@@ -186,6 +186,7 @@ const addAllRelatedToAgenda = (tempGraph, adminGraph) => {
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX dbpedia: <http://dbpedia.org/ontology/>
   INSERT {
     GRAPH <${tempGraph}> {
       ?s a ?thing .
