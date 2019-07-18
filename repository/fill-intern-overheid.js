@@ -17,7 +17,7 @@ const addVisibleAgendas = () => {
     GRAPH <${tempGraph}> {
       ?s a besluitvorming:Agenda.
     }
-  } where {
+  } WHERE {
     GRAPH <${adminGraph}> {
       ?s a besluitvorming:Agenda.
       ?s ext:agendaNaam ?naam.
@@ -44,7 +44,7 @@ const addRelatedToAgenda = () => {
       ?s a ?thing .
       ?subcase a dbpedia:UnitOfWork .
     }
-  } where {
+  } WHERE {
     GRAPH <${tempGraph}> {
       ?agenda a besluitvorming:Agenda .
     }
@@ -86,7 +86,7 @@ const addRelatedDocuments = () => {
       ?s a ?thing .
       ?version a ?subthing .
     }
-  } where {
+  } WHERE {
     GRAPH <${tempGraph}> {
       ?target a ?targetClass .
     }
