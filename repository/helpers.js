@@ -1,4 +1,7 @@
 import mu from 'mu';
+import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
+mu.query = querySudo;
+mu.update = updateSudo;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;

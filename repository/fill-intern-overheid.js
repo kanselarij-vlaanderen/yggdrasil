@@ -1,4 +1,7 @@
 import mu from 'mu';
+import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
+mu.query = querySudo;
+mu.update = updateSudo;
 import moment from 'moment';
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles, cleanup, fillOutDetailsOnVisibleItems, addRelatedToAgendaItemAndSubcase } from './helpers';
 
