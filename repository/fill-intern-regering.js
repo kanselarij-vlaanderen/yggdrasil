@@ -19,7 +19,7 @@ const addVisibleAgendas = () => {
     GRAPH <${tempGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
     }
-  } where {
+  } WHERE {
     GRAPH <${adminGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
       ?s ext:agendaNaam ?naam.

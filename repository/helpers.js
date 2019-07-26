@@ -37,7 +37,7 @@ const removeInfoNotInTemp = (tempGraph, targetGraph) => {
     GRAPH <${targetGraph}> {
       ?s ?p ?o.
     }
-  } where {
+  } WHERE {
     GRAPH <${targetGraph}> {
 			?s ?p ?o.
 			?s a ?type.
@@ -73,7 +73,7 @@ const addRelatedFiles = (tempGraph, adminGraph) => {
       ?s a nfo:FileDataObject .
       ?second a nfo:FileDataObject .
     }
-  } where {
+  } WHERE {
     GRAPH <${tempGraph}> {
       ?target a ?targetClass .
     }
@@ -91,8 +91,11 @@ const addRelatedFiles = (tempGraph, adminGraph) => {
 
 const cleanup = (tempGraph) => {
   const query = `
-
-  DROP SILENT GRAPH <${tempGraph}>`;
+  DELETE WHERE {
+    GRAPH <${tempGraph}> {
+      ?s ?p ?o .
+    }
+  }`;
   return mu.query(query);
 };
 
@@ -119,7 +122,7 @@ const fillOutDetailsOnVisibleItems = (tempGraph, targetGraph, adminGraph) => {
       ?oo ?pp ?s.
       ?s ?p ?literalo.
     }
-  } where {
+  } WHERE {
     GRAPH <${adminGraph}> {
       ?s a ?thing.
       GRAPH <${tempGraph}> {
@@ -139,7 +142,7 @@ const fillOutDetailsOnVisibleItems = (tempGraph, targetGraph, adminGraph) => {
           ?o a ?othing.
         }
       }
-    }    
+    }
   }`;
   return mu.query(query);
 };
@@ -159,7 +162,7 @@ const addAllRelatedDocuments = (tempGraph, adminGraph) => {
       ?s a ?thing .
       ?version a ?subthing .
     }
-  } where {
+  } WHERE {
     GRAPH <${tempGraph}> {
       ?target a ?targetClass .
     }
@@ -170,7 +173,7 @@ const addAllRelatedDocuments = (tempGraph, adminGraph) => {
       FILTER( ?thing IN(
         foaf:Document,
         ext:DocumentVersie ) )
-      
+
       ${notConfidentialFilter}
 
       OPTIONAL {
@@ -195,7 +198,7 @@ const addAllRelatedToAgenda = (tempGraph, adminGraph) => {
       ?s a ?thing .
       ?subcase a dbpedia:UnitOfWork .
     }
-  } where {
+  } WHERE {
     GRAPH <${tempGraph}> {
       ?agenda a besluitvorming:Agenda .
     }
@@ -227,7 +230,7 @@ const addRelatedToAgendaItemAndSubcase = (tempGraph, adminGraph) => {
     GRAPH <${tempGraph}> {
       ?s a ?thing .
     }
-  } where {
+  } WHERE {
     GRAPH <${tempGraph}> {
       ?target a ?targetClass .
       FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
@@ -236,7 +239,7 @@ const addRelatedToAgendaItemAndSubcase = (tempGraph, adminGraph) => {
       ?s a ?thing .
       { { ?s ?p ?target } UNION { ?target ?p ?s } }
       FILTER( ?thing NOT IN(
-        besluitvorming:Agenda, 
+        besluitvorming:Agenda,
         besluit:AgendaItem,
         dbpedia:UnitOfWork,
         foaf:Document,
