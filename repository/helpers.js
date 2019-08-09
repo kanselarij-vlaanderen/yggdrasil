@@ -1,7 +1,6 @@
 import mu from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
-mu.update = updateSudo;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;
@@ -23,7 +22,7 @@ const parseSparQlResults = (data, multiValueProperties = []) => {
 	})
 };
 
-const removeInfoNotInTemp = (tempGraph, targetGraph) => {
+const removeInfoNotInTemp = (queryEnv) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -34,22 +33,22 @@ const removeInfoNotInTemp = (tempGraph, targetGraph) => {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   DELETE {
-    GRAPH <${targetGraph}> {
+    GRAPH <${queryEnv.targetGraph}> {
       ?s ?p ?o.
     }
   } WHERE {
-    GRAPH <${targetGraph}> {
+    GRAPH <${queryEnv.targetGraph}> {
 			?s ?p ?o.
 			?s a ?type.
 
       FILTER NOT EXISTS {
-        GRAPH <${tempGraph}> {
+        GRAPH <${queryEnv.tempGraph}> {
           ?s ?p ?o.
         }
       }
     }
   }`;
-  return mu.query(query);
+  return queryEnv.run(query);
 };
 
 const notConfidentialFilter = `
@@ -58,7 +57,29 @@ const notConfidentialFilter = `
     }
 `;
 
-const addRelatedFiles = (tempGraph, adminGraph) => {
+const notBeperktOpenbaarFilter = `
+    FILTER NOT EXISTS {
+      ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/abe4c18d-13a9-45f0-8cdd-c493eabbbe29> .
+      FILTER(?accessPredicate in (
+        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap>, 
+        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument>,
+        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> ))
+    }
+`;
+
+const notInternOverheidFilter = `
+    FILTER NOT EXISTS {
+      ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> .
+      FILTER(?accessPredicate in (
+        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap>, 
+        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument>,
+        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> ))
+    }
+`;
+
+const addRelatedFiles = (queryEnv, extraFilters) => {
+	extraFilters = extraFilters || '';
+
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -69,37 +90,35 @@ const addRelatedFiles = (tempGraph, adminGraph) => {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?s a nfo:FileDataObject .
       ?second a nfo:FileDataObject .
     }
   } WHERE {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
     }
-    GRAPH <${adminGraph}> {
+    GRAPH <${queryEnv.adminGraph}> {
       ?s a nfo:FileDataObject .
       ?target ext:file ?s.
 
       OPTIONAL {
         ?second <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#dataSource> ?s.
       }
+
+      ${extraFilters}
     }
   }`;
-  return mu.query(query);
+  return queryEnv.run(query);
 };
 
-const cleanup = (tempGraph) => {
+const cleanup = (queryEnv) => {
   const query = `
-  DELETE WHERE {
-    GRAPH <${tempGraph}> {
-      ?s ?p ?o .
-    }
-  }`;
-  return mu.query(query);
+  DROP GRAPH <${queryEnv.tempGraph}>`;
+  return queryEnv.run(query, true);
 };
 
-const fillOutDetailsOnVisibleItems = (tempGraph, targetGraph, adminGraph) => {
+const fillOutDetailsOnVisibleItems = (queryEnv) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -110,44 +129,45 @@ const fillOutDetailsOnVisibleItems = (tempGraph, targetGraph, adminGraph) => {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing.
       ?s ?p ?o.
       ?oo ?pp ?s.
       ?s ?p ?literalo.
     }
-    GRAPH <${targetGraph}> {
+    GRAPH <${queryEnv.targetGraph}> {
       ?s a ?thing.
       ?s ?p ?o.
       ?oo ?pp ?s.
       ?s ?p ?literalo.
     }
   } WHERE {
-    GRAPH <${adminGraph}> {
+    GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing.
-      GRAPH <${tempGraph}> {
+      GRAPH <${queryEnv.tempGraph}> {
         ?s a ?thing .
       }
       ?s ?p ?literalo.
       FILTER(isLiteral(?literalo))
       OPTIONAL {
         ?oo ?pp ?s.
-        GRAPH <${tempGraph}> {
+        GRAPH <${queryEnv.tempGraph}> {
           ?oo a ?oothing.
         }
       }
       OPTIONAL {
         ?s ?p ?o.
-        GRAPH <${tempGraph}> {
+        GRAPH <${queryEnv.tempGraph}> {
           ?o a ?othing.
         }
       }
     }
   }`;
-  return mu.query(query);
+  return queryEnv.run(query);
 };
 
-const addAllRelatedDocuments = (tempGraph, adminGraph) => {
+const addAllRelatedDocuments = (queryEnv, extraFilters) => {
+	extraFilters = extraFilters || '';
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -158,15 +178,15 @@ const addAllRelatedDocuments = (tempGraph, adminGraph) => {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
       ?version a ?subthing .
     }
   } WHERE {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
     }
-    GRAPH <${adminGraph}> {
+    GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
       ?target ?p ?s .
 
@@ -174,7 +194,7 @@ const addAllRelatedDocuments = (tempGraph, adminGraph) => {
         foaf:Document,
         ext:DocumentVersie ) )
 
-      ${notConfidentialFilter}
+      ${extraFilters}
 
       OPTIONAL {
         ?s besluitvorming:heeftVersie ?version.
@@ -182,10 +202,11 @@ const addAllRelatedDocuments = (tempGraph, adminGraph) => {
       }
     }
   }`;
-  return mu.query(query);
+  return queryEnv.run(query);
 };
 
-const addAllRelatedToAgenda = (tempGraph, adminGraph) => {
+const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
+	extraFilters = extraFilters || '';
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -194,29 +215,33 @@ const addAllRelatedToAgenda = (tempGraph, adminGraph) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   INSERT {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
-      ?subcase a dbpedia:UnitOfWork .
     }
   } WHERE {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?agenda a besluitvorming:Agenda .
     }
-    GRAPH <${adminGraph}> {
+    GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
-      FILTER NOT EXISTS {
-        ?s a besluit:AgendaPunt .
-        ?subcase besluitvorming:isGeagendeerdVia ?agendaItem .
+      { { ?s ?p ?agenda } 
+        UNION 
+        { ?agenda ?p ?s } 
+        UNION
+        { ?agenda dct:hasPart ?agendaItem .
+          ?s besluitvorming:isGeagendeerdVia ?agendaItem .
+        }
       }
-      { { ?s ?p ?agenda } UNION { ?agenda ?p ?s } }
       FILTER( ?thing NOT IN(besluitvorming:Agenda) )
-      ${notConfidentialFilter}
+      ${extraFilters}
     }
   }`;
-  return mu.query(query);
+  return queryEnv.run(query);
 };
 
-const addRelatedToAgendaItemAndSubcase = (tempGraph, adminGraph) => {
+const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
+	extraFilters = extraFilters || '';
+
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -227,15 +252,15 @@ const addRelatedToAgendaItemAndSubcase = (tempGraph, adminGraph) => {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
     }
   } WHERE {
-    GRAPH <${tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
       FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
     }
-    GRAPH <${adminGraph}> {
+    GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
       { { ?s ?p ?target } UNION { ?target ?p ?s } }
       FILTER( ?thing NOT IN(
@@ -245,17 +270,20 @@ const addRelatedToAgendaItemAndSubcase = (tempGraph, adminGraph) => {
         foaf:Document,
         ext:DocumentVersie,
         nfo:FileDataObject ) )
-      ${notConfidentialFilter}
+
+      ${extraFilters}
 
     }
   }`;
-  return mu.query(query);
+  return queryEnv.run(query);
 };
 
 module.exports = {
 	parseSparQlResults,
 	removeInfoNotInTemp,
 	notConfidentialFilter,
+	notBeperktOpenbaarFilter,
+	notInternOverheidFilter,
 	addRelatedFiles,
 	cleanup,
 	fillOutDetailsOnVisibleItems,
