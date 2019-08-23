@@ -75,7 +75,7 @@ if(process.env.RELOAD_ALL_DATA_ON_INIT){
 }
 
 const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
-  return `FILTER( ?${agendaVariable} IN (<${subjects.join('>, <')}>))`;
+  return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
 
 const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
@@ -95,8 +95,8 @@ const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
 };
 
 const pathsToAgenda = {
-  "agendaitem": ["dct:hasPart"],
-  "subcase": ["besluitvorming:isGeagendeerdVia / dct:hasPart"],
+  "agendaitem": ["^dct:hasPart"],
+  "subcase": ["besluitvorming:isGeagendeerdVia / ^dct:hasPart"],
   "meeting": ["^besluit:isAangemaaktVoor"],
   "access-level": [
     {path: "^ext:toegangsniveauVoorProcedurestap", nextRDFType: "subcase"},
@@ -241,7 +241,9 @@ const selectRelatedAgendasForSubjects = async function(subjects){
   }`;
 
   const results = await directQuery(select);
-  return parseSparQlResults(JSON.parse(results));
+  return parseSparQlResults(JSON.parse(results)).map((item) => {
+    return item.agenda;
+  });
 };
 
 const grabDeltaSubjects = function(deltaset){
