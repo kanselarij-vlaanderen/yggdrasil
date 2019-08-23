@@ -6,6 +6,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const cron = require('node-cron');
 const DEBUG = process.env.DEBUG;
+import { ok } from 'assert';
+
 
 const fillInterneOverheid = require('./repository/fill-intern-overheid');
 const fillInterneRegering = require('./repository/fill-intern-regering');
@@ -76,22 +78,25 @@ const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
   return `FILTER( ?${agendaVariable} IN (<${subjects.join('>, <')}>))`;
 };
 
-const handleDeltaRelatedToAgenda = async function(subjects){
+const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
   if(DEBUG){
     console.log(`Found subjects: ${JSON.stringify(subjects)}`);
   }
-  const relatedAgendas = selectRelatedAgendasForSubjects(subjects);
+  const relatedAgendas = await selectRelatedAgendasForSubjects(subjects);
   if(DEBUG){
     console.log(`Related to subjects: ${relatedAgendas}`);
   }
+  if(!relatedAgendas || !relatedAgendas.length){
+    return;
+  }
   const filterAgendas = filterAgendaMustBeInSet(relatedAgendas);
-  fillInterneOverheid.fillUp(queryEnvOverheid, filterAgendas);
-  fillInterneRegering.fillUp(queryEnvRegering, filterAgendas);
+  await fillInterneOverheid.fillUp(queryEnvOverheid, filterAgendas);
+  await fillInterneRegering.fillUp(queryEnvRegering, filterAgendas);
 };
 
 const pathsToAgenda = {
   "agendaitem": ["dct:hasPart"],
-  "procedurestap": ["besluitvorming:isGeagendeerdVia/dct:hasPart"],
+  "subcase": ["besluitvorming:isGeagendeerdVia / dct:hasPart"],
   "meeting": ["^besluit:isAangemaaktVoor"],
   "access-level": [
     {path: "^ext:toegangsniveauVoorProcedurestap", nextRDFType: "subcase"},
@@ -110,35 +115,35 @@ const pathsToAgenda = {
     {path: "^ext:subcaseAgendapuntFase", nextRDFType: "agendaitem"}
   ],
   "decision": [
-    {path: "^ext:procedurestapHeeftBesluit", nextRDFType: "decision"},
+    {path: "^ext:procedurestapHeeftBesluit", nextRDFType: "subcase"},
     {path: "^ext:agendapuntHeeftBesluit", nextRDFType: "agendaitem"}
   ],
   "meeting-record": [
     {path: "^ext:notulenVanAgendaPunt", nextRDFType: "agendaitem"},
-    {path: "^ext:algemeneNotulen", nextRDFType: "meeting-record"}
+    {path: "^ext:algemeneNotulen", nextRDFType: "meeting"}
   ],
   "case": [
     {path: "dct:hasPart", nextRDFType: "subcase"}
   ],
   "remark": [
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "meeting"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "newsletter-info"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "document"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "agendaitem"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "decision"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "case"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "subcase"},
-    {path: "^ext:antwoorden*/^besluitvorming:opmerking", nextRDFType: "decision"}
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "meeting"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "newsletter-info"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "document"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "agendaitem"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "decision"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "case"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "subcase"},
+    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "decision"}
   ],
   "document": [
-    {path: "^ext:beslissingFiche", nextRDFType: "document" },
+    {path: "^ext:beslissingFiche", nextRDFType: "decision" },
     {path: "besluitvorming:heeftVersie", nextRDFType: "document-version"},
     {path: "^ext:getekendeNotulen", nextRDFType: "meeting-record"}
   ],
   "announcement": [
-    ["ext:mededeling"]
+    "ext:mededeling"
   ],
-  "documentversion": [
+  "document-version": [
     {path: "^ext:bevatDocumentversie", nextRDFType: "subcase"},
     {path: "^ext:documentenVoorPublicatie", nextRDFType: "newsletter-info" },
     {path: "^ext:documentenVoorPublicatie", nextRDFType: "newsletter-info" },
@@ -189,15 +194,16 @@ const buildFullPathsToAgendaForType = function(type){
     return [];
   }
 
-  const result = paths.map((path) => {
+  let result = paths.map((path) => {
     if(path.nextRDFType){
-      return getFullPathsToAgendaForType(path.nextRDFType).map((next) => {
+      return buildFullPathsToAgendaForType(path.nextRDFType).map((next) => {
         return `${path.path} / ${next}`;
       });
     }else{
-      return path.path;
+      return path;
     }
-  }).flat();
+  });
+  result = [].concat(...result);
 
   fullPathsCache[type] = result;
   return result;
@@ -208,34 +214,47 @@ const selectRelatedAgendasForSubjects = async function(subjects){
   const unions = Object.keys(pathsToAgenda).map((typeName) => {
     return `{ 
       ?subject a ${typeUris[typeName]} .
-      ?subject (${pathsToAgenda[typeName].join(" | ")}) ?agenda .
+      ?subject (${pathsToAgenda[typeName].join(") | (")}) ?agenda .
     }`
   }).join(' UNION ');
 
-  const select = `SELECT DISTINCT ?agenda WHERE {
+  const select = `
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX dbpedia: <http://dbpedia.org/ontology/>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  PREFIX schema: <http://schema.org>
+  
+  SELECT DISTINCT ?agenda WHERE {
     VALUES (?subject) {
-      <${[...subjects].join('> <')}>
+      (<${subjects.join('>) (<')}>)
     }
     { {
       ?subject a ${typeUris.agenda} .
-      BIND(?subject) AS ?agenda.
+      BIND(?subject AS ?agenda ).
     } UNION ${unions} }
+    
+    ?agenda a ${typeUris.agenda} .
   }`;
 
-  const results = await query(select);
-  return parseSparQlResults(results);
+  const results = await directQuery(select);
+  return parseSparQlResults(JSON.parse(results));
 };
 
 const grabDeltaSubjects = function(deltaset){
   let subjects = new Set();
   const addTripleUris = (triple) => {
-    subjects.add(triple.subject);
+    subjects.add(triple.subject.value);
     if(triple.object.type == "uri"){
-      subjects.add(triple.object);
+      subjects.add(triple.object.value);
     }
   };
   deltaset.inserts.map(addTripleUris);
   deltaset.deletes.map(addTripleUris);
+  subjects = Array.from(subjects);
   return subjects;
 };
 
@@ -246,6 +265,8 @@ const handleDelta = async function(req,res){
     const insertSubjects = grabDeltaSubjects(deltaset);
     handleDeltaRelatedToAgenda(insertSubjects);
   });
+  // don't wait on result so our notifier doesn't get a timeout
+  // (even if it doesn't care, it's just good manners!)
   res.send({ status: ok, statusCode: 200});
 };
 
