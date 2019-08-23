@@ -22,6 +22,10 @@ const parseSparQlResults = (data, multiValueProperties = []) => {
 	})
 };
 
+const logStage = (logMessage, graph) => {
+	console.log(`${graph} => ${logMessage}`);
+};
+
 const removeInfoNotInTemp = (queryEnv) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -94,9 +98,16 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
       ?s a nfo:FileDataObject .
       ?second a nfo:FileDataObject .
     }
-  } WHERE {
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+		  ?s ext:tracesLineageTo ?agenda .
+      ?second ext:tracesLineageTo ?agenda .
+		}
+	} WHERE {
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
+    }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?target ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?s a nfo:FileDataObject .
@@ -114,7 +125,7 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
 
 const cleanup = (queryEnv) => {
   const query = `
-  DROP GRAPH <${queryEnv.tempGraph}>`;
+  DROP SILENT GRAPH <${queryEnv.tempGraph}>`;
   return queryEnv.run(query, true);
 };
 
@@ -162,7 +173,7 @@ const fillOutDetailsOnVisibleItems = (queryEnv) => {
         }
       }
     }
-  }`;
+  } `;
   return queryEnv.run(query);
 };
 
@@ -182,9 +193,16 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       ?s a ?thing .
       ?version a ?subthing .
     }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?s ext:tracesLineageTo ?agenda .
+    }
+    
   } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
+    }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?target ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
@@ -217,6 +235,9 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
+    }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
@@ -255,7 +276,13 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
     }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?s ext:tracesLineageTo ?agenda .	
+	  }
   } WHERE {
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?target ext:tracesLineageTo ?agenda .
+    }
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
       FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
@@ -289,6 +316,7 @@ module.exports = {
 	fillOutDetailsOnVisibleItems,
 	addAllRelatedDocuments,
 	addAllRelatedToAgenda,
-	addRelatedToAgendaItemAndSubcase
+	addRelatedToAgendaItemAndSubcase,
+	logStage
 };
 

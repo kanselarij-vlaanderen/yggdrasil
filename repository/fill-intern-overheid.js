@@ -5,7 +5,7 @@ mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addRelatedToAgendaItemAndSubcase,
-  notBeperktOpenbaarFilter, notInternOverheidFilter} from './helpers';
+  notBeperktOpenbaarFilter, notInternOverheidFilter, logStage} from './helpers';
 
 // logic is: make visible if openbaarheid is ok AND
 // if has accepted decision with agenda date > last date
@@ -13,8 +13,7 @@ const sessionPublicationDateHasPassed = function(){
   return `
     ?s besluit:isAangemaaktVoor ?session .
     ?session ext:decisionPublicationDate ?date .
-    FILTER(?date < "${moment().utc().toISOString()}"^^xsd:dateTime.)`;
-
+    FILTER(?date < "${moment().utc().toISOString()}"^^xsd:dateTime )`;
 };
 
 
@@ -23,6 +22,7 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   INSERT {
@@ -54,8 +54,11 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   INSERT {
-    GRAPH <${queryEnv.tempGraph} {
+    GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
+    }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
@@ -105,7 +108,13 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       ?s a ?thing .
       ?version a ?subthing .
     }
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?s ext:tracesLineageTo ?agenda .
+    }
   } WHERE {
+    GRAPH <${queryEnv.agendaLineageGraph}> {
+      ?decision ext:tracesLineageTo ?agenda .
+    }
     GRAPH <${queryEnv.tempGraph}> {
       ?decision a ?targetClass .
     }
@@ -130,24 +139,40 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
   return queryEnv.run(query);
 };
 
-
-export const fillUp = async (queryEnv) => {
+export const fillUp = async (queryEnv, agendaFilter = "") => {
   try {
     const start = moment().utc();
     const filter = [notConfidentialFilter, notBeperktOpenbaarFilter].join("\n");
-    const filterWithDecisions = [notConfidentialFilter, notBeperktOpenbaarFilter, sessionPublicationDateHasPassed()].join("\n");
-    console.log(`fill overheid started at: ${start}`);
-    await addVisibleAgendas(queryEnv, filterWithDecisions);
+    const filterAgendasWithAccess=[
+      notConfidentialFilter, notBeperktOpenbaarFilter,
+      sessionPublicationDateHasPassed(),
+      agendaFilter
+    ].join("\n");
+    let targetGraph = queryEnv.targetGraph;
+    logStage(`fill overheid started at: ${start}`, targetGraph);
+    await addVisibleAgendas(queryEnv, filterAgendasWithAccess);
+    logStage(`overheid agendas added`, targetGraph);
     await addAllRelatedToAgenda(queryEnv, filter);
+    logStage(`related to agenda added`, targetGraph);
     await addRelatedToAgendaItemAndSubcase(queryEnv, filter);
+    logStage(`agenda items and subcases added`, targetGraph);
     await addAllRelatedDocuments(queryEnv, filter);
+    logStage('documents added', targetGraph);
     await addRelatedFiles(queryEnv);
+    logStage('related files added', targetGraph);
     await fillOutDetailsOnVisibleItems(queryEnv);
+    logStage('details added', targetGraph);
+
+    // TODO this will remove everything except the changeset if we have any
+    // should fix... will use lineage graph to remove things that should use targeted agenda only but that are no longer in the result set
+    // always remove links to lineage agenda if not in temp graph but has link to lineage
     await removeInfoNotInTemp(queryEnv);
+    logStage('removed not in temp', targetGraph);
     await cleanup(queryEnv);
+    logStage('done filling overheid', targetGraph);
     const end = moment().utc();
-    console.log(`fill overheid ended at: ${end}, took: ${end.diff(start, 'ms')}ms`);
+    logStage(`fill overheid ended at: ${end}, took: ${end.diff(start, 'ms')}ms`);
   } catch (e) {
-    console.log(e);
+    logStage(e, queryEnv.targetGraph);
   }
 };

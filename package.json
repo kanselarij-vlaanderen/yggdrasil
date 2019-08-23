@@ -1,16 +1,18 @@
 {
-  "name": "agenda-sort-service",
+  "name": "yggdrasil",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
   "dependencies": {
+    "@lblod/mu-auth-sudo": "^0.2.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "moment": "^2.23.0",
     "node-cron": "^2.0.3",
     "node-fetch": "^2.3.0",
-    "@lblod/mu-auth-sudo": "^0.2.0"
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
   },
   "devDependencies": {},
   "scripts": {
