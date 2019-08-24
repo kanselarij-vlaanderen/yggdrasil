@@ -33,8 +33,7 @@ const queryEnvPublic = {
   tempGraph: `http://mu.semte.ch/temp/${mu.uuid()}`,
   adminGraph: adminGraph,
   targetGraph:`http://mu.semte.ch/graphs/public`,
-  // the graph that traces lineage of uris to an agenda
-  agendaLineageGraph: `http://mu.semte.ch/graphs/util/lineage`,
+  fullRebuild: false,
   run: configurableQuery
 };
 
@@ -42,8 +41,7 @@ const queryEnvOverheid = {
   tempGraph: `http://mu.semte.ch/temp/${mu.uuid()}`,
   adminGraph: adminGraph,
   targetGraph:`http://mu.semte.ch/graphs/organizations/intern-overheid`,
-  // the graph that traces lineage of uris to an agenda
-  agendaLineageGraph: `http://mu.semte.ch/graphs/util/lineage`,
+  fullRebuild: false,
   run: configurableQuery
 };
 
@@ -51,8 +49,7 @@ const queryEnvRegering = {
   tempGraph: `http://mu.semte.ch/temp/${mu.uuid()}`,
   adminGraph: adminGraph,
   targetGraph: `http://mu.semte.ch/graphs/organizations/intern-regering`,
-  // the graph that traces lineage of uris to an agenda
-  agendaLineageGraph: `http://mu.semte.ch/graphs/util/lineage`,
+  fullRebuild: false,
   run: configurableQuery
 };
 
@@ -62,13 +59,15 @@ if(process.env.RELOAD_ALL_DATA_ON_INIT){
   const fillAll = async function(){
     let queryEnvOverheidSetup = Object.assign({}, queryEnvOverheid);
     let queryEnvRegeringSetup = Object.assign({}, queryEnvRegering);
+    queryEnvOverheidSetup.fullRebuild = true;
+    queryEnvRegeringSetup.fullRebuild = true;
     queryEnvOverheidSetup.run = directQuery;
     queryEnvRegeringSetup.run = directQuery;
     queryEnvPublic.run = directQuery;
 
     await fillPublic.fillUp(queryEnvPublic);
-    //await fillInterneOverheid.fillUp(queryEnvOverheidSetup);
-    //await fillInterneRegering.fillUp(queryEnvRegeringSetup);
+    await fillInterneOverheid.fillUp(queryEnvOverheidSetup);
+    await fillInterneRegering.fillUp(queryEnvRegeringSetup);
   };
   fillAll();
 

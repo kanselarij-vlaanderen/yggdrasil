@@ -5,7 +5,9 @@ mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addRelatedToAgendaItemAndSubcase,
-  notBeperktOpenbaarFilter, notInternOverheidFilter, logStage} from './helpers';
+  notBeperktOpenbaarFilter, notInternOverheidFilter, logStage,
+  removeThingsWithLineageNoLongerInTemp
+} from './helpers';
 
 // logic is: make visible if openbaarheid is ok AND
 // if has accepted decision with agenda date > last date
@@ -18,7 +20,6 @@ const sessionPublicationDateHasPassed = function(){
 
 
 const addVisibleAgendas = (queryEnv, extraFilters) => {
-  // TODO can reduce the number of agendas examined using delta service
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -56,8 +57,6 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
@@ -107,16 +106,12 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
       ?version a ?subthing .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
-    GRAPH <${queryEnv.agendaLineageGraph}> {
-      ?decision ext:tracesLineageTo ?agenda .
-    }
     GRAPH <${queryEnv.tempGraph}> {
       ?decision a ?targetClass .
+      ?decision ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
@@ -162,12 +157,12 @@ export const fillUp = async (queryEnv, agendaFilter = "") => {
     logStage('related files added', targetGraph);
     await fillOutDetailsOnVisibleItems(queryEnv);
     logStage('details added', targetGraph);
-
-    // TODO this will remove everything except the changeset if we have any
-    // should fix... will use lineage graph to remove things that should use targeted agenda only but that are no longer in the result set
-    // always remove links to lineage agenda if not in temp graph but has link to lineage
-    await removeInfoNotInTemp(queryEnv);
-    logStage('removed not in temp', targetGraph);
+    await removeThingsWithLineageNoLongerInTemp(queryEnv);
+    logStage('lineage updated', targetGraph);
+    if(queryEnv.fullRebuild){
+      await removeInfoNotInTemp(queryEnv);
+      logStage('removed info not in temp', targetGraph);
+    }
     await cleanup(queryEnv);
     logStage('done filling overheid', targetGraph);
     const end = moment().utc();

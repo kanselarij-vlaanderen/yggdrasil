@@ -97,16 +97,12 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a nfo:FileDataObject .
       ?second a nfo:FileDataObject .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
-		  ?s ext:tracesLineageTo ?agenda .
+      ?s ext:tracesLineageTo ?agenda .
       ?second ext:tracesLineageTo ?agenda .
-		}
+    }
 	} WHERE {
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
       ?target ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
@@ -192,16 +188,11 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
       ?version a ?subthing .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
       ?s ext:tracesLineageTo ?agenda .
     }
-    
   } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
       ?target ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
@@ -235,8 +226,6 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
-    }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
@@ -275,15 +264,11 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
+      ?s ext:tracesLineageTo ?agenda .
     }
-    GRAPH <${queryEnv.agendaLineageGraph}> {
-      ?s ext:tracesLineageTo ?agenda .	
-	  }
   } WHERE {
-    GRAPH <${queryEnv.agendaLineageGraph}> {
-      ?target ext:tracesLineageTo ?agenda .
-    }
     GRAPH <${queryEnv.tempGraph}> {
+      ?target ext:tracesLineageTo ?agenda .
       ?target a ?targetClass .
       FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
     }
@@ -305,6 +290,38 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
   return queryEnv.run(query);
 };
 
+const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
+	if(!targetedAgendas){
+		return;
+	}
+	const query = `
+		DELETE {
+		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ext:tracesLineageTo ?agenda .
+        ?s ?p ?o .
+		    ??o ?pp ?s .
+		  }
+		} WHERE {
+		  VALUES (?agenda) {
+		    (<${targetedAgendas.join('>) (<')}>)
+		  }
+		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ext:tracesLineageTo ?agenda .
+		    ?s ?p ?o .
+		    OPTIONAL {
+		      ?oo ?pp ?s .
+		    }
+		  }
+		  FILTER NOT EXISTS {
+		    GRAPH <${queryEnv.tempGraph}> {
+		      ?s ext:tracesLineageTo ?agenda .
+		    }
+		  }		  
+		}
+		`;
+	await queryEnv.run(query);
+};
+
 module.exports = {
 	parseSparQlResults,
 	removeInfoNotInTemp,
@@ -317,6 +334,7 @@ module.exports = {
 	addAllRelatedDocuments,
 	addAllRelatedToAgenda,
 	addRelatedToAgendaItemAndSubcase,
+	removeThingsWithLineageNoLongerInTemp,
 	logStage
 };
 
