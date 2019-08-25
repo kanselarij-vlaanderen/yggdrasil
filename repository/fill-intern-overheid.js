@@ -6,7 +6,7 @@ mu.query = querySudo;
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addRelatedToAgendaItemAndSubcase,
   notBeperktOpenbaarFilter, notInternOverheidFilter, logStage,
-  removeThingsWithLineageNoLongerInTemp
+  removeThingsWithLineageNoLongerInTemp, filterAgendaMustBeInSet
 } from './helpers';
 
 // logic is: make visible if openbaarheid is ok AND
@@ -134,10 +134,11 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
   return queryEnv.run(query);
 };
 
-export const fillUp = async (queryEnv, agendaFilter = "") => {
+export const fillUp = async (queryEnv, agendas) => {
   try {
     const start = moment().utc();
     const filter = [notConfidentialFilter, notBeperktOpenbaarFilter].join("\n");
+    const agendaFilter = filterAgendaMustBeInSet(agendas);
     const filterAgendasWithAccess=[
       notConfidentialFilter, notBeperktOpenbaarFilter,
       sessionPublicationDateHasPassed(),
@@ -157,7 +158,7 @@ export const fillUp = async (queryEnv, agendaFilter = "") => {
     logStage('related files added', targetGraph);
     await fillOutDetailsOnVisibleItems(queryEnv);
     logStage('details added', targetGraph);
-    await removeThingsWithLineageNoLongerInTemp(queryEnv);
+    await removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
     logStage('lineage updated', targetGraph);
     if(queryEnv.fullRebuild){
       await removeInfoNotInTemp(queryEnv);

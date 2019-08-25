@@ -5,7 +5,8 @@ import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup,
   fillOutDetailsOnVisibleItems, addAllRelatedDocuments,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
-  notBeperktOpenbaarFilter, notInternOverheidFilter, notConfidentialFilter
+  notBeperktOpenbaarFilter, notInternOverheidFilter, notConfidentialFilter,
+  logStage, removeThingsWithLineageNoLongerInTemp, filterAgendaMustBeInSet
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilter) => {
@@ -33,9 +34,11 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
   return queryEnv.run(query);
 };
 
-export const fillUp = async (queryEnv, agendaFilter) => {
+export const fillUp = async (queryEnv, agendas) => {
   try{
     const start = moment().utc();
+    const agendaFilter = filterAgendaMustBeInSet(agendas);
+    const targetGraph = queryEnv.targetGraph;
     console.log(`fill regering started at: ${start}`);
     await addVisibleAgendas(queryEnv, agendaFilter);
     logStage('agendas added', targetGraph);
@@ -49,7 +52,7 @@ export const fillUp = async (queryEnv, agendaFilter) => {
     logStage('related files added', targetGraph);
     await fillOutDetailsOnVisibleItems(queryEnv);
     logStage('details added', targetGraph);
-    await removeThingsWithLineageNoLongerInTemp(queryEnv);
+    await removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
     logStage('lineage updated', targetGraph);
     if(queryEnv.fullRebuild){
       await removeInfoNotInTemp(queryEnv);

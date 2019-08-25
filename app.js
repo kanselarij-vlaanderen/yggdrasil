@@ -7,6 +7,7 @@ const cors = require('cors');
 const cron = require('node-cron');
 const DEBUG = process.env.DEBUG;
 import { ok } from 'assert';
+import debounce from 'debounce';
 
 
 const fillInterneOverheid = require('./repository/fill-intern-overheid');
@@ -73,10 +74,6 @@ if(process.env.RELOAD_ALL_DATA_ON_INIT){
 
 }
 
-const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
-  return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
-};
-
 const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
   if(DEBUG){
     console.log(`Found subjects: ${JSON.stringify(subjects)}`);
@@ -88,9 +85,8 @@ const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
   if(!relatedAgendas || !relatedAgendas.length){
     return;
   }
-  const filterAgendas = filterAgendaMustBeInSet(relatedAgendas);
-  await fillInterneOverheid.fillUp(queryEnvOverheid, filterAgendas);
-  await fillInterneRegering.fillUp(queryEnvRegering, filterAgendas);
+  await fillInterneOverheid.fillUp(queryEnvOverheid, relatedAgendas);
+  await fillInterneRegering.fillUp(queryEnvRegering, relatedAgendas);
 };
 
 const pathsToAgenda = {
@@ -144,6 +140,7 @@ const pathsToAgenda = {
   ],
   "document-version": [
     {path: "^ext:bevatDocumentversie", nextRDFType: "subcase"},
+    {path: "^ext:bevatAgendapuntDocumentversie", nextRDFType: "agendaitem"},
     {path: "^ext:documentenVoorPublicatie", nextRDFType: "newsletter-info" },
     {path: "^ext:documentenVoorPublicatie", nextRDFType: "newsletter-info" },
     {path: "^ext:mededelingBevatDocumentversie", nextRDFType: "announcement" },
@@ -245,8 +242,10 @@ const selectRelatedAgendasForSubjects = async function(subjects){
   });
 };
 
-const grabDeltaSubjects = function(deltaset){
-  let subjects = new Set();
+let subjectsToCheck = new Set();
+
+const rememberDeltaSubjects = function(deltaset){
+  let subjects = subjectsToCheck;
   const addTripleUris = (triple) => {
     subjects.add(triple.subject.value);
     if(triple.object.type == "uri"){
@@ -255,19 +254,27 @@ const grabDeltaSubjects = function(deltaset){
   };
   deltaset.inserts.map(addTripleUris);
   deltaset.deletes.map(addTripleUris);
-  subjects = Array.from(subjects);
   return subjects;
 };
+
+
+
+const checkAllDeltas = function(){
+  let subjects = Array.from(subjectsToCheck);
+  subjectsToCheck = new Set();
+
+  handleDeltaRelatedToAgenda(subjects);
+};
+
+const debouncedDelta = debounce(checkAllDeltas, 10000);
 
 const handleDelta = async function(req,res){
   let body = req.body;
 
   body.map((deltaset) => {
-    const insertSubjects = grabDeltaSubjects(deltaset);
-    handleDeltaRelatedToAgenda(insertSubjects);
+    rememberDeltaSubjects(deltaset);
   });
-  // don't wait on result so our notifier doesn't get a timeout
-  // (even if it doesn't care, it's just good manners!)
+  debouncedDelta();
   res.send({ status: ok, statusCode: 200});
 };
 

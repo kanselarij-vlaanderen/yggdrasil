@@ -55,6 +55,7 @@ const removeInfoNotInTemp = (queryEnv) => {
   return queryEnv.run(query);
 };
 
+// TODO better do the inverse, but that means we should do it on items that truly have confidentiality... to be seen
 const notConfidentialFilter = `
     FILTER NOT EXISTS {
       ?s ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
@@ -141,18 +142,23 @@ const fillOutDetailsOnVisibleItems = (queryEnv) => {
       ?s ?p ?o.
       ?oo ?pp ?s.
       ?s ?p ?literalo.
+      ?s ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.targetGraph}> {
       ?s a ?thing.
       ?s ?p ?o.
       ?oo ?pp ?s.
       ?s ?p ?literalo.
+      ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing.
       GRAPH <${queryEnv.tempGraph}> {
         ?s a ?thing .
+        OPTIONAL {
+          ?s ext:tracesLineageTo ?agenda .
+        }
       }
       ?s ?p ?literalo.
       FILTER(isLiteral(?literalo))
@@ -196,12 +202,16 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       ?target ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
+      VALUES (?thing) {
+        (foaf:Document) (ext:DocumentVersie)
+      }
       ?s a ?thing .
-      ?target ?p ?s .
-
-      FILTER( ?thing IN(
-        foaf:Document,
-        ext:DocumentVersie ) )
+      { { ?target ?p ?s . } 
+        UNION
+        { ?target ?p ?version .
+          ?s <http://data.vlaanderen.be/ns/besluitvorming#heeftVersie> ?version .
+        }
+      }
 
       ${extraFilters}
 
@@ -275,7 +285,7 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
       { { ?s ?p ?target } UNION { ?target ?p ?s } }
-      FILTER( ?thing NOT IN(
+      FILTER( ?thing NOT IN (
         besluitvorming:Agenda,
         besluit:AgendaItem,
         dbpedia:UnitOfWork,
@@ -295,11 +305,12 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 		return;
 	}
 	const query = `
-		DELETE {
+		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    DELETE {
 		  GRAPH <${queryEnv.targetGraph}> {
 		    ?s ext:tracesLineageTo ?agenda .
         ?s ?p ?o .
-		    ??o ?pp ?s .
+		    ?oo ?pp ?s .
 		  }
 		} WHERE {
 		  VALUES (?agenda) {
@@ -316,10 +327,17 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 		    GRAPH <${queryEnv.tempGraph}> {
 		      ?s ext:tracesLineageTo ?agenda .
 		    }
-		  }		  
+		  }
 		}
 		`;
 	await queryEnv.run(query);
+};
+
+const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
+	if(!subjects || !subjects.length){
+		return "";
+	}
+	return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
 
 module.exports = {
@@ -335,6 +353,7 @@ module.exports = {
 	addAllRelatedToAgenda,
 	addRelatedToAgendaItemAndSubcase,
 	removeThingsWithLineageNoLongerInTemp,
-	logStage
+	logStage,
+	filterAgendaMustBeInSet
 };
 
