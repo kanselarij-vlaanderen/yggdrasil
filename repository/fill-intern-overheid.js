@@ -29,6 +29,7 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a besluitvorming:Agenda.
+      ?s ext:tracesLineageTo ?s.
     }
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {

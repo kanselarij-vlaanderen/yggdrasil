@@ -21,6 +21,7 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
+      ?s ext:tracesLineageTo ?s.
     }
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {

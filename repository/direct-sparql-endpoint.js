@@ -11,7 +11,7 @@ const request = require('request-promise');
 function newSparqlClient(args) {
 
   let options = {
-    requestDefaults: { headers: { } }
+    requestDefaults: { headers: { 'Connection': 'keep-alive'} }
   };
 
   if (httpContext.get('request')) {
@@ -62,7 +62,12 @@ function query( args, queryString ) {
       'format': 'application/sparql-results+json'
     } };
 
-    options.form.update = queryString;
+    if(queryString.indexOf('INSERT') >= 0 || queryString.indexOf('DELETE') >=0 || queryString.indexOf('DROP')>= 0 || queryString.indexOf('CREATE') >= 0){
+      options.form.update = queryString;
+    }else{
+      options.form.query = queryString;
+    }
+
 
 
   if (httpContext.get('request')) {

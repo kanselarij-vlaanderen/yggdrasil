@@ -126,8 +126,8 @@ const cleanup = (queryEnv) => {
   return queryEnv.run(query, true);
 };
 
-const fillOutDetailsOnVisibleItems = (queryEnv) => {
-  const query = `
+const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
+	const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -140,43 +140,99 @@ const fillOutDetailsOnVisibleItems = (queryEnv) => {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing.
       ?s ?p ?o.
-      ?oo ?pp ?s.
-      ?s ?p ?literalo.
       ?s ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.targetGraph}> {
       ?s a ?thing.
       ?s ?p ?o.
-      ?oo ?pp ?s.
-      ?s ?p ?literalo.
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
-    GRAPH <${queryEnv.adminGraph}> {
-      ?s a ?thing.
-      GRAPH <${queryEnv.tempGraph}> {
-        ?s a ?thing .
-        OPTIONAL {
-          ?s ext:tracesLineageTo ?agenda .
-        }
-      }
-      ?s ?p ?literalo.
-      FILTER(isLiteral(?literalo))
-      OPTIONAL {
-        ?oo ?pp ?s.
-        GRAPH <${queryEnv.tempGraph}> {
-          ?oo a ?oothing.
-        }
-      }
-      OPTIONAL {
+    { SELECT ?s ?p ?o ?thing ?agenda WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+			?s a ?thing .
+			?s ext:tracesLineageTo ?agenda .
+		}
+	  
+		GRAPH <${queryEnv.adminGraph}> {
+			?s a ?thing.
+			?s ?p ?o.
+		}
+		FILTER NOT EXISTS {
+		  GRAPH <${queryEnv.tempGraph}> {
+        ?s a ?thing.
         ?s ?p ?o.
-        GRAPH <${queryEnv.tempGraph}> {
-          ?o a ?othing.
-        }
       }
+		}
+		} LIMIT 10000 }
+  }`;
+	return queryEnv.run(query);
+};
+
+const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
+  const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX dbpedia: <http://dbpedia.org/ontology/>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?oo ?pp ?s.
     }
-  } `;
+    GRAPH <${queryEnv.targetGraph}> {
+      ?oo ?pp ?s.
+    }
+  } WHERE {
+    { SELECT ?s ?pp ?oo WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+			?s a ?thing .
+		}
+	  
+		GRAPH <${queryEnv.adminGraph}> {
+			?s a ?thing.
+			?oo ?pp ?s.
+			
+			FILTER NOT EXISTS {
+			  GRAPH <${queryEnv.tempGraph}> {
+			    ?oo ?pp ?s.
+			  }
+			}
+		}
+		} LIMIT 100000 }
+  }`;
   return queryEnv.run(query);
+};
+
+const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount){
+	const funResult = await fun();
+	const query = `SELECT (COUNT(?s) AS ?count) WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s ?p ?o.
+    }
+  }`;
+	return queryEnv.run(query).then((result) => {
+		let count = ((JSON.parse(result).results || [])[0] || {}).count || 0;
+		if(count == previousCount){
+			return funResult;
+		}else {
+			return repeatUntilTripleCountConstant(fun, queryEnv, count);
+		}
+	});
+};
+
+const fillOutDetailsOnVisibleItems = (queryEnv) => {
+	return Promise.all([
+		repeatUntilTripleCountConstant(() => {
+			fillOutDetailsOnVisibleItemsLeft(queryEnv);
+		}, queryEnv, 0),
+		repeatUntilTripleCountConstant(() => {
+			fillOutDetailsOnVisibleItemsRight(queryEnv);
+		}, queryEnv, 0)
+	]);
 };
 
 const addAllRelatedDocuments = (queryEnv, extraFilters) => {

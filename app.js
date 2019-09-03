@@ -5,7 +5,7 @@ const app = mu.app;
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const cron = require('node-cron');
-const DEBUG = process.env.DEBUG;
+const DEBUG = process.env.DEBUG == "true";
 import { ok } from 'assert';
 import debounce from 'debounce';
 
@@ -206,15 +206,23 @@ const buildFullPathsToAgendaForType = function(type){
 };
 
 const selectRelatedAgendasForSubjects = async function(subjects){
+
   const pathsToAgenda = getFullPathsToAgenda();
-  const unions = Object.keys(pathsToAgenda).map((typeName) => {
-    return `{ 
+  const restrictions = Object.keys(pathsToAgenda).map((typeName) => {
+    return ` 
       ?subject a ${typeUris[typeName]} .
       ?subject (${pathsToAgenda[typeName].join(") | (")}) ?agenda .
-    }`
-  }).join(' UNION ');
+    `
+  });
 
-  const select = `
+  restrictions.push(`
+    ?subject a ${typeUris.agenda} .
+    BIND(?subject AS ?agenda ).
+  `);
+
+  const agendas = new Set();
+  return Promise.all(restrictions.map(async (restriction) => {
+    const select = `
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -228,17 +236,19 @@ const selectRelatedAgendasForSubjects = async function(subjects){
     VALUES (?subject) {
       (<${subjects.join('>) (<')}>)
     }
-    { {
-      ?subject a ${typeUris.agenda} .
-      BIND(?subject AS ?agenda ).
-    } UNION ${unions} }
+    
+    ${restriction}
     
     ?agenda a ${typeUris.agenda} .
   }`;
-
-  const results = await directQuery(select);
-  return parseSparQlResults(JSON.parse(results)).map((item) => {
-    return item.agenda;
+    const results = await directQuery(select);
+    parseSparQlResults(JSON.parse(results)).map((item) => {
+      return item.agenda;
+    }).map((agenda) => {
+      agendas.add(agenda);
+    });
+  })).then(() => {
+    return Array.from(agendas);
   });
 };
 
