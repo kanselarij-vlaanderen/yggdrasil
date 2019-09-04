@@ -232,10 +232,10 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
 const fillOutDetailsOnVisibleItems = (queryEnv) => {
 	return Promise.all([
 		repeatUntilTripleCountConstant(() => {
-			fillOutDetailsOnVisibleItemsLeft(queryEnv);
+			return fillOutDetailsOnVisibleItemsLeft(queryEnv);
 		}, queryEnv, 0),
 		repeatUntilTripleCountConstant(() => {
-			fillOutDetailsOnVisibleItemsRight(queryEnv);
+			return fillOutDetailsOnVisibleItemsRight(queryEnv);
 		}, queryEnv, 0)
 	]);
 };
