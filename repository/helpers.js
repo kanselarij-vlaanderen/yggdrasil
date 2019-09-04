@@ -215,7 +215,12 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
     }
   }`;
 	return queryEnv.run(query).then((result) => {
-		let count = ((JSON.parse(result).results || [])[0] || {}).count || 0;
+		let count = 0;
+		try {
+			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
+		}catch (e) {
+			console.log('no matching results');
+		}
 		if(count == previousCount){
 			return funResult;
 		}else {
