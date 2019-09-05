@@ -24,7 +24,7 @@ const parseSparQlResults = (data, multiValueProperties = []) => {
 };
 
 const logStage = (start, logMessage, graph) => {
-	const time = moment().utc().diff(start, 'seconds');
+	const time = moment().utc().diff(start, 'seconds', true);
 	console.log(`${graph} => ${logMessage} -- time: ${time.toFixed(3)}s`);
 };
 
