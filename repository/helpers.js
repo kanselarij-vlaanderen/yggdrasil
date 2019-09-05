@@ -22,8 +22,9 @@ const parseSparQlResults = (data, multiValueProperties = []) => {
 	})
 };
 
-const logStage = (logMessage, graph) => {
-	console.log(`${graph} => ${logMessage}`);
+const logStage = (start, logMessage, graph) => {
+	const time = moment().utc().diff(start, 'seconds');
+	console.log(`${graph} => ${logMessage} -- time: ${time.toFixed(3)}s`);
 };
 
 const removeInfoNotInTemp = (queryEnv) => {

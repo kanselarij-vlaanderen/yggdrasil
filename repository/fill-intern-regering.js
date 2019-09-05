@@ -41,28 +41,37 @@ export const fillUp = async (queryEnv, agendas) => {
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const targetGraph = queryEnv.targetGraph;
     console.log(`fill regering started at: ${start}`);
+    let stageStart = moment().utc();
     await addVisibleAgendas(queryEnv, agendaFilter);
-    logStage('agendas added', targetGraph);
+    logStage(stageStart, 'agendas added', targetGraph);
+    stageStart = moment().utc();
     await addAllRelatedToAgenda(queryEnv, notConfidentialFilter);
-    logStage('related to agenda added', targetGraph);
+    logStage(stageStart, 'related to agenda added', targetGraph);
+    stageStart = moment().utc();
     await addRelatedToAgendaItemAndSubcase(queryEnv, notConfidentialFilter);
-    logStage('agendaitem and subcase added', targetGraph);
+    logStage(stageStart, 'agendaitem and subcase added', targetGraph);
+    stageStart = moment().utc();
     await addAllRelatedDocuments(queryEnv, notConfidentialFilter);
-    logStage('related documents added', targetGraph);
+    logStage(stageStart, 'related documents added', targetGraph);
+    stageStart = moment().utc();
     await addRelatedFiles(queryEnv);
-    logStage('related files added', targetGraph);
+    logStage(stageStart, 'related files added', targetGraph);
+    stageStart = moment().utc();
     await fillOutDetailsOnVisibleItems(queryEnv);
-    logStage('details added', targetGraph);
+    logStage(stageStart, 'details added', targetGraph);
+    stageStart = moment().utc();
     await removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
-    logStage('lineage updated', targetGraph);
+    logStage(stageStart, 'lineage updated', targetGraph);
     if(queryEnv.fullRebuild){
+      stageStart = moment().utc();
       await removeInfoNotInTemp(queryEnv);
-      logStage('removed info not in temp', targetGraph);
+      logStage(stageStart, 'removed info not in temp', targetGraph);
     }
+    stageStart = moment().utc();
     await cleanup(queryEnv);
-    logStage('cleaned up', targetGraph);
+    logStage(stageStart, 'cleaned up', targetGraph);
     const end = moment().utc();
-    console.log(`fill regering ended at: ${end}, took: ${end.diff(start, 'ms')}ms`);
+    logStage(start, `fill regering ended at: ${end}`, targetGraph);
   }catch (e) {
     console.log(e);
   }
