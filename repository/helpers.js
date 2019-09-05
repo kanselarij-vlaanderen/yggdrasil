@@ -219,6 +219,7 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
 		let count = 0;
 		try {
 			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
+			console.log(`<${queryEnv.tempGraph}> size is now ${count}...`);
 		}catch (e) {
 			console.log('no matching results');
 		}
