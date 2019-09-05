@@ -47,7 +47,50 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
   }`;
   return queryEnv.run(query);
 };
-const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
+
+const addRelatedAgendaItems = (queryEnv, extraFilters) => {
+  const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX dbpedia: <http://dbpedia.org/ontology/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a ?thing .
+      ?s ext:tracesLineageTo ?agenda .
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?agenda a besluitvorming:Agenda .
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?agenda dct:hasPart ?s .
+      ?s a ?thing .
+      # can only see agenda items with a decision that has been approved. note: can only see documents if cuurent date > release date of agenda and only if the documents are attached to the decision
+      # no subcase == notules from previous meeting
+      { { 
+          ?s a ?thing .
+          FILTER NOT EXISTS {
+            ?subcase besluitvorming:isGeagendeerdVia ?s .
+          }
+        } UNION {
+          ?subcase besluitvorming:isGeagendeerdVia ?s .
+          ?subcase ext:procedurestapHeeftBesluit ?decision.
+          ?decision besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+        }
+      }
+      
+      ${extraFilters}
+      
+    }
+  }`;
+  return queryEnv.run(query);
+};
+
+
+const addAllRelatedToAgendaAndItems = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -66,28 +109,25 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
-      
-      ?s a ?thing .
       { { ?s ?p ?agenda } 
         UNION 
         { ?agenda ?p ?s } 
         UNION
-        { ?agenda dct:hasPart ?agendaItem .
+        { 
+          ?agenda dct:hasPart ?agendaItem .
           ?s besluitvorming:isGeagendeerdVia ?agendaItem .
+          GRAPH <${queryEnv.tempGraph}> {
+            ?agendaItem a besluit:Agendapunt .
+          }
         }
+      }
+      
+      FILTER NOT EXISTS {
+        ?s a besluit:Agendapunt .
       }
       
       ${extraFilters}
       
-      FILTER( ?thing NOT IN(besluitvorming:Agenda) )
-      
-      FILTER NOT EXISTS {
-        ?s a besluit:AgendaPunt .
-        ?subcase ext:procedurestapHeeftBesluit ?decision.
-        FILTER NOT EXISTS {
-          ?decision besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-        }
-      }
     }
   }`;
   return queryEnv.run(query);
@@ -120,9 +160,10 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       ?decision a besluit:Besluit .
       ?decision besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
       
-      FILTER( ?thing IN(
-        foaf:Document,
-        ext:DocumentVersie ) )
+      VALUES ( ?thing ) {
+        ( foaf:Document )
+        ( ext:DocumentVersie )
+      }
 
       ${extraFilters}
 
@@ -142,7 +183,7 @@ export const fillUp = async (queryEnv, agendas) => {
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const filterAgendasWithAccess=[
       notConfidentialFilter, notBeperktOpenbaarFilter,
-      sessionPublicationDateHasPassed(),
+      // TODO activate when implemented in frontend sessionPublicationDateHasPassed(),
       agendaFilter
     ].join("\n");
     let targetGraph = queryEnv.targetGraph;
@@ -151,8 +192,11 @@ export const fillUp = async (queryEnv, agendas) => {
     await addVisibleAgendas(queryEnv, filterAgendasWithAccess);
     logStage(stageStart, `overheid agendas added`, targetGraph);
     stageStart = moment().utc();
-    await addAllRelatedToAgenda(queryEnv, filter);
-    logStage(stageStart, `related to agenda added`, targetGraph);
+    await addRelatedAgendaItems(queryEnv, filter);
+    logStage(stageStart, `related agendaitems added`, targetGraph);
+    stageStart = moment().utc();
+    await addAllRelatedToAgendaAndItems(queryEnv, filter);
+    logStage(stageStart, `related to agenda and agendaitems added`, targetGraph);
     stageStart = moment().utc();
     await addRelatedToAgendaItemAndSubcase(queryEnv, filter);
     logStage(stageStart, `agenda items and subcases added`, targetGraph);

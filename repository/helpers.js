@@ -351,7 +351,7 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
       { { ?s ?p ?target } UNION { ?target ?p ?s } }
       FILTER( ?thing NOT IN (
         besluitvorming:Agenda,
-        besluit:AgendaItem,
+        besluit:Agendapunt,
         dbpedia:UnitOfWork,
         foaf:Document,
         ext:DocumentVersie,
