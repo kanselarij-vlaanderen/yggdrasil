@@ -49,6 +49,10 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
 };
 
 const addRelatedAgendaItems = (queryEnv, extraFilters) => {
+  // can only see agenda items with a decision that has been approved.
+  // note: can only see documents if cuurent date > release date of agenda and only if the documents are attached to the decision
+  // no subcase == notules from previous meeting
+
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -68,8 +72,6 @@ const addRelatedAgendaItems = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.adminGraph}> {
       ?agenda dct:hasPart ?s .
       ?s a ?thing .
-      # can only see agenda items with a decision that has been approved. note: can only see documents if cuurent date > release date of agenda and only if the documents are attached to the decision
-      # no subcase == notules from previous meeting
       { { 
           ?s a ?thing .
           FILTER NOT EXISTS {
