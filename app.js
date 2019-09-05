@@ -55,7 +55,7 @@ const queryEnvRegering = {
 };
 
 
-if(process.env.RELOAD_ALL_DATA_ON_INIT){
+if(process.env.RELOAD_ALL_DATA_ON_INIT == "true"){
 
   const fillAll = async function(){
     let queryEnvOverheidSetup = Object.assign({}, queryEnvOverheid);
