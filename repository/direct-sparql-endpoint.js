@@ -43,9 +43,12 @@ function newSparqlClient(args) {
 
 
 // executes a query (you can use the template syntax)
-function query( args, queryString ) {
+function query( args, queryString, retries ) {
   if(process.env.VERBOSE){
     console.log(queryString);
+  }
+  if (!retries){
+    retries = 0;
   }
 
   var options = { method: 'POST',
@@ -88,6 +91,9 @@ function query( args, queryString ) {
 
   return request(options).catch((e) => {
     console.log(`Failed executing query ${queryString}`);
+    if (retries < 5){
+      return query(args, queryString, retries + 1);
+    }
     throw e;
   });
 };
