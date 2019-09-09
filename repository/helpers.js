@@ -403,11 +403,75 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 	await queryEnv.run(query);
 };
 
+const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas){
+	if(!targetedAgendas){
+		return;
+	}
+	const query = `
+		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    DELETE {
+		  GRAPH <${queryEnv.targetGraph}> {
+        ?s ?p ?o .
+		    ?oo ?pp ?s .
+		  }
+		} WHERE {
+		  VALUES (?agenda) {
+		    (<${targetedAgendas.join('>) (<')}>)
+		  }
+		  GRAPH <${queryEnv.tempGraph}> {
+        ?s ext:tracesLineageTo ?agenda .
+      }
+		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ext:tracesLineageTo ?agenda .
+		  }
+		  { {
+		      GRAPH <${queryEnv.targetGraph}> {
+    		    ?s ?p ?o .
+    		  }
+    		  FILTER NOT EXISTS {
+		        GRAPH <${queryEnv.tempGraph}> {
+		          ?s ?p ?o.
+		        }
+  		    }
+	  	  } UNION {
+		      GRAPH <${queryEnv.targetGraph}> {
+            ?oo ?pp ?s .
+          }
+          FILTER NOT EXISTS {
+            GRAPH <${queryEnv.tempGraph}> {
+              ?oo ?pp ?s.
+            }
+          }
+  		} }
+		}
+		`;
+	await queryEnv.run(query);
+
+};
+
+const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas){
+	await removeThingsWithLineageNoLongerInTemp(queryEnv, targetedAgendas);
+	await removeStalePropertiesOfLineage(queryEnv, targetedAgendas);
+};
+
 const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
 	if(!subjects || !subjects.length){
 		return "";
 	}
 	return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
+};
+
+const generateTempGraph = async function(queryEnv){
+	const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
+	queryEnv.tempGraph = tempGraph;
+	await queryEnv.run(`
+	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
+    INSERT DATA {
+	  GRAPH <${tempGraph}> {
+	    <${tempGraph}> a ext:TempGraph .
+	  }
+	}`);
 };
 
 module.exports = {
@@ -422,9 +486,10 @@ module.exports = {
 	addAllRelatedDocuments,
 	addAllRelatedToAgenda,
 	addRelatedToAgendaItemAndSubcase,
-	removeThingsWithLineageNoLongerInTemp,
+	cleanupBasedOnLineage,
 	logStage,
 	filterAgendaMustBeInSet,
+	generateTempGraph,
 	runStage
 };
 

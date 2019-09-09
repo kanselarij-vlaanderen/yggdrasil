@@ -6,7 +6,7 @@ mu.query = querySudo;
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
   notBeperktOpenbaarFilter, notInternOverheidFilter, logStage, runStage,
-  removeThingsWithLineageNoLongerInTemp, filterAgendaMustBeInSet
+  cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph
 } from './helpers';
 
 // logic is: make visible if openbaarheid is ok AND
@@ -127,8 +127,10 @@ const notADecisionFilter = `
 `;
 
 export const fillUp = async (queryEnv, agendas) => {
+
   try {
     const start = moment().utc();
+    await generateTempGraph(queryEnv);
     const filter = [notConfidentialFilter, notBeperktOpenbaarFilter].join("\n");
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const filterAgendasWithAccess=[
@@ -160,7 +162,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return fillOutDetailsOnVisibleItems(queryEnv);
     });
     await runStage('lineage updated', queryEnv, () => {
-      return removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
+      return cleanupBasedOnLineage(queryEnv, agendas);
     });
     if(queryEnv.fullRebuild){
       await runStage('removed info not in temp', queryEnv, () => {
@@ -174,5 +176,10 @@ export const fillUp = async (queryEnv, agendas) => {
     logStage(start,`fill overheid ended at: ${end}`, targetGraph);
   } catch (e) {
     logStage(e, queryEnv.targetGraph);
+    try {
+      cleanup(queryEnv);
+    }catch (e2) {
+      console.log(e2);
+    }
   }
 };

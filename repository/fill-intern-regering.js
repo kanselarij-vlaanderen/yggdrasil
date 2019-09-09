@@ -3,10 +3,10 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
 import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup,
-  fillOutDetailsOnVisibleItems, addAllRelatedDocuments,
+  fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage,
   notBeperktOpenbaarFilter, notInternOverheidFilter, notConfidentialFilter,
-  logStage, removeThingsWithLineageNoLongerInTemp, filterAgendaMustBeInSet
+  logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilter) => {
@@ -38,6 +38,7 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
 export const fillUp = async (queryEnv, agendas) => {
   try{
     const start = moment().utc();
+    await generateTempGraph(queryEnv);
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const targetGraph = queryEnv.targetGraph;
     console.log(`fill regering started at: ${start}`);
@@ -61,7 +62,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return fillOutDetailsOnVisibleItems(queryEnv);
     });
     await runStage('lineage updated', queryEnv, () => {
-      return removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
+      return cleanupBasedOnLineage(queryEnv, agendas);
     });
     if(queryEnv.fullRebuild){
       await runStage('removed info not in temp', queryEnv, () => {
@@ -75,5 +76,10 @@ export const fillUp = async (queryEnv, agendas) => {
     logStage(start, `fill regering ended at: ${end}`, targetGraph);
   }catch (e) {
     console.log(e);
+    try {
+      cleanup(queryEnv);
+    }catch (e2) {
+      console.log(e2);
+    }
   }
 };

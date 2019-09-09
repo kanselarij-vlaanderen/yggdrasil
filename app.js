@@ -31,7 +31,6 @@ const directQuery = function(queryString){
 const adminGraph = `http://mu.semte.ch/graphs/organizations/kanselarij`;
 
 const queryEnvPublic = {
-  tempGraph: `http://mu.semte.ch/temp/${mu.uuid()}`,
   adminGraph: adminGraph,
   targetGraph:`http://mu.semte.ch/graphs/public`,
   fullRebuild: false,
@@ -39,7 +38,6 @@ const queryEnvPublic = {
 };
 
 const queryEnvOverheid = {
-  tempGraph: `http://mu.semte.ch/temp/${mu.uuid()}`,
   adminGraph: adminGraph,
   targetGraph:`http://mu.semte.ch/graphs/organizations/intern-overheid`,
   fullRebuild: false,
@@ -47,7 +45,6 @@ const queryEnvOverheid = {
 };
 
 const queryEnvRegering = {
-  tempGraph: `http://mu.semte.ch/temp/${mu.uuid()}`,
   adminGraph: adminGraph,
   targetGraph: `http://mu.semte.ch/graphs/organizations/intern-regering`,
   fullRebuild: false,
