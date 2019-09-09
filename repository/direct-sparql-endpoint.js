@@ -44,7 +44,7 @@ function newSparqlClient(args) {
 
 // executes a query (you can use the template syntax)
 function query( args, queryString, retries ) {
-  if(process.env.VERBOSE){
+  if(process.env.VERBOSE || process.env.DEBUG == "true"){
     console.log(queryString);
   }
   if (!retries){
