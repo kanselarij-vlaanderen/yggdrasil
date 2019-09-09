@@ -268,12 +268,17 @@ const rememberDeltaSubjects = function(deltaset){
 };
 
 
-
-const checkAllDeltas = function(){
+let checkingDeltas = false;
+const checkAllDeltas = async function(){
+  if(checkingDeltas){
+    return debouncedDelta();
+  }
+  checkingDeltas = true;
   let subjects = Array.from(subjectsToCheck);
   subjectsToCheck = new Set();
 
-  handleDeltaRelatedToAgenda(subjects);
+  await handleDeltaRelatedToAgenda(subjects);
+  checkingDeltas = false;
 };
 
 const debouncedDelta = debounce(checkAllDeltas, 10000);
