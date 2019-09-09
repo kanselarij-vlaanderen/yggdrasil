@@ -4,8 +4,8 @@ import moment from 'moment';
 mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
-  cleanup, fillOutDetailsOnVisibleItems, addRelatedToAgendaItemAndSubcase,
-  notBeperktOpenbaarFilter, notInternOverheidFilter, logStage,
+  cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
+  notBeperktOpenbaarFilter, notInternOverheidFilter, logStage, runStage,
   removeThingsWithLineageNoLongerInTemp, filterAgendaMustBeInSet
 } from './helpers';
 
@@ -36,100 +36,36 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
       ?s a besluitvorming:Agenda.
       ?s ext:agendaNaam ?naam.
       FILTER(?naam != "Ontwerpagenda")
+      
+      ${extraFilters}
+    }
+  }`;
+  return queryEnv.run(query);
+};
 
-      ?s dct:hasPart ?item.
-      ?subcase besluitvorming:isGeagendeerdVia ?item.
+const addVisibleDecisions = (queryEnv, extraFilters) => {
+  const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a besluit:Besluit.
+      ?s ext:tracesLineageTo ?agenda.
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?agendaitem a besluit:Agendapunt.
+      ?agendaitem ext:tracesLineageTo ?agenda.
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
       ?subcase ext:procedurestapHeeftBesluit ?decision.
-      ?decision besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+      ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
       
       ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query);
-};
-
-const addRelatedAgendaItems = (queryEnv, extraFilters) => {
-  // can only see agenda items with a decision that has been approved.
-  // note: can only see documents if cuurent date > release date of agenda and only if the documents are attached to the decision
-  // no subcase == notules from previous meeting
-
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing .
-      ?s ext:tracesLineageTo ?agenda .
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agenda a besluitvorming:Agenda .
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?agenda dct:hasPart ?s .
-      ?s a ?thing .
-      { { 
-          ?s a ?thing .
-          FILTER NOT EXISTS {
-            ?subcase besluitvorming:isGeagendeerdVia ?s .
-          }
-        } UNION {
-          ?subcase besluitvorming:isGeagendeerdVia ?s .
-          ?subcase ext:procedurestapHeeftBesluit ?decision.
-          ?decision besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-        }
-      }
-      
-      ${extraFilters}
-      
-    }
-  }`;
-  return queryEnv.run(query);
-};
-
-
-const addAllRelatedToAgendaAndItems = (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing .
-      ?s ext:tracesLineageTo ?agenda .
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agenda a besluitvorming:Agenda .
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?s a ?thing .
-      { { ?s ?p ?agenda } 
-        UNION 
-        { ?agenda ?p ?s } 
-        UNION
-        { 
-          ?agenda dct:hasPart ?agendaItem .
-          ?s besluitvorming:isGeagendeerdVia ?agendaItem .
-          GRAPH <${queryEnv.tempGraph}> {
-            ?agendaItem a besluit:Agendapunt .
-          }
-        }
-      }
-      
-      FILTER NOT EXISTS {
-        ?s a besluit:Agendapunt .
-      }
-      
-      ${extraFilters}
-      
     }
   }`;
   return queryEnv.run(query);
@@ -153,14 +89,26 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
     }
   } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
-      ?decision a ?targetClass .
-      ?decision ext:tracesLineageTo ?agenda .
+      ?target a ?targetClass .
+      ?target ext:tracesLineageTo ?agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?s a ?thing .
-      ?decision ?p ?s .
-      ?decision a besluit:Besluit .
-      ?decision besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+      { {
+          ?target a besluit:Besluit .
+        } UNION {
+          ?target a besluit:Agendapunt.
+          FILTER NOT EXISTS {
+              ?subcase besluitvorming:isGeagendeerdVia ?target.
+          }
+        }
+      }
+      ?s a ?thing.
+       { { ?target ?p ?s . } 
+        UNION
+        { ?target ?p ?version .
+          ?s <http://data.vlaanderen.be/ns/besluitvorming#heeftVersie> ?version .
+        }
+      }
       
       VALUES ( ?thing ) {
         ( foaf:Document )
@@ -169,14 +117,14 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
 
       ${extraFilters}
 
-      OPTIONAL {
-        ?s besluitvorming:heeftVersie ?version.
-        ?version a ?subthing.
-      }
     }
   }`;
   return queryEnv.run(query);
 };
+
+const notADecisionFilter = `
+ FILTER ( ?thing != besluit:Besluit )
+`;
 
 export const fillUp = async (queryEnv, agendas) => {
   try {
@@ -189,39 +137,39 @@ export const fillUp = async (queryEnv, agendas) => {
       agendaFilter
     ].join("\n");
     let targetGraph = queryEnv.targetGraph;
-    let stageStart = moment().utc();
-    logStage(stageStart, `fill overheid started at: ${start}`, targetGraph);
-    await addVisibleAgendas(queryEnv, filterAgendasWithAccess);
-    logStage(stageStart, `overheid agendas added`, targetGraph);
-    stageStart = moment().utc();
-    await addRelatedAgendaItems(queryEnv, filter);
-    logStage(stageStart, `related agendaitems added`, targetGraph);
-    stageStart = moment().utc();
-    await addAllRelatedToAgendaAndItems(queryEnv, filter);
-    logStage(stageStart, `related to agenda and agendaitems added`, targetGraph);
-    stageStart = moment().utc();
-    await addRelatedToAgendaItemAndSubcase(queryEnv, filter);
-    logStage(stageStart, `agenda items and subcases added`, targetGraph);
-    stageStart = moment().utc();
-    await addAllRelatedDocuments(queryEnv, filter);
-    logStage(stageStart, 'documents added', targetGraph);
-    stageStart = moment().utc();
-    await addRelatedFiles(queryEnv);
-    logStage(stageStart, 'related files added', targetGraph);
-    stageStart = moment().utc();
-    await fillOutDetailsOnVisibleItems(queryEnv);
-    logStage(stageStart, 'details added', targetGraph);
-    stageStart = moment().utc();
-    await removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
-    logStage(stageStart, 'lineage updated', targetGraph);
+    logStage(start, `fill overheid started at: ${start}`, targetGraph);
+    await runStage(`overheid agendas added`, queryEnv, () => {
+      return addVisibleAgendas(queryEnv, filterAgendasWithAccess);
+    });
+    await runStage('related to agenda added', queryEnv, () => {
+      return addAllRelatedToAgenda(queryEnv, notConfidentialFilter);
+    });
+    await runStage('related to agendaitem and subcase added', queryEnv, () => {
+      return addRelatedToAgendaItemAndSubcase(queryEnv, [notConfidentialFilter, notADecisionFilter].join("\n"));
+    });
+    await runStage('visible decisions added', queryEnv, () => {
+      return addVisibleDecisions(queryEnv, notConfidentialFilter);
+    });
+    await runStage('documents added', queryEnv, () => {
+      return addAllRelatedDocuments(queryEnv, filter);
+    });
+    await runStage('related files added', queryEnv, () => {
+      return addRelatedFiles(queryEnv);
+    });
+    await runStage('details added', queryEnv, () => {
+      return fillOutDetailsOnVisibleItems(queryEnv);
+    });
+    await runStage('lineage updated', queryEnv, () => {
+      return removeThingsWithLineageNoLongerInTemp(queryEnv, agendas);
+    });
     if(queryEnv.fullRebuild){
-      stageStart = moment().utc();
-      await removeInfoNotInTemp(queryEnv);
-      logStage(stageStart, 'removed info not in temp', targetGraph);
+      await runStage('removed info not in temp', queryEnv, () => {
+        return removeInfoNotInTemp(queryEnv);
+      });
     }
-    stageStart = moment().utc();
-    await cleanup(queryEnv);
-    logStage(stageStart, 'done filling overheid', targetGraph);
+    await runStage('done filling overheid', queryEnv, () => {
+      return cleanup(queryEnv);
+    });
     const end = moment().utc();
     logStage(start,`fill overheid ended at: ${end}`, targetGraph);
   } catch (e) {

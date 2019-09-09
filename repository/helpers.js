@@ -364,6 +364,12 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
   return queryEnv.run(query);
 };
 
+const runStage = async function(message, queryEnv, stage){
+	let stageStart = moment().utc();
+	await stage();
+	logStage(stageStart, message, queryEnv.targetGraph);
+};
+
 const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
 	if(!targetedAgendas){
 		return;
@@ -418,6 +424,7 @@ module.exports = {
 	addRelatedToAgendaItemAndSubcase,
 	removeThingsWithLineageNoLongerInTemp,
 	logStage,
-	filterAgendaMustBeInSet
+	filterAgendaMustBeInSet,
+	runStage
 };
 
