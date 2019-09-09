@@ -62,7 +62,7 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
-      ?subcase ext:procedurestapHeeftBesluit ?decision.
+      ?subcase ext:procedurestapHeeftBesluit ?s.
       ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
       
       ${extraFilters}
