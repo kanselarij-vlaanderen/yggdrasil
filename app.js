@@ -219,6 +219,10 @@ const selectRelatedAgendasForSubjects = async function(subjects){
 
   const agendas = new Set();
   return Promise.all(restrictions.map(async (restriction) => {
+    // the graph distinction here is meaningful. Only things in the original graph (kanselarij) should be examined,
+    // otherwise the target can be in the public graph and can for instance be a type of document. in that case, almost all
+    // documents will be examined
+    
     const select = `
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -230,13 +234,13 @@ const selectRelatedAgendasForSubjects = async function(subjects){
   PREFIX schema: <http://schema.org>
   
   SELECT DISTINCT ?agenda WHERE {
-    VALUES (?subject) {
-      (<${subjects.join('>) (<')}>)
+    GRAPH <http://mu.semte.ch/graphs/organizations/kanselarij> {
+      VALUES (?subject) {
+        (<${subjects.join('>) (<')}>)
+      }
+      ${restriction}
+      ?agenda a ${typeUris.agenda} .
     }
-    
-    ${restriction}
-    
-    ?agenda a ${typeUris.agenda} .
   }`;
     const results = await directQuery(select);
     parseSparQlResults(JSON.parse(results)).map((item) => {
