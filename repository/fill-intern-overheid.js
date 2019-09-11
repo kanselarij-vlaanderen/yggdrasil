@@ -9,16 +9,6 @@ import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph
 } from './helpers';
 
-// logic is: make visible if openbaarheid is ok AND
-// if has accepted decision with agenda date > last date
-const sessionPublicationDateHasPassed = function(){
-  return `
-    ?s besluit:isAangemaaktVoor ?session .
-    ?session ext:decisionPublicationDate ?date .
-    FILTER(?date < "${moment().utc().toISOString()}"^^xsd:dateTime )`;
-};
-
-
 const addVisibleAgendas = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -61,6 +51,9 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
       ?agendaitem ext:tracesLineageTo ?agenda.
     }
     GRAPH <${queryEnv.adminGraph}> {
+      ?agenda dct:hasPart ?agendaitem.
+      ?agenda besluit:isAangemaaktVoor ?session.
+      ?session ext:releasedDecisions ?date.
       ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
       ?subcase ext:procedurestapHeeftBesluit ?s.
       ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
@@ -102,6 +95,9 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
           }
         }
       }
+      ?agenda besluit:isAangemaaktVoor ?session.
+      ?session ext:releasedDocuments ?date.
+
       ?s a ?thing.
        { { ?target ?p ?s . } 
         UNION
@@ -135,7 +131,6 @@ export const fillUp = async (queryEnv, agendas) => {
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const filterAgendasWithAccess=[
       notConfidentialFilter, notBeperktOpenbaarFilter,
-      // TODO activate when implemented in frontend sessionPublicationDateHasPassed(),
       agendaFilter
     ].join("\n");
     let targetGraph = queryEnv.targetGraph;
