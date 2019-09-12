@@ -339,24 +339,22 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.tempGraph}> {
       ?target ext:tracesLineageTo ?agenda .
       ?target a ?targetClass .
-      FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
+      VALUES (?targetClass) {
+        (besluit:Agendapunt) (dbpedia:UnitOfWork)
+      }
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
       { { ?s ?p ?target } UNION { ?target ?p ?s } }
       
-      FILTER NOT EXISTS {
-        VALUES (?forbiddenClass) {
-          ( besluitvorming:Agenda )
-          ( besluit:Agendapunt )
-          ( dbpedia:UnitOfWork )
-          ( foaf:Document )
-          ( ext:DocumentVersie )
-          ( nfo:FileDataObject )
-        }
-        ?s a ?forbiddenClass .
-      }
-      
+      FILTER( ?thing NOT IN (
+        besluitvorming:Agenda,
+        besluit:Agendapunt,
+        dbpedia:UnitOfWork,
+        foaf:Document,
+        ext:DocumentVersie,
+        nfo:FileDataObject ) )
+
       ${extraFilters}
 
     }
