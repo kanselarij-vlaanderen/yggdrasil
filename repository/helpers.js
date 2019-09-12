@@ -330,6 +330,8 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  PREFIX schema: <http://schema.org>
+  
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
@@ -344,16 +346,15 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
       }
     }
     GRAPH <${queryEnv.adminGraph}> {
+      VALUES (?thing) {
+       ( besluit:Zitting ) ( besluitvorming:NieuwsbriefInfo ) ( besluitvorming:Consultatievraag )
+       ( ext:ProcedurestapFase ) ( besluit:Besluit ) ( ext:Notule ) ( dbpedia:Case ) ( schema:Comment )
+       ( besluitvorming:Mededeling )
+      }
+    
       ?s a ?thing .
-      { { ?s ?p ?target } UNION { ?target ?p ?s } }
       
-      FILTER( ?thing NOT IN (
-        besluitvorming:Agenda,
-        besluit:Agendapunt,
-        dbpedia:UnitOfWork,
-        foaf:Document,
-        ext:DocumentVersie,
-        nfo:FileDataObject ) )
+      { { ?s ?p ?target } UNION { ?target ?p ?s } }
 
       ${extraFilters}
 
