@@ -6,7 +6,7 @@ import { removeInfoNotInTemp, addRelatedFiles, cleanup,
   fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage,
   notBeperktOpenbaarFilter, notInternOverheidFilter, notConfidentialFilter,
-  logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet
+  logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilter) => {
@@ -32,7 +32,7 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
       ${extraFilter}
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 export const fillUp = async (queryEnv, agendas) => {
@@ -69,6 +69,9 @@ export const fillUp = async (queryEnv, agendas) => {
         return removeInfoNotInTemp(queryEnv);
       });
     }
+    await runStage('copy temp to target', queryEnv, () => {
+      return copyTempToTarget(queryEnv);
+    });
     await runStage('cleaned up', queryEnv, () => {
       return cleanup(queryEnv);
     });

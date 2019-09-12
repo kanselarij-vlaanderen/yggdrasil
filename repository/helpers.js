@@ -119,7 +119,7 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
       ${extraFilters}
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const cleanup = (queryEnv) => {
@@ -144,11 +144,6 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
       ?s ?p ?o.
       ?s ext:tracesLineageTo ?agenda .
     }
-    GRAPH <${queryEnv.targetGraph}> {
-      ?s a ?thing.
-      ?s ?p ?o.
-      ?s ext:tracesLineageTo ?agenda .
-    }
   } WHERE {
     { SELECT ?s ?p ?o ?thing ?agenda WHERE {
     GRAPH <${queryEnv.tempGraph}> {
@@ -168,7 +163,7 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
 		}
 		} LIMIT 10000 }
   }`;
-	return queryEnv.run(query);
+	return queryEnv.run(query, true);
 };
 
 const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
@@ -183,9 +178,6 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?oo ?pp ?s.
-    }
-    GRAPH <${queryEnv.targetGraph}> {
       ?oo ?pp ?s.
     }
   } WHERE {
@@ -206,13 +198,14 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
 		}
 		} LIMIT 100000 }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
-const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount){
+const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
 	const funResult = await fun();
+	graph = graph || queryEnv.tempGraph;
 	const query = `SELECT (COUNT(?s) AS ?count) WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
+    GRAPH <${graph}> {
       ?s ?p ?o.
     }
   }`;
@@ -220,14 +213,14 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
 		let count = 0;
 		try {
 			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
-			console.log(`<${queryEnv.tempGraph}> size is now ${count}...`);
+			console.log(`<${graph}> size is now ${count}...`);
 		}catch (e) {
 			console.log('no matching results');
 		}
 		if(count == previousCount){
 			return funResult;
 		}else {
-			return repeatUntilTripleCountConstant(fun, queryEnv, count);
+			return repeatUntilTripleCountConstant(fun, queryEnv, count, graph);
 		}
 	});
 };
@@ -285,7 +278,7 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       }
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
@@ -320,7 +313,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
       ${extraFilters}
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
@@ -361,7 +354,7 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
 
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const runStage = async function(message, queryEnv, stage){
@@ -399,6 +392,39 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 		    }
 		  }
 		}
+		`;
+	await queryEnv.run(query);
+};
+
+const copyTempToTarget = async function(queryEnv){
+	return repeatUntilTripleCountConstant(() => {
+		return copySetOfTempToTarget(queryEnv);
+	}, queryEnv, 0, queryEnv.targetGraph);
+};
+
+const copySetOfTempToTarget = async function(queryEnv){
+	const query = `
+		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    INSERT {
+		  GRAPH <${queryEnv.targetGraph}> {
+        ?s ?p ?o .
+		  }
+		} WHERE {
+		  GRAPH <${queryEnv.tempGraph}> {
+        ?s a ?thing .
+        { SELECT ?s ?p ?o WHERE {
+          GRAPH <${queryEnv.tempGraph}> {
+            ?s ?p ?o.
+            FILTER NOT EXISTS {
+              GRAPH <${queryEnv.targetGraph}> {
+                ?s ?p ?o.
+              }
+            }
+            FILTER (?p != <http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+          }
+        } LIMIT 10000 }
+      }
+    }
 		`;
 	await queryEnv.run(query);
 };
@@ -490,6 +516,7 @@ module.exports = {
 	logStage,
 	filterAgendaMustBeInSet,
 	generateTempGraph,
+	copyTempToTarget,
 	runStage
 };
 

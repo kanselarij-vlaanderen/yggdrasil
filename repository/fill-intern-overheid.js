@@ -6,7 +6,7 @@ mu.query = querySudo;
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
   notBeperktOpenbaarFilter, notInternOverheidFilter, logStage, runStage,
-  cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph
+  cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilters) => {
@@ -30,7 +30,7 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
       ${extraFilters}
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const addVisibleDecisions = (queryEnv, extraFilters) => {
@@ -61,7 +61,7 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
       ${extraFilters}
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const addAllRelatedDocuments = (queryEnv, extraFilters) => {
@@ -115,7 +115,7 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
 
     }
   }`;
-  return queryEnv.run(query);
+  return queryEnv.run(query, true);
 };
 
 const notADecisionFilter = `
@@ -164,6 +164,9 @@ export const fillUp = async (queryEnv, agendas) => {
         return removeInfoNotInTemp(queryEnv);
       });
     }
+    await runStage('copy temp to target', queryEnv, () => {
+      return copyTempToTarget(queryEnv);
+    });
     await runStage('done filling overheid', queryEnv, () => {
       return cleanup(queryEnv);
     });
