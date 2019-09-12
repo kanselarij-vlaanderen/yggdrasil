@@ -344,14 +344,19 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a ?thing .
       { { ?s ?p ?target } UNION { ?target ?p ?s } }
-      FILTER( ?thing NOT IN (
-        besluitvorming:Agenda,
-        besluit:Agendapunt,
-        dbpedia:UnitOfWork,
-        foaf:Document,
-        ext:DocumentVersie,
-        nfo:FileDataObject ) )
-
+      
+      FILTER NOT EXISTS {
+        VALUES (?forbiddenClass) {
+          ( besluitvorming:Agenda )
+          ( besluit:Agendapunt )
+          ( dbpedia:UnitOfWork )
+          ( foaf:Document )
+          ( ext:DocumentVersie )
+          ( nfo:FileDataObject )
+        }
+        ?s a ?forbiddenClass .
+      }
+      
       ${extraFilters}
 
     }
