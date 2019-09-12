@@ -3,6 +3,8 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
 import moment from 'moment';
 
+const batchSize = process.env.BATCH_SIZE || 10000;
+
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;
 	return data.results.bindings.map(binding => {
@@ -161,7 +163,7 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
         ?s ?p ?o.
       }
 		}
-		} LIMIT 10000 }
+		} LIMIT ${batchSize} }
   }`;
 	return queryEnv.run(query, true);
 };
@@ -196,7 +198,7 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
 			  }
 			}
 		}
-		} LIMIT 100000 }
+		} LIMIT ${batchSize} }
   }`;
   return queryEnv.run(query, true);
 };
@@ -422,7 +424,7 @@ const copySetOfTempToTarget = async function(queryEnv){
             }
             FILTER (?p != <http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
           }
-        } LIMIT 10000 }
+        } LIMIT ${batchSize} }
       }
     }
 		`;
