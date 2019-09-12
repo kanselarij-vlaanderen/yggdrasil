@@ -346,6 +346,9 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
       }
     }
     GRAPH <${queryEnv.adminGraph}> {
+      ?target a ?targetClass .
+      { { ?s ?p ?target } UNION { ?target ?p ?s } }
+      
       VALUES (?thing) {
        ( besluit:Zitting ) ( besluitvorming:NieuwsbriefInfo ) ( besluitvorming:Consultatievraag )
        ( ext:ProcedurestapFase ) ( besluit:Besluit ) ( ext:Notule ) ( dbpedia:Case ) ( schema:Comment )
@@ -354,8 +357,6 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
     
       ?s a ?thing .
       
-      { { ?s ?p ?target } UNION { ?target ?p ?s } }
-
       ${extraFilters}
 
     }
