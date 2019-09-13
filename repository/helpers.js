@@ -3,7 +3,7 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
 import moment from 'moment';
 
-const batchSize = process.env.BATCH_SIZE || 10000;
+const batchSize = process.env.BATCH_SIZE || 3000;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;
