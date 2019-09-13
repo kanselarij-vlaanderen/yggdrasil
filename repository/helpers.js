@@ -496,8 +496,8 @@ const copySetOfTempToTarget = async function(queryEnv){
         ?s a ?thing .
       }
       FILTER NOT EXISTS {
-        GRAPH <${queryEnv.targetGraph}> {
-          ?s a ?thing.
+        GRAPH <${queryEnv.tempGraph}> {
+          ?s ext:yggdrasilMoved ?s .
         }
       }
     } LIMIT ${batchSize}`, true);
@@ -512,7 +512,10 @@ const copySetOfTempToTarget = async function(queryEnv){
     INSERT {
 		  GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
-		  }
+      }
+      GRAPH <${queryEnv.tempGraph}> {
+        ?s ext:yggdrasilMoved ?s .
+      }
 		} WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         VALUES (?s) {
