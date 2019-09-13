@@ -367,7 +367,7 @@ const runStage = async function(message, queryEnv, stage){
 	logStage(stageStart, message, queryEnv.targetGraph);
 };
 
-const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
+const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
 	if(!targetedAgendas){
 		return;
 	}
@@ -375,11 +375,11 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
 		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ext:tracesLineageTo ?agenda .
         ?s ?p ?o .
 		    ?oo ?pp ?s .
 		  }
 		} WHERE {
+		  { SELECT ?s ?p ?o ?oo ?pp WHERE {
 		  VALUES (?agenda) {
 		    (<${targetedAgendas.join('>) (<')}>)
 		  }
@@ -389,15 +389,55 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 		    OPTIONAL {
 		      ?oo ?pp ?s .
 		    }
+		    FILTER ( ?p != ext:tracesLineageTo )
 		  }
 		  FILTER NOT EXISTS {
 		    GRAPH <${queryEnv.tempGraph}> {
 		      ?s ext:tracesLineageTo ?agenda .
 		    }
 		  }
+		  } LIMIT ${batchSize} }
 		}
 		`;
 	await queryEnv.run(query);
+};
+
+const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
+	if(!targetedAgendas){
+		return;
+	}
+	const query = `
+		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    DELETE {
+		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ext:tracesLineageTo ?agenda .
+		  }
+		} WHERE {
+		  { SELECT ?s ?agenda WHERE {
+		  VALUES (?agenda) {
+		    (<${targetedAgendas.join('>) (<')}>)
+		  }
+		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ext:tracesLineageTo ?agenda .
+		  }
+		  FILTER NOT EXISTS {
+		    GRAPH <${queryEnv.tempGraph}> {
+		      ?s ext:tracesLineageTo ?agenda .
+		    }
+		  }
+		  } LIMIT ${batchSize} }
+		}
+		`;
+	await queryEnv.run(query);
+};
+
+const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
+	await repeatUntilTripleCountConstant(() => {
+		return removeThingsWithLineageNoLongerInTempBatched(queryEnv,targetedAgendas);
+	}, queryEnv, 0, queryEnv.targetGraph);
+	await repeatUntilTripleCountConstant(() => {
+		return removeLineageWhereLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
+	}, queryEnv, 0, queryEnv.targetGraph);
 };
 
 const copyTempToTarget = async function(queryEnv){
@@ -433,7 +473,7 @@ const copySetOfTempToTarget = async function(queryEnv){
 	await queryEnv.run(query);
 };
 
-const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas){
+const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas){
 	if(!targetedAgendas){
 		return;
 	}
@@ -445,16 +485,17 @@ const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas)
 		    ?oo ?pp ?s .
 		  }
 		} WHERE {
-		  VALUES (?agenda) {
-		    (<${targetedAgendas.join('>) (<')}>)
-		  }
-		  GRAPH <${queryEnv.tempGraph}> {
-        ?s ext:tracesLineageTo ?agenda .
-      }
-		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ext:tracesLineageTo ?agenda .
-		  }
-		  { {
+		  { SELECT ?s ?p ?o ?pp ?oo WHERE {
+		    VALUES (?agenda) {
+		      (<${targetedAgendas.join('>) (<')}>)
+		    }
+		    GRAPH <${queryEnv.tempGraph}> {
+          ?s ext:tracesLineageTo ?agenda .
+        }
+  		  GRAPH <${queryEnv.targetGraph}> {
+	  	    ?s ext:tracesLineageTo ?agenda .
+  		  }
+	  	  { {
 		      GRAPH <${queryEnv.targetGraph}> {
     		    ?s ?p ?o .
     		  }
@@ -472,11 +513,17 @@ const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas)
               ?oo ?pp ?s.
             }
           }
-  		} }
+  		} } } LIMIT ${batchSize} }
 		}
 		`;
 	await queryEnv.run(query);
 
+};
+
+const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas) {
+  return repeatUntilTripleCountConstant(() => {
+  	return removeStalePropertiesOfLineageBatch(queryEnv, targetedAgendas);
+	}, queryEnv, 0, queryEnv.targetGraph);
 };
 
 const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas){
