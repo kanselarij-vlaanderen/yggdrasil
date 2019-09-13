@@ -321,44 +321,41 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
 const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-  PREFIX schema: <http://schema.org>
-  
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing .
-      ?s ext:tracesLineageTo ?agenda .
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?target ext:tracesLineageTo ?agenda .
-      ?target a ?targetClass .
-      VALUES (?targetClass) {
-        (besluit:Agendapunt) (dbpedia:UnitOfWork)
-      }
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?target a ?targetClass .
-      { { ?s ?p ?target } UNION { ?target ?p ?s } }
-      
-      VALUES (?thing) {
-       ( besluit:Zitting ) ( besluitvorming:NieuwsbriefInfo ) ( besluitvorming:Consultatievraag )
-       ( ext:ProcedurestapFase ) ( besluit:Besluit ) ( ext:Notule ) ( dbpedia:Case ) ( schema:Comment )
-       ( besluitvorming:Mededeling )
-      }
-    
-      ?s a ?thing .
-      
-      ${extraFilters}
+	const query = `
+   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+   PREFIX dct: <http://purl.org/dc/terms/>
+   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+   PREFIX dbpedia: <http://dbpedia.org/ontology/>
+   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+   PREFIX schema: <http://schema.org>
+   INSERT {
+     GRAPH <${queryEnv.tempGraph}> {
+       ?s a ?thing .
+       ?s ext:tracesLineageTo ?agenda .
+     }
+   } WHERE {
+     { SELECT ?target WHERE {
+       GRAPH <${queryEnv.tempGraph}> {
+         ?target ext:tracesLineageTo ?agenda .
+         ?target a ?targetClass .
+         FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
+       }
+     }}
+     GRAPH <${queryEnv.adminGraph}> {
+       ?s a ?thing .
+       { { ?s [] ?target . } UNION { ?target [] ?s . } }
+       FILTER( ?thing NOT IN (
+         besluitvorming:Agenda,
+         besluit:Agendapunt,
+         dbpedia:UnitOfWork,
+         foaf:Document,
+         ext:DocumentVersie,
+         nfo:FileDataObject ) )
 
+      ${extraFilters}
     }
   }`;
   return queryEnv.run(query, true);
