@@ -297,6 +297,12 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
         (foaf:Document) (ext:DocumentVersie)
       }
       
+      FILTER NOT EXISTS {
+        GRAPH <${queryEnv.tempGraph}> {
+          ?s a ?thing .
+        }
+      }
+      
       ${extraFilters}
 
     }
