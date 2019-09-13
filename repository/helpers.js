@@ -146,12 +146,10 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
     }
   } WHERE {
     { SELECT ?s ?p ?o ?thing ?agenda WHERE {
-     { SELECT ?s ?thing WHERE {
-       GRAPH <${queryEnv.tempGraph}> {
-			   ?s a ?thing .
-			   ?s ext:tracesLineageTo ?agenda .
-		   }
-		 } }
+      GRAPH <${queryEnv.tempGraph}> {
+		   ?s a ?thing .
+		   ?s ext:tracesLineageTo ?agenda .
+	   }
 	  
 		GRAPH <${queryEnv.adminGraph}> {
 			?s a ?thing.
@@ -184,11 +182,9 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
     }
   } WHERE {
     { SELECT ?s ?pp ?oo WHERE {
-      { SELECT ?s ?thing WHERE {
-        GRAPH <${queryEnv.tempGraph}> {
-    			?s a ?thing .
-    		}
-    	} }
+			GRAPH <${queryEnv.tempGraph}> {
+				?s a ?thing .
+			}
 	  
   		GRAPH <${queryEnv.adminGraph}> {
   			?s a ?thing.
@@ -548,7 +544,7 @@ const generateTempGraph = async function(queryEnv){
 	  GRAPH <${tempGraph}> {
 	    <${tempGraph}> a ext:TempGraph .
 	  }
-	}`);
+	}`, true);
 };
 
 module.exports = {
