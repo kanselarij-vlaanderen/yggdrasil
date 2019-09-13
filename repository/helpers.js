@@ -202,18 +202,22 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
 };
 
 const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
+	const startQ = moment();
 	const funResult = await fun();
+	const timeQuery = moment().diff(startQ, 'seconds', true).toFixed(3);
 	graph = graph || queryEnv.tempGraph;
+	const start = moment();
 	const query = `SELECT (COUNT(?s) AS ?count) WHERE {
     GRAPH <${graph}> {
       ?s ?p ?o.
     }
   }`;
 	return queryEnv.run(query, true).then((result) => {
+		const timeCount = moment().diff(start, 'seconds', true).toFixed(3);
 		let count = 0;
 		try {
 			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
-			console.log(`<${graph}> size is now ${count}...`);
+			console.log(`<${graph}> size is now ${count}... -- q: ${timeQuery}, t: ${timeCount}s`);
 		}catch (e) {
 			console.log('no matching results');
 		}
