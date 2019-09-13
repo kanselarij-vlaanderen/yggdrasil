@@ -281,7 +281,6 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
-      ?version a ?subthing .
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
@@ -303,10 +302,6 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
 
       ${extraFilters}
 
-      OPTIONAL {
-        ?s besluitvorming:heeftVersie ?version.
-        ?version a ?subthing.
-      }
     }
   }`;
   return queryEnv.run(query, true);
