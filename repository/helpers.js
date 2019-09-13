@@ -276,6 +276,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
@@ -295,6 +296,22 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       ?s a ?thing .
       VALUES (?thing) {
         (foaf:Document) (ext:DocumentVersie)
+      }
+      
+      VALUES (?p) {
+        ( besluitvorming:heeftVersie )
+        ( ext:bevatDocumentversie )
+        ( ext:bevatReedsBezorgdeDocumentversie )
+        ( ext:bevatAgendapuntDocumentversie )
+        ( ext:bevatReedsBezorgdAgendapuntDocumentversie )
+        ( ext:mededelingBevatDocumentversie )
+        ( ext:documentenVoorPublicatie )
+        ( ext:documentenVoorBeslissing )
+        ( ext:getekendeDocumentVersiesVoorNotulen )
+        ( dct:hasPart )
+        ( ext:beslissingsfiche )
+        ( ext:getekendeNotulen )
+        ( prov:generated ) 
       }
       
       FILTER NOT EXISTS {
