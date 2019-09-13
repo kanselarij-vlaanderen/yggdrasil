@@ -269,7 +269,7 @@ const fillOutDetailsOnVisibleItems = (queryEnv) => {
 
 const addAllRelatedDocuments = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
-  const query = `
+  const queryTemplate = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -291,22 +291,26 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       }
     } }
     GRAPH <${queryEnv.adminGraph}> {
+      $REPLACECONSTRAINT
+      ?s a ?thing .
       VALUES (?thing) {
         (foaf:Document) (ext:DocumentVersie)
       }
-      ?s a ?thing .
-      { { ?target ?p ?s . } 
-        UNION
-        { ?target ?p ?version .
-          ?s <http://data.vlaanderen.be/ns/besluitvorming#heeftVersie> ?version .
-        }
-      }
-
+      
       ${extraFilters}
 
     }
   }`;
-  return queryEnv.run(query, true);
+  const constraints = [`
+        ?target ?p ?version .
+        ?s <http://data.vlaanderen.be/ns/besluitvorming#heeftVersie> ?version .
+  `,`
+    ?target ?p ?s .
+  `];
+  return Promise.all(constraints.map((constraint) => {
+		return queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraint), true);
+	}));
+
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
