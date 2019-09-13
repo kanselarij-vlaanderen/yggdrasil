@@ -464,12 +464,10 @@ const copySetOfTempToTarget = async function(queryEnv){
                 ?s ?p ?o.
               }
             }
-            FILTER (?p != <http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
           }
         } LIMIT ${batchSize} }
       }
-    }
-		`;
+    }`;
 	await queryEnv.run(query);
 };
 
