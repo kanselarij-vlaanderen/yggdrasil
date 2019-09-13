@@ -211,7 +211,7 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
       ?s ?p ?o.
     }
   }`;
-	return queryEnv.run(query).then((result) => {
+	return queryEnv.run(query, true).then((result) => {
 		let count = 0;
 		try {
 			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);

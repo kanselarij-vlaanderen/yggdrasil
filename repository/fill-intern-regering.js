@@ -53,7 +53,6 @@ export const fillUp = async (queryEnv, agendas) => {
     });
     await runStage('related documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, notConfidentialFilter);
-
     });
     await runStage('related files added', queryEnv, () => {
       return addRelatedFiles(queryEnv);
