@@ -145,11 +145,10 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
       ?s ?p ?o.
     }
   } WHERE {
-    { SELECT ?s ?p ?o ?thing ?agenda WHERE {
-      GRAPH <${queryEnv.tempGraph}> {
+    GRAPH <${queryEnv.tempGraph}> {
 		   ?s a ?thing .
 		   ?s ext:tracesLineageTo ?agenda .
-	   }
+	  }
 	  
 		GRAPH <${queryEnv.adminGraph}> {
 			?s a ?thing.
@@ -161,8 +160,7 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
         ?s ?p ?o.
       }
 		}
-		} LIMIT ${batchSize} }
-  }`;
+  } LIMIT ${batchSize}`;
 	return queryEnv.run(query, true);
 };
 
@@ -181,23 +179,21 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
       ?oo ?pp ?s.
     }
   } WHERE {
-    { SELECT ?s ?pp ?oo WHERE {
-			GRAPH <${queryEnv.tempGraph}> {
-				?s a ?thing .
+		GRAPH <${queryEnv.tempGraph}> {
+			?s a ?thing .
+		}
+	
+		GRAPH <${queryEnv.adminGraph}> {
+			?s a ?thing.
+			?oo ?pp ?s.
+		
+			FILTER NOT EXISTS {
+				GRAPH <${queryEnv.tempGraph}> {
+					?oo ?pp ?s.
+				}
 			}
-	  
-  		GRAPH <${queryEnv.adminGraph}> {
-  			?s a ?thing.
-  			?oo ?pp ?s.
-			
-  			FILTER NOT EXISTS {
-  			  GRAPH <${queryEnv.tempGraph}> {
-  			    ?oo ?pp ?s.
-  			  }
-  			}
-  		}
-		} LIMIT ${batchSize} }
-  }`;
+		}
+  } LIMIT ${batchSize}`;
   return queryEnv.run(query, true);
 };
 
@@ -217,7 +213,7 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
 		let count = 0;
 		try {
 			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
-			console.log(`<${graph}> size is now ${count}... -- q: ${timeQuery}, t: ${timeCount}s`);
+			console.log(`<${graph}> size is now ${count}... -- q: ${timeQuery}s, t: ${timeCount}s`);
 		}catch (e) {
 			console.log('no matching results');
 		}
@@ -373,17 +369,39 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
 	if(!targetedAgendas){
 		return;
 	}
-	const query = `
+
+	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT DISTINCT ?s WHERE {
+		  VALUES (?agenda) {
+        (<${targetedAgendas.join('>) (<')}>)
+      }
+      GRAPH <${queryEnv.targetGraph}> {
+        ?s ext:tracesLineageTo ?agenda .
+      }
+      FILTER NOT EXISTS {
+        GRAPH <${queryEnv.tempGraph}> {
+          ?s ext:tracesLineageTo ?anyTargetedAgenda.
+        }
+      }
+    } LIMIT ${batchSize}`, true);
+	  const targets = JSON.parse(result).results.bindings.map((binding) => {
+		  return binding.s.value;
+	  });
+	  if(targets.length == 0){
+  		return;
+  	}
+
+	  const query = `
 		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
 		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ext:tracesLineageTo ?agenda .
         ?s ?p ?o .
 		    ?oo ?pp ?s .
 		  }
 		} WHERE {
-		  { SELECT ?s ?p ?o ?oo ?pp WHERE {
-		  VALUES (?agenda) {
-		    (<${targetedAgendas.join('>) (<')}>)
+		  VALUES ( ?s ) {
+		    ( <${targets.join('>) (<')}> )
 		  }
 		  GRAPH <${queryEnv.targetGraph}> {
 		    ?s ext:tracesLineageTo ?agenda .
@@ -391,16 +409,8 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
 		    OPTIONAL {
 		      ?oo ?pp ?s .
 		    }
-		    FILTER ( ?p != ext:tracesLineageTo )
 		  }
-		  FILTER NOT EXISTS {
-		    GRAPH <${queryEnv.tempGraph}> {
-		      ?s ext:tracesLineageTo ?agenda .
-		    }
-		  }
-		  } LIMIT ${batchSize} }
-		}
-		`;
+		}`;
 	await queryEnv.run(query);
 };
 
@@ -449,6 +459,23 @@ const copyTempToTarget = async function(queryEnv){
 };
 
 const copySetOfTempToTarget = async function(queryEnv){
+	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT DISTINCT ?s WHERE {
+		  GRAPH <${queryEnv.tempGraph}> {
+        ?s a ?thing .
+      }
+      FILTER NOT EXISTS {
+        GRAPH <${queryEnv.targetGraph}> {
+          ?s a ?thing.
+        }
+      }
+    } LIMIT ${batchSize}`, true);
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return binding.s.value;
+	});
+	if(targets.length == 0){
+		return;
+	}
 	const query = `
 		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT {
@@ -456,18 +483,11 @@ const copySetOfTempToTarget = async function(queryEnv){
         ?s ?p ?o .
 		  }
 		} WHERE {
-		  GRAPH <${queryEnv.tempGraph}> {
-        ?s a ?thing .
-        { SELECT ?s ?p ?o WHERE {
-          GRAPH <${queryEnv.tempGraph}> {
-            ?s ?p ?o.
-            FILTER NOT EXISTS {
-              GRAPH <${queryEnv.targetGraph}> {
-                ?s ?p ?o.
-              }
-            }
-          }
-        } LIMIT ${batchSize} }
+      GRAPH <${queryEnv.tempGraph}> {
+        VALUES (?s) {
+          ( <${targets.join('>) (<')}> )
+        }
+				?s ?p ?o.
       }
     }`;
 	await queryEnv.run(query);
@@ -542,8 +562,7 @@ const generateTempGraph = async function(queryEnv){
 	const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
 	queryEnv.tempGraph = tempGraph;
 	await queryEnv.run(`
-	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-
+  	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT DATA {
 	  GRAPH <${tempGraph}> {
 	    <${tempGraph}> a ext:TempGraph .
