@@ -142,16 +142,16 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing.
       ?s ?p ?o.
-      ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     { SELECT ?s ?p ?o ?thing ?agenda WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-			?s a ?thing .
-			?s ext:tracesLineageTo ?agenda .
-		}
+     { SELECT ?s ?thing WHERE {
+       GRAPH <${queryEnv.tempGraph}> {
+			   ?s a ?thing .
+			   ?s ext:tracesLineageTo ?agenda .
+		   }
+		 } }
 	  
 		GRAPH <${queryEnv.adminGraph}> {
 			?s a ?thing.
@@ -184,20 +184,22 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
     }
   } WHERE {
     { SELECT ?s ?pp ?oo WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-			?s a ?thing .
-		}
+      { SELECT ?s ?thing WHERE {
+        GRAPH <${queryEnv.tempGraph}> {
+    			?s a ?thing .
+    		}
+    	} }
 	  
-		GRAPH <${queryEnv.adminGraph}> {
-			?s a ?thing.
-			?oo ?pp ?s.
+  		GRAPH <${queryEnv.adminGraph}> {
+  			?s a ?thing.
+  			?oo ?pp ?s.
 			
-			FILTER NOT EXISTS {
-			  GRAPH <${queryEnv.tempGraph}> {
-			    ?oo ?pp ?s.
-			  }
-			}
-		}
+  			FILTER NOT EXISTS {
+  			  GRAPH <${queryEnv.tempGraph}> {
+  			    ?oo ?pp ?s.
+  			  }
+  			}
+  		}
 		} LIMIT ${batchSize} }
   }`;
   return queryEnv.run(query, true);
