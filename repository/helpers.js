@@ -284,10 +284,12 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?target a ?targetClass .
-      ?target ext:tracesLineageTo ?agenda .
-    }
+    { SELECT ?target ?agenda WHERE { 
+      GRAPH <${queryEnv.tempGraph}> {
+        ?target a ?targetClass .
+        ?target ext:tracesLineageTo ?agenda .
+      }
+    } }
     GRAPH <${queryEnv.adminGraph}> {
       VALUES (?thing) {
         (foaf:Document) (ext:DocumentVersie)
