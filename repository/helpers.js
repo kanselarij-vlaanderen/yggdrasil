@@ -130,7 +130,26 @@ const cleanup = (queryEnv) => {
   return queryEnv.run(query, true);
 };
 
-const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
+const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
+
+	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT DISTINCT ?s WHERE {
+		  GRAPH <${queryEnv.tempGraph}> {
+        ?s ext:tracesLineageTo ?agenda .
+      }
+      FILTER NOT EXISTS {
+        GRAPH <${queryEnv.tempGraph}> {
+          ?s ext:yggdrasilLeft ?s.
+        }
+      }
+    } LIMIT ${batchSize}`, true);
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return binding.s.value;
+	});
+	if(targets.length == 0){
+		return;
+	}
+
 	const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -143,29 +162,44 @@ const fillOutDetailsOnVisibleItemsLeft = (queryEnv) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s ?p ?o.
+      ?s ext:yggdrasilLeft ?s.
     }
   } WHERE {
+    VALUES ( ?s ) {
+       ( <${targets.join('>) (<')}> )
+    }
     GRAPH <${queryEnv.tempGraph}> {
 		   ?s a ?thing .
 		   ?s ext:tracesLineageTo ?agenda .
 	  }
 	  
 		GRAPH <${queryEnv.adminGraph}> {
-			?s a ?thing.
 			?s ?p ?o.
 		}
-		FILTER NOT EXISTS {
-		  GRAPH <${queryEnv.tempGraph}> {
-        ?s a ?thing.
-        ?s ?p ?o.
-      }
-		}
-  } LIMIT ${batchSize}`;
+  }`;
 	return queryEnv.run(query, true);
 };
 
-const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
-  const query = `
+const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
+	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT DISTINCT ?s WHERE {
+		  GRAPH <${queryEnv.tempGraph}> {
+        ?s ext:tracesLineageTo ?agenda .
+      }
+      FILTER NOT EXISTS {
+        GRAPH <${queryEnv.tempGraph}> {
+          ?s ext:yggdrasilRight ?s.
+        }
+      }
+    } LIMIT ${batchSize}`, true);
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return binding.s.value;
+	});
+	if(targets.length == 0){
+		return;
+	}
+
+	const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -177,23 +211,21 @@ const fillOutDetailsOnVisibleItemsRight = (queryEnv) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?oo ?pp ?s.
+      ?s ext:yggdrasilRight ?s.
     }
   } WHERE {
-		GRAPH <${queryEnv.tempGraph}> {
+		VALUES ( ?s ) {
+       ( <${targets.join('>) (<')}> )
+    }
+    GRAPH <${queryEnv.tempGraph}> {
 			?s a ?thing .
 		}
 	
 		GRAPH <${queryEnv.adminGraph}> {
 			?s a ?thing.
 			?oo ?pp ?s.
-		
-			FILTER NOT EXISTS {
-				GRAPH <${queryEnv.tempGraph}> {
-					?oo ?pp ?s.
-				}
-			}
 		}
-  } LIMIT ${batchSize}`;
+  }`;
   return queryEnv.run(query, true);
 };
 
@@ -487,7 +519,8 @@ const copySetOfTempToTarget = async function(queryEnv){
         VALUES (?s) {
           ( <${targets.join('>) (<')}> )
         }
-				?s ?p ?o.
+				?s ?p ?o .
+				FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
     }`;
 	await queryEnv.run(query);
