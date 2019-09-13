@@ -267,7 +267,7 @@ const fillOutDetailsOnVisibleItems = (queryEnv) => {
 	]);
 };
 
-const addAllRelatedDocuments = (queryEnv, extraFilters) => {
+const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
   const queryTemplate = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -313,10 +313,8 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
   `,`
     ?target ?p ?s .
   `];
-  return Promise.all(constraints.map((constraint) => {
-		return queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraint), true);
-	}));
-
+	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
+	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
