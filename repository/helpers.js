@@ -497,6 +497,42 @@ const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAge
 	if(!targetedAgendas){
 		return;
 	}
+	const result = await queryEnv.run(`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT DISTINCT ?s WHERE {
+      VALUES (?agenda) {
+        (<${targetedAgendas.join('>) (<')}>)
+      }
+  	  GRAPH <${queryEnv.targetGraph}> {
+        ?s ext:tracesLineageTo ?agenda .
+      }
+      { {
+				GRAPH <${queryEnv.targetGraph}> {
+					?s ?p ?o .
+				}
+				FILTER NOT EXISTS {
+					GRAPH <${queryEnv.tempGraph}> {
+						?s ?p ?o.
+					}
+				}
+			 } UNION {
+				GRAPH <${queryEnv.targetGraph}> {
+					?oo ?pp ?s .
+				}
+				FILTER NOT EXISTS {
+					GRAPH <${queryEnv.tempGraph}> {
+						?oo ?pp ?s.
+					}
+				}
+      } }
+    } LIMIT ${batchSize}`, true);
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return binding.s.value;
+	});
+	if(targets.length == 0){
+		return;
+	}
+
 	const query = `
 		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
@@ -505,39 +541,30 @@ const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAge
 		    ?oo ?pp ?s .
 		  }
 		} WHERE {
-		  { SELECT ?s ?p ?o ?pp ?oo WHERE {
-		    VALUES (?agenda) {
-		      (<${targetedAgendas.join('>) (<')}>)
-		    }
-		    GRAPH <${queryEnv.tempGraph}> {
-          ?s ext:tracesLineageTo ?agenda .
-        }
-  		  GRAPH <${queryEnv.targetGraph}> {
-	  	    ?s ext:tracesLineageTo ?agenda .
-  		  }
-	  	  { {
-		      GRAPH <${queryEnv.targetGraph}> {
-    		    ?s ?p ?o .
-    		  }
-    		  FILTER NOT EXISTS {
-		        GRAPH <${queryEnv.tempGraph}> {
-		          ?s ?p ?o.
-		        }
-  		    }
-	  	  } UNION {
-		      GRAPH <${queryEnv.targetGraph}> {
-            ?oo ?pp ?s .
-          }
-          FILTER NOT EXISTS {
-            GRAPH <${queryEnv.tempGraph}> {
-              ?oo ?pp ?s.
-            }
-          }
-  		} } } LIMIT ${batchSize} }
-		}
-		`;
+		  VALUES (?s) {
+		    ( <${targets.join('>) (<')}> )
+		  }
+			{ {
+				GRAPH <${queryEnv.targetGraph}> {
+					?s ?p ?o .
+				}
+				FILTER NOT EXISTS {
+					GRAPH <${queryEnv.tempGraph}> {
+						?s ?p ?o.
+					}
+				}
+			} UNION {
+				GRAPH <${queryEnv.targetGraph}> {
+					?oo ?pp ?s .
+				}
+				FILTER NOT EXISTS {
+					GRAPH <${queryEnv.tempGraph}> {
+						?oo ?pp ?s.
+					}
+				}
+		  } }
+		}`;
 	await queryEnv.run(query);
-
 };
 
 const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas) {
