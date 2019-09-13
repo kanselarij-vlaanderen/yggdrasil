@@ -222,7 +222,6 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
 		}
 	
 		GRAPH <${queryEnv.adminGraph}> {
-			?s a ?thing.
 			?oo ?pp ?s.
 		}
   }`;
