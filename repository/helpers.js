@@ -70,20 +70,26 @@ const notConfidentialFilter = `
 const notInternRegeringFilter = `
     FILTER NOT EXISTS {
       ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> .
-      FILTER(?accessPredicate in (
-        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap>, 
-        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument>,
-        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> ))
+      VALUES (?accessPredicate ) {
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> ) 
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
+      }
     }
 `;
 
 const notInternOverheidFilter = `
     FILTER NOT EXISTS {
-      ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/abe4c18d-13a9-45f0-8cdd-c493eabbbe29> .
-      FILTER(?accessPredicate in (
-        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap>, 
-        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument>,
-        <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> ))
+      ?s ?accessPredicate ?levelTooTough .
+      VALUES (?levelTooTough) {
+        ( <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/abe4c18d-13a9-45f0-8cdd-c493eabbbe29> )
+        ( <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/abe4c18d-13a9-45f0-8cdd-c493eabbbe29> ) .
+      }
+      VALUES (?accessPredicate ) {
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> ) 
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
+      }
     }
 `;
 
