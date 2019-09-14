@@ -14,7 +14,7 @@ const fillInterneOverheid = require('./repository/fill-intern-overheid');
 const fillInterneRegering = require('./repository/fill-intern-regering');
 const fillPublic = require('./repository/fill-public');
 
-app.use(bodyParser.json({ type: 'application/json' }));
+app.use(bodyParser.json({ type: 'application/json' , limit: '50mb' }));
 app.use(cors());
 
 const configurableQuery = function(queryString, direct){
