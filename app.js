@@ -4,6 +4,7 @@ import { parseSparQlResults } from './repository/helpers';
 const app = mu.app;
 const bodyParser = require('body-parser');
 const cors = require('cors');
+import moment from 'moment';
 const cron = require('node-cron');
 const DEBUG = process.env.DEBUG == "true";
 import { ok } from 'assert';
