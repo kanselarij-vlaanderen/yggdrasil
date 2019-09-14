@@ -281,7 +281,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing .
+      ?s a $type .
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
@@ -293,26 +293,6 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
     } }
     GRAPH <${queryEnv.adminGraph}> {
       $REPLACECONSTRAINT
-      ?s a ?thing .
-      VALUES (?thing) {
-        (foaf:Document) (ext:DocumentVersie)
-      }
-      
-      VALUES (?p) {
-        ( besluitvorming:heeftVersie )
-        ( ext:bevatDocumentversie )
-        ( ext:bevatReedsBezorgdeDocumentversie )
-        ( ext:bevatAgendapuntDocumentversie )
-        ( ext:bevatReedsBezorgdAgendapuntDocumentversie )
-        ( ext:mededelingBevatDocumentversie )
-        ( ext:documentenVoorPublicatie )
-        ( ext:documentenVoorBeslissing )
-        ( ext:getekendeDocumentVersiesVoorNotulen )
-        ( dct:hasPart )
-        ( ext:beslissingsfiche )
-        ( ext:getekendeNotulen )
-        ( prov:generated ) 
-      }
       
       FILTER NOT EXISTS {
         GRAPH <${queryEnv.tempGraph}> {
@@ -325,13 +305,25 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
     }
   }`;
   const constraints = [`
-        ?target ?p ?version .
-        ?s <http://data.vlaanderen.be/ns/besluitvorming#heeftVersie> ?version .
+		?s a ext:DocumentVersie .
+		?target ( ext:bevatDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) / ^besluitvorming:heeftVersie  ?s .
+		FILTER NOT EXISTS {
+			GRAPH <${queryEnv.tempGraph}> {
+				?s a ext:DocumentVersie .
+			}
+		}      
   `,`
-    ?target ?p ?s .
+    ?s a foaf:Document .
+    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) ?s .
+    FILTER NOT EXISTS {
+			GRAPH <${queryEnv.tempGraph}> {
+				?s a foaf:Document .
+			}
+		}
   `];
-	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
-	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
+
+	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]).split('$type').join('ext:DocumentVersie'), true);
+	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]).split('$type').join('foaf:Document'), true);
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
