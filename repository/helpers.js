@@ -4,6 +4,7 @@ mu.query = querySudo;
 import moment from 'moment';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
+const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;
@@ -422,7 +423,7 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
           ?s ext:tracesLineageTo ?anyTargetedAgenda.
         }
       }
-    } LIMIT ${Math.round(batchSize / 5)}`, true);
+    } LIMIT ${smallBatchSize}`, true);
 	  const targets = JSON.parse(result).results.bindings.map((binding) => {
 		  return binding.s.value;
 	  });
