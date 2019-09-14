@@ -5,7 +5,7 @@ mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
-  notBeperktOpenbaarFilter, notInternOverheidFilter, logStage, runStage,
+  notInternRegeringFilter, notInternOverheidFilter, logStage, runStage,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget
 } from './helpers';
 
@@ -137,10 +137,10 @@ export const fillUp = async (queryEnv, agendas) => {
   try {
     const start = moment().utc();
     await generateTempGraph(queryEnv);
-    const filter = [notConfidentialFilter, notBeperktOpenbaarFilter].join("\n");
+    const filter = [notConfidentialFilter, notInternRegeringFilter].join("\n");
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const filterAgendasWithAccess=[
-      notConfidentialFilter, notBeperktOpenbaarFilter,
+      notConfidentialFilter, notInternRegeringFilter,
       agendaFilter
     ].join("\n");
     let targetGraph = queryEnv.targetGraph;

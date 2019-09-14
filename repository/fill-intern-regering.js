@@ -5,7 +5,7 @@ import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup,
   fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage,
-  notBeperktOpenbaarFilter, notInternOverheidFilter, notConfidentialFilter,
+  notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget
 } from './helpers';
 
