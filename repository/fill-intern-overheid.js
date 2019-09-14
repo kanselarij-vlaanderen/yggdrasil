@@ -64,27 +64,29 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const addAllRelatedDocuments = (queryEnv, extraFilters) => {
-  const query = `
+const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
+  const queryTemplate = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing .
-      ?version a ?subthing .
+      ?s a $type .
       ?s ext:tracesLineageTo ?agenda .
     }
   } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?target a ?targetClass .
-      ?target ext:tracesLineageTo ?agenda .
-    }
+    { SELECT ?target ?agenda WHERE {
+      GRAPH <${queryEnv.tempGraph}> {
+        ?target a ?targetClass .
+        ?target ext:tracesLineageTo ?agenda .
+      }
+    } }
     GRAPH <${queryEnv.adminGraph}> {
       { {
           ?target a besluit:Besluit .
@@ -95,27 +97,35 @@ const addAllRelatedDocuments = (queryEnv, extraFilters) => {
           }
         }
       }
-      ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDocuments ?date.
+      ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date.
 
-      ?s a ?thing.
-       { { ?target ?p ?s . } 
-        UNION
-        { ?target ?p ?version .
-          ?s <http://data.vlaanderen.be/ns/besluitvorming#heeftVersie> ?version .
-        }
-      }
-      
-      VALUES ( ?thing ) {
-        ( foaf:Document )
-        ( ext:DocumentVersie )
-      }
+      $REPLACECONSTRAINT
 
       ${extraFilters}
 
     }
   }`;
-  return queryEnv.run(query, true);
+
+  const constraints = [`
+		?s a ext:DocumentVersie .
+		?target ( ext:bevatDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) / ^besluitvorming:heeftVersie  ?s .
+		FILTER NOT EXISTS {
+			GRAPH <${queryEnv.tempGraph}> {
+				?s a ext:DocumentVersie .
+			}
+		}      
+  `,`
+    ?s a foaf:Document .
+    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) ?s .
+    FILTER NOT EXISTS {
+			GRAPH <${queryEnv.tempGraph}> {
+				?s a foaf:Document .
+			}
+		}
+  `];
+
+  await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]).split('$type').join('ext:DocumentVersie'), true);
+  await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]).split('$type').join('foaf:Document'), true);
 };
 
 const notADecisionFilter = `

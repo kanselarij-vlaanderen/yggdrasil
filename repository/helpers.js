@@ -294,12 +294,6 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.adminGraph}> {
       $REPLACECONSTRAINT
       
-      FILTER NOT EXISTS {
-        GRAPH <${queryEnv.tempGraph}> {
-          ?s a ?thing .
-        }
-      }
-      
       ${extraFilters}
 
     }
