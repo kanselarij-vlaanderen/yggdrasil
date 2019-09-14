@@ -422,7 +422,7 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
           ?s ext:tracesLineageTo ?anyTargetedAgenda.
         }
       }
-    } LIMIT ${batchSize}`, true);
+    } LIMIT ${Math.round(batchSize / 5)}`, true);
 	  const targets = JSON.parse(result).results.bindings.map((binding) => {
 		  return binding.s.value;
 	  });
