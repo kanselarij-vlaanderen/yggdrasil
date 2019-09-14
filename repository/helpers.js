@@ -4,7 +4,7 @@ mu.query = querySudo;
 import moment from 'moment';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
-const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
+const smallBatchSize = process.env.SMALL_BATCH_SIZE || 1000;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;
@@ -431,12 +431,25 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
   		return;
   	}
 
-	  const query = `
+	  const queryRight = `
 		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
 		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ext:tracesLineageTo ?agenda .
         ?s ?p ?o .
+		  }
+		} WHERE {
+		  VALUES ( ?s ) {
+		    ( <${targets.join('>) (<')}> )
+		  }
+		  GRAPH <${queryEnv.targetGraph}> {
+		    ?s ?p ?o .
+		  }
+		}`;
+	await queryEnv.run(queryRight);
+	const queryLeft = `
+		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    DELETE {
+		  GRAPH <${queryEnv.targetGraph}> {
 		    ?oo ?pp ?s .
 		  }
 		} WHERE {
@@ -444,14 +457,10 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
 		    ( <${targets.join('>) (<')}> )
 		  }
 		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ext:tracesLineageTo ?agenda .
-		    ?s ?p ?o .
-		    OPTIONAL {
-		      ?oo ?pp ?s .
-		    }
+		    ?oo ?pp ?s .
 		  }
 		}`;
-	await queryEnv.run(query);
+	await queryEnv.run(queryLeft);
 };
 
 const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
