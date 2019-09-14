@@ -75,9 +75,11 @@ const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
   if(DEBUG){
     console.log(`Found subjects: ${JSON.stringify(subjects)}`);
   }
+  const start = moment();
   const relatedAgendas = await selectRelatedAgendasForSubjects(subjects);
   if(DEBUG){
-    console.log(`Related to subjects: ${relatedAgendas}`);
+    const diff = moment().diff(start, 'seconds', true).toFixed(3);
+    console.log(`Related to subjects: ${relatedAgendas} -- ${diff}s`);
   }
   if(!relatedAgendas || !relatedAgendas.length){
     return;
