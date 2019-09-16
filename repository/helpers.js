@@ -365,6 +365,7 @@ const addRelatedToAgendaItem = (queryEnv, extraFilters) => {
    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
    PREFIX dbpedia: <http://dbpedia.org/ontology/>
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+   PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
@@ -399,6 +400,7 @@ const addRelatedToSubcase = (queryEnv, extraFilters) => {
    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
    PREFIX dbpedia: <http://dbpedia.org/ontology/>
+   PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
