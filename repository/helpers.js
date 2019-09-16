@@ -3,7 +3,7 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
 import moment from 'moment';
 
-const batchSize = process.env.BATCH_SIZE || 1000;
+const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
@@ -375,14 +375,17 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
    } WHERE {
      { SELECT ?target ?agenda WHERE {
        GRAPH <${queryEnv.tempGraph}> {
-         ?target ext:tracesLineageTo ?agenda .
+         VALUES (?targetClass) {
+           ( besluit:Agendapunt ) 
+           ( dbpedia:UnitOfWork )
+         }
          ?target a ?targetClass .
-         FILTER(?targetClass IN (besluit:Agendapunt, dbpedia:UnitOfWork))
+         ?target ext:tracesLineageTo ?agenda .
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?s a ?thing .
        { { ?s [] ?target . } UNION { ?target [] ?s . } }
+       ?s a ?thing .
        FILTER( ?thing NOT IN (
          besluitvorming:Agenda,
          besluit:Agendapunt,
@@ -516,7 +519,7 @@ const copySetOfTempToTarget = async function(queryEnv){
           ?s ext:yggdrasilMoved ?s .
         }
       }
-    } LIMIT ${batchSize}`, true);
+    } LIMIT ${smallBatchSize}`, true);
 	const targets = JSON.parse(result).results.bindings.map((binding) => {
 		return binding.s.value;
 	});
