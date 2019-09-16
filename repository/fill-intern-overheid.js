@@ -77,8 +77,10 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a $type .
+      ?s a ext:DocumentVersie .
       ?s ext:tracesLineageTo ?agenda .
+      ?document a foaf:Document .
+      ?document ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     { SELECT ?target ?agenda WHERE {
@@ -100,7 +102,16 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date.
 
       $REPLACECONSTRAINT
-
+      
+      FILTER NOT EXISTS {
+        GRAPH <${queryEnv.tempGraph}> {
+          ?s a ext:DocumentVersie .
+        }
+      }   
+      OPTIONAL {
+        ?document besluitvorming:heeftVersie ?s .
+      }
+      
       ${extraFilters}
 
     }
@@ -108,20 +119,10 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 
   const constraints = [`
 		?s a ext:DocumentVersie .
-		?target ( ext:bevatDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) / ^besluitvorming:heeftVersie  ?s .
-		FILTER NOT EXISTS {
-			GRAPH <${queryEnv.tempGraph}> {
-				?s a ext:DocumentVersie .
-			}
-		}      
+		?target ( ext:bevatDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
   `,`
-    ?s a foaf:Document .
-    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) ?s .
-    FILTER NOT EXISTS {
-			GRAPH <${queryEnv.tempGraph}> {
-				?s a foaf:Document .
-			}
-		}
+    ?s a ext:DocumentVersie .
+    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / besluitvorming:heeftVersie ?s .
   `];
 
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]).split('$type').join('ext:DocumentVersie'), true);
