@@ -354,7 +354,8 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
+
+const addRelatedToAgendaItem = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
 	const query = `
@@ -375,29 +376,60 @@ const addRelatedToAgendaItemAndSubcase = (queryEnv, extraFilters) => {
    } WHERE {
      { SELECT ?target ?agenda WHERE {
        GRAPH <${queryEnv.tempGraph}> {
-         VALUES (?targetClass) {
-           ( besluit:Agendapunt ) 
-           ( dbpedia:UnitOfWork )
-         }
-         ?target a ?targetClass .
+         ?target a besluit:Agendapunt .
          ?target ext:tracesLineageTo ?agenda .
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       { { ?s [] ?target . } UNION { ?target [] ?s . } }
+       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | besluitvorming:heeftBevoegdeVoorAgendapunt | ext:agendapuntGoedkeuring | besluit:heeftAanwezige | ext:heeftVerdaagd | ext:agendapuntHeeftBesluit |  ext:notulenVanAgendaPunt | besluitvorming:opmerking | ext:agendapuntSubject) ?s .  
        ?s a ?thing .
-       FILTER( ?thing NOT IN (
-         besluitvorming:Agenda,
-         besluit:Agendapunt,
-         dbpedia:UnitOfWork,
-         foaf:Document,
-         ext:DocumentVersie,
-         nfo:FileDataObject ) )
-
+       
       ${extraFilters}
     }
   }`;
-  return queryEnv.run(query, true);
+	return queryEnv.run(query, true);
+};
+
+const addRelatedToSubcase = (queryEnv, extraFilters) => {
+	extraFilters = extraFilters || '';
+
+	const query = `
+   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+   PREFIX dct: <http://purl.org/dc/terms/>
+   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+   PREFIX dbpedia: <http://dbpedia.org/ontology/>
+   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+   PREFIX schema: <http://schema.org>
+   INSERT {
+     GRAPH <${queryEnv.tempGraph}> {
+       ?s a ?thing .
+       ?s ext:tracesLineageTo ?agenda .
+     }
+   } WHERE {
+     { SELECT ?target ?agenda WHERE {
+       GRAPH <${queryEnv.tempGraph}> {
+         ?target a dbpedia:UnitOfWork .
+         ?target ext:tracesLineageTo ?agenda .
+       }
+     }}
+     GRAPH <${queryEnv.adminGraph}> {
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart |  dct:type | ext:subcaseProcedurestapFase | ext:toegangsniveauVoorProcedurestap | ext:bevatConsultatievraag | besluitvorming:heeftBevoegde | ext:indiener | ext:heeftInhoudelijkeStructuurElementen | ext:procedurestapGoedkeuring | ext:procedurestapHeeftBesluit | besluitvorming:isAangevraagdVoor | prov:generated | dct:subject | dct:creator | besluitvorming:opmerking ) ?s .
+       ?s a ?thing .
+       
+       ${extraFilters}
+    }
+  }`;
+	return queryEnv.run(query, true);
+};
+
+const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
+	return Promise.all([
+		addRelatedToAgendaItem(queryEnv, extraFilters),
+	  addRelatedToSubcase(queryEnv, extraFilters)
+	]);
 };
 
 const runStage = async function(message, queryEnv, stage){
