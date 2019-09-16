@@ -3,7 +3,7 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
 import moment from 'moment';
 
-const batchSize = process.env.BATCH_SIZE || 3000;
+const batchSize = process.env.BATCH_SIZE || 1000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
@@ -345,16 +345,9 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
       ?agenda a besluitvorming:Agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
+      ?agenda (ext:getekendeNotule | dct:hasPart | ext:mededeling | besluit:isAangemaaktVoor | ^besluitvorming:behandelt | ( dct:hasPart / ^besluitvorming:isGeagendeerdVia )) ?s .   
       ?s a ?thing .
-      { { ?s ?p ?agenda } 
-        UNION 
-        { ?agenda ?p ?s } 
-        UNION
-        { ?agenda dct:hasPart ?agendaItem .
-          ?s besluitvorming:isGeagendeerdVia ?agendaItem .
-        }
-      }
-      FILTER( ?thing NOT IN(besluitvorming:Agenda) )
+      
       ${extraFilters}
     }
   }`;
