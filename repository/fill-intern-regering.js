@@ -4,7 +4,7 @@ mu.query = querySudo;
 import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup,
   fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
-  addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage,
+  addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage, addVisibleDecisions,
   notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget
 } from './helpers';
@@ -50,6 +50,9 @@ export const fillUp = async (queryEnv, agendas) => {
     });
     await runStage('agendaitem and subcase added', queryEnv, () => {
       return addRelatedToAgendaItemAndSubcase(queryEnv, notConfidentialFilter);
+    });
+    await runStage('visible decisions added', queryEnv, () => {
+      return addVisibleDecisions(queryEnv, notConfidentialFilter);
     });
     await runStage('related documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, notConfidentialFilter);

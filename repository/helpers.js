@@ -73,6 +73,7 @@ const notInternRegeringFilter = `
       VALUES (?accessPredicate ) {
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> ) 
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
       }
     }
@@ -83,11 +84,12 @@ const notInternOverheidFilter = `
       ?s ?accessPredicate ?levelTooTough .
       VALUES (?levelTooTough) {
         ( <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/abe4c18d-13a9-45f0-8cdd-c493eabbbe29> )
-        ( <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/abe4c18d-13a9-45f0-8cdd-c493eabbbe29> ) .
+        ( <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> ) .
       }
       VALUES (?accessPredicate ) {
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> ) 
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
       }
     }
@@ -382,7 +384,7 @@ const addRelatedToAgendaItem = (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | besluitvorming:heeftBevoegdeVoorAgendapunt | ext:agendapuntGoedkeuring | besluit:heeftAanwezige | ext:heeftVerdaagd | ext:agendapuntHeeftBesluit |  ext:notulenVanAgendaPunt | besluitvorming:opmerking | ext:agendapuntSubject) ?s .  
+       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | besluitvorming:heeftBevoegdeVoorAgendapunt | ext:agendapuntGoedkeuring | besluit:heeftAanwezige | ext:heeftVerdaagd |  ext:notulenVanAgendaPunt | besluitvorming:opmerking | ext:agendapuntSubject) ?s .  
        ?s a ?thing .
        
       ${extraFilters}
@@ -418,7 +420,7 @@ const addRelatedToSubcase = (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart |  dct:type | ext:subcaseProcedurestapFase | ext:toegangsniveauVoorProcedurestap | ext:bevatConsultatievraag | besluitvorming:heeftBevoegde | ext:indiener | ext:heeftInhoudelijkeStructuurElementen | ext:procedurestapGoedkeuring | ext:procedurestapHeeftBesluit | besluitvorming:isAangevraagdVoor | prov:generated | dct:subject | dct:creator | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart |  dct:type | ext:subcaseProcedurestapFase | ext:toegangsniveauVoorProcedurestap | ext:bevatConsultatievraag | besluitvorming:heeftBevoegde | ext:indiener | ext:heeftInhoudelijkeStructuurElementen | ext:procedurestapGoedkeuring | besluitvorming:isAangevraagdVoor | prov:generated | dct:subject | dct:creator | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
        
        ${extraFilters}
@@ -673,6 +675,37 @@ const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
 	return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
 
+const addVisibleDecisions = (queryEnv, extraFilters) => {
+	const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a besluit:Besluit.
+      ?s ext:tracesLineageTo ?agenda.
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?agendaitem a besluit:Agendapunt.
+      ?agendaitem ext:tracesLineageTo ?agenda.
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?agenda dct:hasPart ?agendaitem.
+      ?agenda besluit:isAangemaaktVoor ?session.
+      ?session ext:releasedDecisions ?date.
+      ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
+      ?subcase ext:procedurestapHeeftBesluit ?s.
+      ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+      
+      ${extraFilters}
+    }
+  }`;
+	return queryEnv.run(query, true);
+};
+
 const generateTempGraph = async function(queryEnv){
 	const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
 	queryEnv.tempGraph = tempGraph;
@@ -695,6 +728,7 @@ module.exports = {
 	cleanup,
 	fillOutDetailsOnVisibleItems,
 	addAllRelatedDocuments,
+	addVisibleDecisions,
 	addAllRelatedToAgenda,
 	addRelatedToAgendaItemAndSubcase,
 	cleanupBasedOnLineage,

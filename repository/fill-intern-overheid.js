@@ -6,7 +6,7 @@ mu.query = querySudo;
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
   notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllRelatedDocuments,
-  cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget
+  cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget, addVisibleDecisions
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilters) => {
@@ -26,37 +26,6 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
       ?s a besluitvorming:Agenda.
       ?s ext:agendaNaam ?naam.
       FILTER(?naam != "Ontwerpagenda")
-      
-      ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
-};
-
-const addVisibleDecisions = (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a besluit:Besluit.
-      ?s ext:tracesLineageTo ?agenda.
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agendaitem a besluit:Agendapunt.
-      ?agendaitem ext:tracesLineageTo ?agenda.
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?agenda dct:hasPart ?agendaitem.
-      ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDecisions ?date.
-      ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
-      ?subcase ext:procedurestapHeeftBesluit ?s.
-      ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
       
       ${extraFilters}
     }
@@ -91,10 +60,6 @@ const addVisibleNotulen = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const notADecisionFilter = `
- FILTER ( ?thing != besluit:Besluit )
-`;
-
 export const fillUp = async (queryEnv, agendas) => {
 
   try {
@@ -112,16 +77,16 @@ export const fillUp = async (queryEnv, agendas) => {
       return addVisibleAgendas(queryEnv, filterAgendasWithAccess);
     });
     await runStage('related to agenda added', queryEnv, () => {
-      return addAllRelatedToAgenda(queryEnv, notConfidentialFilter, ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )']);
+      return addAllRelatedToAgenda(queryEnv, filter, ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )']);
     });
     await runStage('related to agendaitem and subcase added', queryEnv, () => {
-      return addRelatedToAgendaItemAndSubcase(queryEnv, [notConfidentialFilter, notADecisionFilter].join("\n"));
+      return addRelatedToAgendaItemAndSubcase(queryEnv, filter);
     });
     await runStage('visible decisions added', queryEnv, () => {
-      return addVisibleDecisions(queryEnv, notConfidentialFilter);
+      return addVisibleDecisions(queryEnv, filter);
     });
     await runStage('visible notulen added', queryEnv, () => {
-      return addVisibleNotulen(queryEnv, notConfidentialFilter);
+      return addVisibleNotulen(queryEnv, filter);
     });
     await runStage('documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, `
