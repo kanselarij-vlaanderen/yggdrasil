@@ -5,7 +5,7 @@ mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
-  notInternRegeringFilter, notInternOverheidFilter, logStage, runStage,
+  notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllRelatedDocuments,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget
 } from './helpers';
 
@@ -91,71 +91,6 @@ const addVisibleNotulen = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
-  const queryTemplate = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX prov: <http://www.w3.org/ns/prov#>
-  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ext:DocumentVersie .
-      ?s ext:tracesLineageTo ?agenda .
-      ?document a foaf:Document .
-      ?document ext:tracesLineageTo ?agenda .
-    }
-  } WHERE {
-    { SELECT ?target ?agenda WHERE {
-      GRAPH <${queryEnv.tempGraph}> {
-        ?target a ?targetClass .
-        ?target ext:tracesLineageTo ?agenda .
-      }
-    } }
-    GRAPH <${queryEnv.adminGraph}> {
-      { {
-          ?target a besluit:Besluit .
-        } UNION {
-          ?target a besluit:Agendapunt.
-          FILTER NOT EXISTS {
-              ?subcase besluitvorming:isGeagendeerdVia ?target.
-          }
-        }
-      }
-      ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date.
-
-      $REPLACECONSTRAINT
-      
-      FILTER NOT EXISTS {
-        GRAPH <${queryEnv.tempGraph}> {
-          ?s a ext:DocumentVersie .
-        }
-      }   
-      OPTIONAL {
-        ?document besluitvorming:heeftVersie ?s .
-      }
-      
-      ${extraFilters}
-
-    }
-  }`;
-
-  const constraints = [`
-		?s a ext:DocumentVersie .
-		?target ( ext:bevatDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
-  `,`
-    ?s a ext:DocumentVersie .
-    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / besluitvorming:heeftVersie ?s .
-  `];
-
-  await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]).split('$type').join('ext:DocumentVersie'), true);
-  await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]).split('$type').join('foaf:Document'), true);
-};
-
 const notADecisionFilter = `
  FILTER ( ?thing != besluit:Besluit )
 `;
@@ -189,7 +124,10 @@ export const fillUp = async (queryEnv, agendas) => {
       return addVisibleNotulen(queryEnv, notConfidentialFilter);
     });
     await runStage('documents added', queryEnv, () => {
-      return addAllRelatedDocuments(queryEnv, filter);
+      return addAllRelatedDocuments(queryEnv, `
+        ${filter}
+        ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date.
+      `);
     });
     await runStage('related files added', queryEnv, () => {
       return addRelatedFiles(queryEnv);
