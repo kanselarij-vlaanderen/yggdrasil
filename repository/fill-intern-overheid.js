@@ -64,6 +64,33 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
+const addVisibleNotulen = (queryEnv, extraFilters) => {
+  const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a ?thing.
+      ?s ext:tracesLineageTo ?agenda.
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?agenda a besluit:Agenda.
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?agenda besluit:isAangemaaktVoor ?session.
+      ?session ext:releasedDecisions ?date.
+      ?session ext:algemeneNotulen / ext:getekendeNotulen? ?s .
+
+      ${extraFilters}
+    }
+  }`;
+  return queryEnv.run(query, true);
+};
+
 const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   const queryTemplate = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -157,6 +184,9 @@ export const fillUp = async (queryEnv, agendas) => {
     });
     await runStage('visible decisions added', queryEnv, () => {
       return addVisibleDecisions(queryEnv, notConfidentialFilter);
+    });
+    await runStage('visible notulen added', queryEnv, () => {
+      return addVisibleNotulen(queryEnv, notConfidentialFilter);
     });
     await runStage('documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, filter);
