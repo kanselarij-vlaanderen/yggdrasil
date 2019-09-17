@@ -112,7 +112,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return addVisibleAgendas(queryEnv, filterAgendasWithAccess);
     });
     await runStage('related to agenda added', queryEnv, () => {
-      return addAllRelatedToAgenda(queryEnv, notConfidentialFilter);
+      return addAllRelatedToAgenda(queryEnv, notConfidentialFilter, ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )']);
     });
     await runStage('related to agendaitem and subcase added', queryEnv, () => {
       return addRelatedToAgendaItemAndSubcase(queryEnv, [notConfidentialFilter, notADecisionFilter].join("\n"));

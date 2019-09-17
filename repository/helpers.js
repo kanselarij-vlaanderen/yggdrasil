@@ -138,7 +138,6 @@ const cleanup = (queryEnv) => {
 };
 
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
-
 	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
 		  GRAPH <${queryEnv.tempGraph}> {
@@ -326,7 +325,8 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
 };
 
-const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
+const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
+	relationProperties = relationProperties || ['ext:getekendeNotule', 'dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
 	extraFilters = extraFilters || '';
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -345,7 +345,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters) => {
       ?agenda a besluitvorming:Agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?agenda (ext:getekendeNotule | dct:hasPart | ext:mededeling | besluit:isAangemaaktVoor | ^besluitvorming:behandelt | ( dct:hasPart / ^besluitvorming:isGeagendeerdVia )) ?s .   
+      ?agenda ( ${relationProperties.join(" | ")} ) ?s .   
       ?s a ?thing .
       
       ${extraFilters}
