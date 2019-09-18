@@ -516,28 +516,34 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
 	if(!targetedAgendas){
 		return;
 	}
-	const query = `
-		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-    DELETE {
-		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ext:tracesLineageTo ?agenda .
-		  }
-		} WHERE {
-		  { SELECT ?s ?agenda WHERE {
-		  VALUES (?agenda) {
-		    (<${targetedAgendas.join('>) (<')}>)
-		  }
-		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ext:tracesLineageTo ?agenda .
-		  }
-		  FILTER NOT EXISTS {
-		    GRAPH <${queryEnv.tempGraph}> {
-		      ?s ext:tracesLineageTo ?agenda .
-		    }
-		  }
-		  } LIMIT ${batchSize} }
+
+	const result = await queryEnv.run(`
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  SELECT ?s ?agenda WHERE {
+		VALUES (?agenda) {
+			(<${targetedAgendas.join('>) (<')}>)
 		}
-		`;
+		GRAPH <${queryEnv.targetGraph}> {
+			?s ext:tracesLineageTo ?agenda .
+		}
+		FILTER NOT EXISTS {
+			GRAPH <${queryEnv.tempGraph}> {
+				?s ext:tracesLineageTo ?agenda .
+			}
+		}
+	} LIMIT ${batchSize}
+  `, true);
+
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return `<${binding.s.value}> ext:tracesLineageTo <${bindings.agenda.value}> .`;
+	});
+
+	const query = `
+	DELETE DATA {
+		GRAPH <${queryEnv.targetGraph}> {
+			${targets.join("\n")}
+		}
+	}`;
 	await queryEnv.run(query);
 };
 
