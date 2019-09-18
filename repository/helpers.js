@@ -538,6 +538,9 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
 		return `<${binding.s.value}> ext:tracesLineageTo <${bindings.agenda.value}> .`;
 	});
 
+  if(!targets || targets.length == 0){
+		return;
+  }
 	const query = `
 	DELETE DATA {
 		GRAPH <${queryEnv.targetGraph}> {
