@@ -90,10 +90,16 @@ function query( args, queryString, retries ) {
   }
 
   return request(options).catch((e) => {
-    console.log(`Failed executing query ${queryString}`);
     if (retries < 5){
+      console.log(`Failed executing query ${queryString}`);
       return query(args, queryString, retries + 1);
     }
+    console.log(`Error: failed executing query in final try: ${queryString}
+    
+    ${e.message}
+    
+    ${e.stack}`);
+
     throw e;
   });
 };

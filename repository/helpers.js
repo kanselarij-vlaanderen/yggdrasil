@@ -357,7 +357,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
 };
 
 
-const addRelatedToAgendaItem = (queryEnv, extraFilters) => {
+const addRelatedToAgendaItemBatched = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
 	const query = `
@@ -384,16 +384,22 @@ const addRelatedToAgendaItem = (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | besluitvorming:heeftBevoegdeVoorAgendapunt | ext:agendapuntGoedkeuring | besluit:heeftAanwezige | ext:heeftVerdaagd |  ext:notulenVanAgendaPunt | besluitvorming:opmerking | ext:agendapuntSubject) ?s .  
+       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ext:heeftVerdaagd | besluitvorming:opmerking ) ?s .  
        ?s a ?thing .
        
       ${extraFilters}
     }
-  }`;
+  } LIMIT ${batchSize}`;
 	return queryEnv.run(query, true);
 };
 
-const addRelatedToSubcase = (queryEnv, extraFilters) => {
+const addRelatedToAgendaItem = async (queryEnv, extraFilters) => {
+	await repeatUntilTripleCountConstant(() => {
+		return addRelatedToAgendaItemBatched(queryEnv, extraFilters);
+	}, queryEnv, 0, queryEnv.tempGraph);
+};
+
+const addRelatedToSubcaseBatched = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
 	const query = `
@@ -420,13 +426,19 @@ const addRelatedToSubcase = (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart |  dct:type | ext:subcaseProcedurestapFase | ext:toegangsniveauVoorProcedurestap | ext:bevatConsultatievraag | besluitvorming:heeftBevoegde | ext:indiener | ext:heeftInhoudelijkeStructuurElementen | ext:procedurestapGoedkeuring | besluitvorming:isAangevraagdVoor | prov:generated | dct:subject | dct:creator | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | prov:generated | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
        
        ${extraFilters}
     }
-  }`;
+  } LIMIT ${batchSize}`;
 	return queryEnv.run(query, true);
+};
+
+const addRelatedToSubcase = async (queryEnv, extraFilters) => {
+	await repeatUntilTripleCountConstant(() => {
+		return addRelatedToSubcaseBatched(queryEnv, extraFilters);
+	}, queryEnv, 0, queryEnv.tempGraph);
 };
 
 const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
