@@ -328,7 +328,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-	relationProperties = relationProperties || ['ext:getekendeNotule', 'dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
+	relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
 	extraFilters = extraFilters || '';
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -356,6 +356,37 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   return queryEnv.run(query, true);
 };
 
+const addVisibleNotulen = (queryEnv, extraFilters) => {
+	const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a ?thing.
+      ?s ext:tracesLineageTo ?agenda.
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?agenda a besluit:Agenda.
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?agenda besluit:isAangemaaktVoor ?session.
+      ?session ext:releasedDecisions ?date.
+      
+      { { 
+        ?session ext:algemeneNotulen ?s  .
+        } UNION {
+        ?agenda dct:hasPart / ext:notulenVanAgendaPunt ?s .
+      } }
+
+      ${extraFilters}
+    }
+  }`;
+	return queryEnv.run(query, true);
+};
 
 const addRelatedToAgendaItemBatched = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
@@ -426,7 +457,7 @@ const addRelatedToSubcaseBatched = (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | prov:generated | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
        
        ${extraFilters}
@@ -739,6 +770,37 @@ const generateTempGraph = async function(queryEnv){
 	}`, true);
 };
 
+const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
+	const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a besluitvorming:NieuwsbriefInfo .
+      ?s ext:tracesLineageTo ?agenda.
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?target a ?thing .
+      ?target ext:tracesLineageTo ?agenda.
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?target (^prov:generated | ^ext:algemeneNieuwsbrief ) ?s .
+      
+      ?agenda besluit:isAangemaaktVoor ?session .
+      ?session ext:releasedDecisions ?date .
+      ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?date .
+      
+      ${extraFilters}
+    }
+  }`;
+	return queryEnv.run(query, true);
+};
+
 module.exports = {
 	parseSparQlResults,
 	removeInfoNotInTemp,
@@ -751,9 +813,11 @@ module.exports = {
 	addAllRelatedDocuments,
 	addVisibleDecisions,
 	addAllRelatedToAgenda,
+	addVisibleNewsletterInfo,
 	addRelatedToAgendaItemAndSubcase,
 	cleanupBasedOnLineage,
 	logStage,
+	addVisibleNotulen,
 	filterAgendaMustBeInSet,
 	generateTempGraph,
 	copyTempToTarget,

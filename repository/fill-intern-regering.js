@@ -2,11 +2,12 @@ import mu from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 mu.query = querySudo;
 import moment from 'moment';
-import { removeInfoNotInTemp, addRelatedFiles, cleanup,
+import { removeInfoNotInTemp, addRelatedFiles, cleanup, addVisibleNewsletterInfo,
   fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage, addVisibleDecisions,
   notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
-  logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget
+  logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
+  addVisibleNotulen
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilter) => {
@@ -54,6 +55,12 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('visible decisions added', queryEnv, () => {
       return addVisibleDecisions(queryEnv, notConfidentialFilter);
     });
+    await runStage('visible notulen added', queryEnv, () => {
+      return addVisibleNotulen(queryEnv, notConfidentialFilter);
+    });
+    await runStage('visible newsletter info added', queryEnv, () => {
+      return addVisibleNewsletterInfo(queryEnv, notConfidentialFilter);
+    });
     await runStage('related documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, notConfidentialFilter);
     });
@@ -80,7 +87,7 @@ export const fillUp = async (queryEnv, agendas) => {
     const end = moment().utc();
     logStage(start, `fill regering ended at: ${end}`, targetGraph);
   }catch (e) {
-    console.log(e);
+    logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {
       cleanup(queryEnv);
     }catch (e2) {

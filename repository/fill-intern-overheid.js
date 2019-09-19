@@ -3,9 +3,10 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import moment from 'moment';
 mu.query = querySudo;
 
-import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles,
+import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles, addVisibleNewsletterInfo,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
   notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllRelatedDocuments,
+  addVisibleNotulen,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget, addVisibleDecisions
 } from './helpers';
 
@@ -27,33 +28,6 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
       ?s ext:agendaNaam ?naam.
       FILTER(?naam != "Ontwerpagenda")
       
-      ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
-};
-
-const addVisibleNotulen = (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing.
-      ?s ext:tracesLineageTo ?agenda.
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agenda a besluit:Agenda.
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDecisions ?date.
-      ?session ext:algemeneNotulen / ext:getekendeNotulen? ?s .
-
       ${extraFilters}
     }
   }`;
@@ -88,6 +62,10 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('visible notulen added', queryEnv, () => {
       return addVisibleNotulen(queryEnv, filter);
     });
+    await runStage('visible newsletter info added', queryEnv, () => {
+      return addVisibleNewsletterInfo(queryEnv, filter);
+    });
+
     await runStage('documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, `
         ${filter}
@@ -117,7 +95,7 @@ export const fillUp = async (queryEnv, agendas) => {
     const end = moment().utc();
     logStage(start,`fill overheid ended at: ${end}`, targetGraph);
   } catch (e) {
-    logStage(e, queryEnv.targetGraph);
+    logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {
       cleanup(queryEnv);
     }catch (e2) {
