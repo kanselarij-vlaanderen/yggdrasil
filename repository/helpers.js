@@ -365,12 +365,12 @@ const addVisibleNotulen = (queryEnv, extraFilters) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a ?thing.
+      ?s a ext:Notule .
       ?s ext:tracesLineageTo ?agenda.
     }
   } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
-      ?agenda a besluit:Agenda.
+      ?agenda a besluitvorming:Agenda.
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?agenda besluit:isAangemaaktVoor ?session.
