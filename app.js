@@ -46,7 +46,7 @@ const builders = {
   'minister': {
     env: {
       adminGraph: adminGraph,
-      targetGraph: `http://mu.semte.ch/graphs/organizations/ministers`,
+      targetGraph: `http://mu.semte.ch/graphs/organizations/minister`,
       fullRebuild: false,
       extraFilter: ' ',
       run: configurableQuery
@@ -61,7 +61,7 @@ const initialLoad = function(){
     toFillUp = 'public,intern-overheid,intern-regering,minister';
   }else if (process.env.RELOAD_ALL_DATA_ON_INIT) {
     toFillUp = process.env.RELOAD_ALL_DATA_ON_INIT;
-  } 
+  }
 
   toFillUp = toFillUp.split(",");
   const fillOptions = {};
