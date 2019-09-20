@@ -1,7 +1,6 @@
 import mu from 'mu';
-import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
-mu.query = querySudo;
 import moment from 'moment';
+import {query} from './direct-sparql-endpoint';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
@@ -801,6 +800,17 @@ const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
 	return queryEnv.run(query, true);
 };
 
+const configurableQuery = function(queryString, direct){
+	return query({
+		sudo: true,
+		url: direct?process.env.DIRECT_ENDPOINT:undefined
+	}, queryString);
+};
+
+const directQuery = function(queryString){
+	return configurableQuery(queryString, true);
+};
+
 module.exports = {
 	parseSparQlResults,
 	removeInfoNotInTemp,
@@ -821,6 +831,8 @@ module.exports = {
 	filterAgendaMustBeInSet,
 	generateTempGraph,
 	copyTempToTarget,
+	configurableQuery,
+	directQuery,
 	runStage
 };
 

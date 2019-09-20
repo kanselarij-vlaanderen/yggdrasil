@@ -42,27 +42,28 @@ export const fillUp = async (queryEnv, agendas) => {
     await generateTempGraph(queryEnv);
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const targetGraph = queryEnv.targetGraph;
+    const additionalFilter = queryEnv.extraFilter || notConfidentialFilter;
     console.log(`fill regering started at: ${start}`);
     await runStage(`agendas added`, queryEnv, () => {
       return addVisibleAgendas(queryEnv, agendaFilter);
     });
     await runStage('related to agenda added', queryEnv, () => {
-      return addAllRelatedToAgenda(queryEnv, notConfidentialFilter);
+      return addAllRelatedToAgenda(queryEnv, additionalFilter);
     });
     await runStage('agendaitem and subcase added', queryEnv, () => {
-      return addRelatedToAgendaItemAndSubcase(queryEnv, notConfidentialFilter);
+      return addRelatedToAgendaItemAndSubcase(queryEnv, additionalFilter);
     });
     await runStage('visible decisions added', queryEnv, () => {
-      return addVisibleDecisions(queryEnv, notConfidentialFilter);
+      return addVisibleDecisions(queryEnv, additionalFilter);
     });
     await runStage('visible notulen added', queryEnv, () => {
-      return addVisibleNotulen(queryEnv, notConfidentialFilter);
+      return addVisibleNotulen(queryEnv, additionalFilter);
     });
     await runStage('visible newsletter info added', queryEnv, () => {
-      return addVisibleNewsletterInfo(queryEnv, notConfidentialFilter);
+      return addVisibleNewsletterInfo(queryEnv, additionalFilter);
     });
     await runStage('related documents added', queryEnv, () => {
-      return addAllRelatedDocuments(queryEnv, notConfidentialFilter);
+      return addAllRelatedDocuments(queryEnv, additionalFilter);
     });
     await runStage('related files added', queryEnv, () => {
       return addRelatedFiles(queryEnv);
