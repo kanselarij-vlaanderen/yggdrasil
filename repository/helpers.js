@@ -310,6 +310,9 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       OPTIONAL {
         ?document besluitvorming:heeftVersie ?s .
       }
+
+      ?s <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> ?anyAccessLevel .
+
       ${extraFilters}
 
     }
