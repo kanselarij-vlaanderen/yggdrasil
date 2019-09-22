@@ -69,7 +69,12 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, `
         ${filter}
-        ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date.
+
+        { {
+          ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date .
+          } UNION {
+          ?target ext:zittingDocumentversie ?s .
+        } }
       `);
     });
     await runStage('related files added', queryEnv, () => {
