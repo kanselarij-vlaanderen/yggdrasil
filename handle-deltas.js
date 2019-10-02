@@ -2,6 +2,7 @@ import debounce from 'debounce';
 import { ok } from 'assert';
 import moment from 'moment';
 const DEBUG = process.env.DEBUG == "true";
+const DELTA_TIMEOUT = parseInt(process.env.DELTA_TIMEOUT) || (5 * 60 * 1000);
 import { parseSparQlResults, directQuery } from './repository/helpers';
 
 let builders = {};
@@ -217,7 +218,7 @@ const checkAllDeltas = async function(){
   checkingDeltas = false;
 };
 
-const debouncedDelta = debounce(checkAllDeltas, 10000);
+const debouncedDelta = debounce(checkAllDeltas, DELTA_TIMEOUT);
 
 const handleDelta = async function(req,res, newBuilders){
   let body = req.body;
