@@ -27,7 +27,7 @@ const unconfidentialClasses = async function(queryEnv){
 
 const fillUp = async function(queryEnv, extraFilter){
   const start = moment().utc();
-  logStage(start, 'fill public started', queryEnv.targetGraph);
+  logStage(start, `fill public started at: ${start.format()}`, queryEnv.targetGraph);
 
   extraFilter = extraFilter || "";
   const classes = await unconfidentialClasses(queryEnv);
@@ -58,7 +58,7 @@ const fillUp = async function(queryEnv, extraFilter){
   }`;
   const result = await queryEnv.run(query);
   const end = moment().utc();
-  logStage(start, `fill public ended at: ${end}`, queryEnv.targetGraph);
+  logStage(start, `fill public ended at: ${end.format()}`, queryEnv.targetGraph);
   return result;
 };
 

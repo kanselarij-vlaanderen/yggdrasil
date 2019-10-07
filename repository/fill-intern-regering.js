@@ -43,12 +43,12 @@ export const fillUp = async (queryEnv, agendas) => {
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const targetGraph = queryEnv.targetGraph;
     const additionalFilter = queryEnv.extraFilter || notConfidentialFilter;
-    console.log(`fill regering started at: ${start}`);
+    console.log(`fill regering started at: ${start.format()}`);
     await runStage(`agendas added`, queryEnv, () => {
       return addVisibleAgendas(queryEnv, agendaFilter);
     });
     await runStage('related to agenda added', queryEnv, () => {
-      return addAllRelatedToAgenda(queryEnv, additionalFilter);
+      return addAllRelatedToAgenda(queryEnv);
     });
     await runStage('agendaitem and subcase added', queryEnv, () => {
       return addRelatedToAgendaItemAndSubcase(queryEnv, additionalFilter);
@@ -86,7 +86,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return cleanup(queryEnv);
     });
     const end = moment().utc();
-    logStage(start, `fill regering ended at: ${end}`, targetGraph);
+    logStage(start, `fill regering ended at: ${end.format()}`, targetGraph);
   }catch (e) {
     logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {
