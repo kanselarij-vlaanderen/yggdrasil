@@ -41,7 +41,6 @@ const fillUp = async function(queryEnv, extraFilter){
   INSERT {
     GRAPH <${queryEnv.targetGraph}> {
       ?s ?p ?o .
-      ?oo ?pp ?s .
     }
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
@@ -50,9 +49,6 @@ const fillUp = async function(queryEnv, extraFilter){
       }
       ?s a ?class .
       ?s ?p ?o .
-      OPTIONAL {
-        ?oo ?pp ?s .
-      }
       ${extraFilter}
     }
   }`;
