@@ -795,7 +795,7 @@ const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
       
       ?agenda besluit:isAangemaaktVoor ?session .
       ?session ext:releasedDecisions ?date .
-      ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?date .
+      ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
       
       ${extraFilters}
     }
