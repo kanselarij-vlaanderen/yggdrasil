@@ -6,7 +6,7 @@ mu.query = querySudo;
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles, addVisibleNewsletterInfo,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
   notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllRelatedDocuments,
-  addVisibleNotulen,
+  addVisibleNotulen, transformFilter,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget, addVisibleDecisions
 } from './helpers';
 
@@ -68,8 +68,6 @@ export const fillUp = async (queryEnv, agendas) => {
 
     await runStage('documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, `
-        ${filter}
-
         { {
           ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date .
           } UNION {
@@ -78,7 +76,7 @@ export const fillUp = async (queryEnv, agendas) => {
       `);
     });
     await runStage('related files added', queryEnv, () => {
-      return addRelatedFiles(queryEnv);
+      return addRelatedFiles(queryEnv, transformFilter(filter, "?docVersion", "?docVersion (ext:file | ext:convertedFile ) ?s ."));
     });
     await runStage('details added', queryEnv, () => {
       return fillOutDetailsOnVisibleItems(queryEnv);

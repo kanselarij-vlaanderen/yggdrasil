@@ -7,7 +7,7 @@ import { removeInfoNotInTemp, addRelatedFiles, cleanup, addVisibleNewsletterInfo
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage, addVisibleDecisions,
   notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
-  addVisibleNotulen
+  addVisibleNotulen, transformFilter
 } from './helpers';
 
 const addVisibleAgendas = (queryEnv, extraFilter) => {
@@ -63,10 +63,10 @@ export const fillUp = async (queryEnv, agendas) => {
       return addVisibleNewsletterInfo(queryEnv, additionalFilter);
     });
     await runStage('related documents added', queryEnv, () => {
-      return addAllRelatedDocuments(queryEnv, additionalFilter);
+      return addAllRelatedDocuments(queryEnv, '');
     });
     await runStage('related files added', queryEnv, () => {
-      return addRelatedFiles(queryEnv);
+      return addRelatedFiles(queryEnv, transformFilter(additionalFilter, "?docVersion", "?docVersion (ext:file | ext:convertedFile ) ?s ."));
     });
     await runStage('details added', queryEnv, () => {
       return fillOutDetailsOnVisibleItems(queryEnv);
