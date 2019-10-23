@@ -46,12 +46,12 @@ export const fillUp = async (queryEnv, agendas) => {
       agendaFilter
     ].join("\n");
     let targetGraph = queryEnv.targetGraph;
-    logStage(start, `fill overheid started at: ${start}`, targetGraph);
+    logStage(start, `fill overheid started at: ${start.format()}`, targetGraph);
     await runStage(`overheid agendas added`, queryEnv, () => {
       return addVisibleAgendas(queryEnv, filterAgendasWithAccess);
     });
     await runStage('related to agenda added', queryEnv, () => {
-      return addAllRelatedToAgenda(queryEnv, filter, ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )']);
+      return addAllRelatedToAgenda(queryEnv);
     });
     await runStage('related to agendaitem and subcase added', queryEnv, () => {
       return addRelatedToAgendaItemAndSubcase(queryEnv, filter);
@@ -98,7 +98,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return cleanup(queryEnv);
     });
     const end = moment().utc();
-    logStage(start,`fill overheid ended at: ${end}`, targetGraph);
+    logStage(start,`fill overheid ended at: ${end.format()}`, targetGraph);
   } catch (e) {
     logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {

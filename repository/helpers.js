@@ -568,7 +568,7 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
   `, true);
 
 	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return `<${binding.s.value}> ext:tracesLineageTo <${bindings.agenda.value}> .`;
+		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .`;
 	});
 
   if(!targets || targets.length == 0){
