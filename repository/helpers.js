@@ -423,7 +423,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        
       ${extraFilters}
     }
-  } LIMIT ${batchSize}`;
+  } LIMIT ${smallBatchSize}`;
 
 	const result = await queryEnv.run(query, true);
 
@@ -486,7 +486,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
        
        ${extraFilters}
     }
-  } LIMIT ${batchSize}`;
+  } LIMIT ${smallBatchSize}`;
 
   const result = await queryEnv.run(query, true);
 
