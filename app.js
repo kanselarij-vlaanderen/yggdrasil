@@ -9,6 +9,10 @@ const fillInterneOverheid = require('./repository/fill-intern-overheid');
 const fillInterneRegering = require('./repository/fill-intern-regering');
 const fillPublic = require('./repository/fill-public');
 
+if (!process.env.DIRECT_ENDPOINT) {
+  throw new Error("DIRECT_ENDPOINT not set!")
+}
+
 app.use(bodyParser.json({ type: 'application/json' , limit: '50mb' }));
 app.use(cors());
 

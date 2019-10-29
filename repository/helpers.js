@@ -411,7 +411,7 @@ const addVisibleNotulen = (queryEnv, extraFilters) => {
 	return queryEnv.run(query, true);
 };
 
-const addRelatedToAgendaItemBatched = (queryEnv, extraFilters) => {
+const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
 	const query = `
@@ -425,12 +425,7 @@ const addRelatedToAgendaItemBatched = (queryEnv, extraFilters) => {
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
-   INSERT {
-     GRAPH <${queryEnv.tempGraph}> {
-       ?s a ?thing .
-       ?s ext:tracesLineageTo ?agenda .
-     }
-   } WHERE {
+   SELECT ?s ?thing ?agenda WHERE {
      { SELECT ?target ?agenda WHERE {
        GRAPH <${queryEnv.tempGraph}> {
          ?target a besluit:Agendapunt .
@@ -441,10 +436,35 @@ const addRelatedToAgendaItemBatched = (queryEnv, extraFilters) => {
        ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ext:heeftVerdaagd | besluitvorming:opmerking ) ?s .  
        ?s a ?thing .
        
+       FILTER NOT EXISTS {
+         GRAPH <${queryEnv.tempGraph}> {
+           ?s ext:tracesLineageTo ?agenda .
+         }
+       }
+       
       ${extraFilters}
     }
-  } LIMIT ${batchSize}`;
-	return queryEnv.run(query, true);
+  } LIMIT ${smallBatchSize}`;
+
+	const result = await queryEnv.run(query, true);
+
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .
+<${binding.s.value}> a <${binding.thing.value}> .`;
+	});
+
+	if(targets.length < 1){
+		return;
+	}
+	const update = `
+   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  
+   INSERT DATA {
+     GRAPH <${queryEnv.tempGraph}> {
+       ${targets.join('\n')}
+     }
+   }`;
+	return queryEnv.run(update, true);
 };
 
 const addRelatedToAgendaItem = async (queryEnv, extraFilters) => {
@@ -453,10 +473,10 @@ const addRelatedToAgendaItem = async (queryEnv, extraFilters) => {
 	}, queryEnv, 0, queryEnv.tempGraph);
 };
 
-const addRelatedToSubcaseBatched = (queryEnv, extraFilters) => {
+const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
-	const query = `
+	let query = `
    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
    PREFIX dct: <http://purl.org/dc/terms/>
    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -467,26 +487,47 @@ const addRelatedToSubcaseBatched = (queryEnv, extraFilters) => {
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
-   INSERT {
-     GRAPH <${queryEnv.tempGraph}> {
-       ?s a ?thing .
-       ?s ext:tracesLineageTo ?agenda .
-     }
-   } WHERE {
-     { SELECT ?target ?agenda WHERE {
-       GRAPH <${queryEnv.tempGraph}> {
-         ?target a dbpedia:UnitOfWork .
-         ?target ext:tracesLineageTo ?agenda .
-       }
-     }}
+   SELECT ?s ?thing ?agenda WHERE {
+		 { SELECT ?target ?agenda WHERE {
+		   GRAPH <${queryEnv.tempGraph}> {
+			   ?target a dbpedia:UnitOfWork .
+			   ?target ext:tracesLineageTo ?agenda .
+		   }
+		 }}
+
      GRAPH <${queryEnv.adminGraph}> {
        ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
        
+       FILTER NOT EXISTS {
+         GRAPH <${queryEnv.tempGraph}> {
+           ?s ext:tracesLineageTo ?agenda .
+				 }
+       }
+       
        ${extraFilters}
     }
-  } LIMIT ${batchSize}`;
-	return queryEnv.run(query, true);
+  } LIMIT ${smallBatchSize}`;
+
+  const result = await queryEnv.run(query, true);
+
+	const targets = JSON.parse(result).results.bindings.map((binding) => {
+		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .
+<${binding.s.value}> a <${binding.thing.value}> .`;
+	});
+
+  if(targets.length < 1){
+		return;
+  }
+	const update = `
+   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  
+   INSERT DATA {
+     GRAPH <${queryEnv.tempGraph}> {
+       ${targets.join('\n')}
+     }
+   }`;
+	return queryEnv.run(update, true);
 };
 
 const addRelatedToSubcase = async (queryEnv, extraFilters) => {
@@ -589,14 +630,15 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
   `, true);
 
 	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return `<${binding.s.value}> ext:tracesLineageTo <${bindings.agenda.value}> .`;
+		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .`;
 	});
 
   if(!targets || targets.length == 0){
 		return;
   }
 	const query = `
-	DELETE DATA {
+	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  DELETE DATA {
 		GRAPH <${queryEnv.targetGraph}> {
 			${targets.join("\n")}
 		}
