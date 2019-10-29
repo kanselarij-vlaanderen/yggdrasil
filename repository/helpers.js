@@ -94,6 +94,12 @@ const notInternOverheidFilter = `
     }
 `;
 
+const transformFilter = (originalFilter, newTargetVariable, pathToTarget) => {
+  let newFilter = originalFilter.split("?s ").join(`${newTargetVariable} `);
+  return newFilter.split("NOT EXISTS {").join(`NOT EXISTS {
+    ${pathToTarget}`);
+};
+
 const addRelatedFiles = (queryEnv, extraFilters) => {
 	extraFilters = extraFilters || '';
 
@@ -352,6 +358,21 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?agenda ( ${relationProperties.join(" | ")} ) ?s .   
       ?s a ?thing .
       
+      { { ?s a dbpedia:Case .
+          ?s ^besluitvorming:isGeagendeerdVia ?agendaitem .
+          ?agenda dct:hasPart ?agendaitem .
+          ?agendaitem besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636>.
+        }
+        UNION
+        { ?s besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636> . } 
+        UNION 
+        { FILTER NOT EXISTS {
+            VALUES (?restrictedType) {
+              (dbpedia:Case) (besluit:AgendaPunt)
+            }
+            ?s a ?restrictedType. 
+          } }}
+
       ${extraFilters}
     }
   }`;
@@ -837,7 +858,7 @@ const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
       
       ?agenda besluit:isAangemaaktVoor ?session .
       ?session ext:releasedDecisions ?date .
-      ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?date .
+      ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
       
       ${extraFilters}
     }
@@ -862,6 +883,7 @@ module.exports = {
 	notConfidentialFilter,
 	notInternRegeringFilter,
 	notInternOverheidFilter,
+	transformFilter,
 	addRelatedFiles,
 	cleanup,
 	fillOutDetailsOnVisibleItems,
