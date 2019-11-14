@@ -4,6 +4,7 @@ import {query} from './direct-sparql-endpoint';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
+const minimalBatchSize = process.env.MINIMAL_BATCH_SIZE || 100;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
 	const vars = data.head.vars;
@@ -605,7 +606,7 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
 				?s ext:tracesLineageTo ?agenda .
 			}
 		}
-	} LIMIT ${batchSize}
+	} LIMIT ${minimalBatchSize}
   `, true);
 
 	const targets = JSON.parse(result).results.bindings.map((binding) => {

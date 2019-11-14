@@ -1,6 +1,7 @@
 import httpContext from 'express-http-context';
 import SC2 from 'sparql-client-2';
 const { SparqlClient } = SC2;
+const retryTimeout = parseInt(process.env.RETRY_TIMEOUT || "1000");
 
 const request = require('request-promise');
 
@@ -50,7 +51,6 @@ function query( args, queryString, retries ) {
   if (!retries){
     retries = 0;
   }
-
   var options = { method: 'POST',
     url: args.url || process.env.MU_SPARQL_ENDPOINT,
     headers:
@@ -89,10 +89,23 @@ function query( args, queryString, retries ) {
     console.log(`OPTIONS set on SPARQL request: ${JSON.stringify(options)}`);
   }
 
-  return request(options).catch((e) => {
+  return request(options)
+  .catch((e) => {
     if (retries < 5){
       console.log(`Failed executing query ${queryString}`);
-      return query(args, queryString, retries + 1);
+      const newRetryCount = retries + 1;
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          query(args, queryString, newRetryCount)
+          .then((result)=> {
+            resolve(result);
+          })
+          .catch((error) => {
+            reject(error);
+          });
+        }, 1 + ((newRetryCount - 1) * retryTimeout ));
+      });
+
     }
     console.log(`Error: failed executing query in final try: ${queryString}
     
