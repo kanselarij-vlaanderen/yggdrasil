@@ -834,7 +834,7 @@ const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
       ?target ext:tracesLineageTo ?agenda.
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?s (^prov:generated | ^ext:algemeneNieuwsbrief ) ?target .
+      ?target (prov:generated | ext:algemeneNieuwsbrief ) ?s .
       
       ?agenda besluit:isAangemaaktVoor ?session .
       ?session ext:releasedDecisions ?date .
