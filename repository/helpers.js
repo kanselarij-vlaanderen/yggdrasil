@@ -141,6 +141,7 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
 
 const cleanup = (queryEnv) => {
   const query = `
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   DELETE {
     GRAPH ?g {
       ?s ?p ?o.
