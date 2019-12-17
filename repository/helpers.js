@@ -141,7 +141,17 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
 
 const cleanup = (queryEnv) => {
   const query = `
-  DROP SILENT GRAPH <${queryEnv.tempGraph}>`;
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  DELETE {
+    GRAPH ?g {
+      ?s ?p ?o.
+    }
+  } WHERE {
+    GRAPH ?g {
+      ?g a ext:TempGraph .
+      ?s ?p ?o.
+    }
+  }`;
   return queryEnv.run(query, true);
 };
 
@@ -176,7 +186,6 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s ?p ?o.
-      ?s ext:yggdrasilLeft ?s.
     }
   } WHERE {
     VALUES ( ?s ) {
@@ -191,7 +200,19 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
 			?s ?p ?o.
 		}
   }`;
-	return queryEnv.run(query, true);
+	await queryEnv.run(query, true);
+
+  // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+  const doneTriples = targets.map((target) => {
+    return `      <${target}> ext:yggdrasilLeft <${target}> .`;
+  });
+	await queryEnv.run(`
+	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT DATA {
+	  GRAPH <${queryEnv.tempGraph}> {
+      ${doneTriples.join("\n")}
+    }
+	}`, true);
 };
 
 const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
@@ -225,7 +246,6 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?oo ?pp ?s.
-      ?s ext:yggdrasilRight ?s.
     }
   } WHERE {
 		VALUES ( ?s ) {
@@ -239,7 +259,18 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
 			?oo ?pp ?s.
 		}
   }`;
-  return queryEnv.run(query, true);
+  await queryEnv.run(query, true);
+	// mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+	const doneTriples = targets.map((target) => {
+		return `      <${target}> ext:yggdrasilRight <${target}> .`;
+	});
+	await queryEnv.run(`
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+	INSERT DATA {
+	  GRAPH <${queryEnv.tempGraph}> {
+      ${doneTriples.join("\n")}
+    }
+	}`, true);
 };
 
 const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
@@ -686,9 +717,6 @@ const copySetOfTempToTarget = async function(queryEnv){
 		  GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
       }
-      GRAPH <${queryEnv.tempGraph}> {
-        ?s ext:yggdrasilMoved ?s .
-      }
 		} WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         VALUES (?s) {
@@ -699,6 +727,18 @@ const copySetOfTempToTarget = async function(queryEnv){
       }
     }`;
 	await queryEnv.run(query);
+
+	// mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+	const doneTriples = targets.map((target) => {
+		return `      <${target}> ext:yggdrasilMoved <${target}> .`;
+	});
+	await queryEnv.run(`
+	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  INSERT DATA {
+	  GRAPH <${queryEnv.tempGraph}> {
+      ${doneTriples.join("\n")}
+    }
+	}`, true);
 };
 
 const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas){
