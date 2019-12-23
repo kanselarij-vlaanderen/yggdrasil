@@ -308,16 +308,13 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
   });
 };
 
-const fillOutDetailsOnVisibleItems = (queryEnv) => {
-  // TODO use for-loop instead of Promise.all
-  return Promise.all([
-    repeatUntilTripleCountConstant(() => {
-      return fillOutDetailsOnVisibleItemsLeft(queryEnv);
-    }, queryEnv, 0),
-    repeatUntilTripleCountConstant(() => {
+const fillOutDetailsOnVisibleItems = async (queryEnv) => {
+  await repeatUntilTripleCountConstant(() => {
+    return fillOutDetailsOnVisibleItemsLeft(queryEnv);
+  }, queryEnv, 0);
+  await repeatUntilTripleCountConstant(() => {
       return fillOutDetailsOnVisibleItemsRight(queryEnv);
-    }, queryEnv, 0)
-  ]);
+  }, queryEnv, 0);
 };
 
 const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
@@ -380,7 +377,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
   extraFilters = extraFilters || '';
-  
+
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -578,11 +575,8 @@ const addRelatedToSubcase = async (queryEnv, extraFilters) => {
 };
 
 const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
-  // TODO use for-loop instead of Promise.all
-  return Promise.all([
-    addRelatedToAgendaItem(queryEnv, extraFilters),
-    addRelatedToSubcase(queryEnv, extraFilters)
-  ]);
+  await addRelatedToAgendaItem(queryEnv, extraFilters);
+  await addRelatedToSubcase(queryEnv, extraFilters);
 };
 
 const runStage = async function(message, queryEnv, stage){
