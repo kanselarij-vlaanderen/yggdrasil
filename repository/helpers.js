@@ -172,52 +172,46 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
         }
       }
     } LIMIT ${batchSize}`, true);
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return binding.s.value;
-	});
-	if(targets.length == 0){
-		return;
-	}
 
-	const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s ?p ?o.
-    }
-  } WHERE {
-    VALUES ( ?s ) {
-       ( <${targets.join('>) (<')}> )
-    }
-    GRAPH <${queryEnv.tempGraph}> {
-		   ?s a ?thing .
-		   ?s ext:tracesLineageTo ?agenda .
-	  }
-	  
-		GRAPH <${queryEnv.adminGraph}> {
-			?s ?p ?o.
-		}
-  }`;
-	await queryEnv.run(query, true);
+  const targets = JSON.parse(result).results.bindings.map((binding) => binding.s.value);
 
-  // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
-  const doneTriples = targets.map((target) => {
-    return `      <${target}> ext:yggdrasilLeft <${target}> .`;
-  });
-	await queryEnv.run(`
-	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT DATA {
-	  GRAPH <${queryEnv.tempGraph}> {
-      ${doneTriples.join("\n")}
-    }
-	}`, true);
+  for (let target of targets) {
+    const query = `
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+      PREFIX dbpedia: <http://dbpedia.org/ontology/>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+      INSERT {
+        GRAPH <${queryEnv.tempGraph}> {
+          <${target}> ?p ?o.
+        }
+      } WHERE {
+        VALUES ( ?s ) {
+           ( <${target}> )
+        }
+        GRAPH <${queryEnv.tempGraph}> {
+                   ?s a ?thing .
+                   ?s ext:tracesLineageTo ?agenda .
+        }
+        GRAPH <${queryEnv.adminGraph}> {
+            ?s ?p ?o.
+        }
+      }`;
+    await queryEnv.run(query, true);
+
+    // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+    await queryEnv.run(`
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      INSERT DATA {
+        GRAPH <${queryEnv.tempGraph}> {
+           <${target}> ext:yggdrasilLeft <${target}> .
+        }
+      }`, true);
+  }
 };
 
 const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
@@ -234,50 +228,45 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
         }
       }
     } LIMIT ${batchSize}`, true);
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return binding.s.value;
-	});
-	if(targets.length == 0){
-		return;
-	}
 
-	const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?oo ?pp ?s.
-    }
-  } WHERE {
-		VALUES ( ?s ) {
-       ( <${targets.join('>) (<')}> )
-    }
-    GRAPH <${queryEnv.tempGraph}> {
-			?s a ?thing .
-		}
-	
-		GRAPH <${queryEnv.adminGraph}> {
-			?oo ?pp ?s.
-		}
-  }`;
-  await queryEnv.run(query, true);
-	// mark done as separate step because transactional behaviour of queries might not actually be trustworthy
-	const doneTriples = targets.map((target) => {
-		return `      <${target}> ext:yggdrasilRight <${target}> .`;
-	});
-	await queryEnv.run(`
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-	INSERT DATA {
-	  GRAPH <${queryEnv.tempGraph}> {
-      ${doneTriples.join("\n")}
-    }
-	}`, true);
+  const targets = JSON.parse(result).results.bindings.map((binding) => binding.s.value);
+
+  for (let target of targets) {
+    const query = `
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+      PREFIX dbpedia: <http://dbpedia.org/ontology/>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+      INSERT {
+        GRAPH <${queryEnv.tempGraph}> {
+          ?oo ?pp ?s.
+        }
+      } WHERE {
+        VALUES ( ?s ) {
+           ( <${target}> )
+        }
+        GRAPH <${queryEnv.tempGraph}> {
+           ?s a ?thing .
+        }
+        GRAPH <${queryEnv.adminGraph}> {
+           ?oo ?pp ?s.
+        }
+    }`;
+    await queryEnv.run(query, true);
+
+    // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+    await queryEnv.run(`
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      INSERT DATA {
+        GRAPH <${queryEnv.tempGraph}> {
+           <${target}> ext:yggdrasilRight <${target}> .
+        }
+      }`, true);
+  }
 };
 
 const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
