@@ -7,28 +7,28 @@ const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
 const minimalBatchSize = process.env.MINIMAL_BATCH_SIZE || 100;
 
 const parseSparQlResults = (data, multiValueProperties = []) => {
-	const vars = data.head.vars;
-	return data.results.bindings.map(binding => {
-		let obj = {};
+  const vars = data.head.vars;
+  return data.results.bindings.map(binding => {
+    let obj = {};
 
-		vars.forEach(varKey => {
-			if (binding[varKey]){
-				let val = binding[varKey].value;
-				if (multiValueProperties.includes(varKey)){
-					val = val.split('|')
-				}
-				obj[varKey] = val;
-			}else {
-				obj[varKey] = null;
-			}
-		});
-		return obj;
-	})
+    vars.forEach(varKey => {
+      if (binding[varKey]){
+        let val = binding[varKey].value;
+        if (multiValueProperties.includes(varKey)){
+          val = val.split('|');
+        }
+        obj[varKey] = val;
+      }else {
+        obj[varKey] = null;
+      }
+    });
+    return obj;
+  });
 };
 
 const logStage = (start, logMessage, graph) => {
-	const time = moment().utc().diff(start, 'seconds', true);
-	console.log(`${graph} => ${logMessage} -- time: ${time.toFixed(3)}s`);
+  const time = moment().utc().diff(start, 'seconds', true);
+  console.log(`${graph} => ${logMessage} -- time: ${time.toFixed(3)}s`);
 };
 
 const removeInfoNotInTemp = (queryEnv) => {
@@ -71,7 +71,7 @@ const notInternRegeringFilter = `
     FILTER NOT EXISTS {
       ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> .
       VALUES (?accessPredicate ) {
-        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> ) 
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
@@ -87,7 +87,7 @@ const notInternOverheidFilter = `
         ( <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> ) .
       }
       VALUES (?accessPredicate ) {
-        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> ) 
+        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
@@ -102,7 +102,7 @@ const transformFilter = (originalFilter, newTargetVariable, pathToTarget) => {
 };
 
 const addRelatedFiles = (queryEnv, extraFilters) => {
-	extraFilters = extraFilters || '';
+  extraFilters = extraFilters || '';
 
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -120,7 +120,7 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
       ?s ext:tracesLineageTo ?agenda .
       ?second ext:tracesLineageTo ?agenda .
     }
-	} WHERE {
+        } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
       ?target ext:tracesLineageTo ?agenda .
@@ -156,9 +156,9 @@ const cleanup = (queryEnv) => {
 };
 
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
-	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
-		  GRAPH <${queryEnv.tempGraph}> {
+      GRAPH <${queryEnv.tempGraph}> {
         ?s ext:tracesLineageTo ?agenda .
       }
       FILTER NOT EXISTS {
@@ -216,9 +216,9 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
 };
 
 const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
-	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
-		  GRAPH <${queryEnv.tempGraph}> {
+      GRAPH <${queryEnv.tempGraph}> {
         ?s ext:tracesLineageTo ?agenda .
       }
       FILTER NOT EXISTS {
@@ -274,46 +274,46 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
 };
 
 const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
-	const startQ = moment();
-	const funResult = await fun();
-	const timeQuery = moment().diff(startQ, 'seconds', true).toFixed(3);
-	graph = graph || queryEnv.tempGraph;
-	const start = moment();
-	const query = `SELECT (COUNT(?s) AS ?count) WHERE {
+  const startQ = moment();
+  const funResult = await fun();
+  const timeQuery = moment().diff(startQ, 'seconds', true).toFixed(3);
+  graph = graph || queryEnv.tempGraph;
+  const start = moment();
+  const query = `SELECT (COUNT(?s) AS ?count) WHERE {
     GRAPH <${graph}> {
       ?s ?p ?o.
     }
   }`;
-	return queryEnv.run(query, true).then((result) => {
-		const timeCount = moment().diff(start, 'seconds', true).toFixed(3);
-		let count = 0;
-		try {
-			count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
-			console.log(`<${graph}> size is now ${count}... -- q: ${timeQuery}s, t: ${timeCount}s`);
-		}catch (e) {
-			console.log('no matching results');
-		}
-		if(count == previousCount){
-			return funResult;
-		}else {
-			return repeatUntilTripleCountConstant(fun, queryEnv, count, graph);
-		}
-	});
+  return queryEnv.run(query, true).then((result) => {
+    const timeCount = moment().diff(start, 'seconds', true).toFixed(3);
+    let count = 0;
+    try {
+      count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
+      console.log(`<${graph}> size is now ${count}... -- q: ${timeQuery}s, t: ${timeCount}s`);
+    }catch (e) {
+      console.log('no matching results');
+    }
+    if(count == previousCount){
+      return funResult;
+    }else {
+      return repeatUntilTripleCountConstant(fun, queryEnv, count, graph);
+    }
+  });
 };
 
 const fillOutDetailsOnVisibleItems = (queryEnv) => {
-	return Promise.all([
-		repeatUntilTripleCountConstant(() => {
-			return fillOutDetailsOnVisibleItemsLeft(queryEnv);
-		}, queryEnv, 0),
-		repeatUntilTripleCountConstant(() => {
-			return fillOutDetailsOnVisibleItemsRight(queryEnv);
-		}, queryEnv, 0)
-	]);
+  return Promise.all([
+    repeatUntilTripleCountConstant(() => {
+      return fillOutDetailsOnVisibleItemsLeft(queryEnv);
+    }, queryEnv, 0),
+    repeatUntilTripleCountConstant(() => {
+      return fillOutDetailsOnVisibleItemsRight(queryEnv);
+    }, queryEnv, 0)
+  ]);
 };
 
 const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
-	extraFilters = extraFilters || '';
+  extraFilters = extraFilters || '';
   const queryTemplate = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -332,7 +332,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       ?document ext:tracesLineageTo ?agenda .
     }
   } WHERE {
-    { SELECT ?target ?agenda WHERE { 
+    { SELECT ?target ?agenda WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         ?target a ?targetClass .
         ?target ext:tracesLineageTo ?agenda .
@@ -344,7 +344,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
         GRAPH <${queryEnv.tempGraph}> {
           ?s a ext:DocumentVersie .
         }
-      }   
+      }
       OPTIONAL {
         ?document besluitvorming:heeftVersie ?s .
       }
@@ -356,20 +356,20 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
     }
   }`;
   const constraints = [`
-		?s a ext:DocumentVersie .
-		?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
+                ?s a ext:DocumentVersie .
+                ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
   `,`
     ?s a ext:DocumentVersie .
     ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / besluitvorming:heeftVersie ?s .
   `];
 
-	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
-	await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
+  await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
+  await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-	relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
-	extraFilters = extraFilters || '';
+  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
+  extraFilters = extraFilters || '';
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -387,22 +387,22 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?agenda a besluitvorming:Agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?agenda ( ${relationProperties.join(" | ")} ) ?s .   
+      ?agenda ( ${relationProperties.join(" | ")} ) ?s .
       ?s a ?thing .
-      
+
       { { ?s a dbpedia:Case .
           ?s ^besluitvorming:isGeagendeerdVia ?agendaitem .
           ?agenda dct:hasPart ?agendaitem .
           ?agendaitem besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636>.
         }
         UNION
-        { ?s besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636> . } 
-        UNION 
+        { ?s besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636> . }
+        UNION
         { FILTER NOT EXISTS {
             VALUES (?restrictedType) {
               (dbpedia:Case) (besluit:AgendaPunt)
             }
-            ?s a ?restrictedType. 
+            ?s a ?restrictedType.
           } }}
 
       ${extraFilters}
@@ -412,7 +412,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
 };
 
 const addVisibleNotulen = (queryEnv, extraFilters) => {
-	const query = `
+  const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -430,8 +430,8 @@ const addVisibleNotulen = (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.adminGraph}> {
       ?agenda besluit:isAangemaaktVoor ?session.
       ?session ext:releasedDecisions ?date.
-      
-      { { 
+
+      { {
         ?session ext:algemeneNotulen ?s  .
         } UNION {
         ?agenda dct:hasPart / ext:notulenVanAgendaPunt ?s .
@@ -440,13 +440,13 @@ const addVisibleNotulen = (queryEnv, extraFilters) => {
       ${extraFilters}
     }
   }`;
-	return queryEnv.run(query, true);
+  return queryEnv.run(query, true);
 };
 
 const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
-	extraFilters = extraFilters || '';
+  extraFilters = extraFilters || '';
 
-	const query = `
+  const query = `
    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
    PREFIX dct: <http://purl.org/dc/terms/>
    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -465,50 +465,50 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ext:heeftVerdaagd | besluitvorming:opmerking ) ?s .  
+       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ext:heeftVerdaagd | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
-       
+
        FILTER NOT EXISTS {
          GRAPH <${queryEnv.tempGraph}> {
            ?s ext:tracesLineageTo ?agenda .
          }
        }
-       
+
       ${extraFilters}
     }
   } LIMIT ${smallBatchSize}`;
 
-	const result = await queryEnv.run(query, true);
+  const result = await queryEnv.run(query, true);
 
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .
+  const targets = JSON.parse(result).results.bindings.map((binding) => {
+    return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .
 <${binding.s.value}> a <${binding.thing.value}> .`;
-	});
+  });
 
-	if(targets.length < 1){
-		return;
-	}
-	const update = `
+  if(targets.length < 1){
+    return;
+  }
+  const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  
+
    INSERT DATA {
      GRAPH <${queryEnv.tempGraph}> {
        ${targets.join('\n')}
      }
    }`;
-	return queryEnv.run(update, true);
+  return queryEnv.run(update, true);
 };
 
 const addRelatedToAgendaItem = async (queryEnv, extraFilters) => {
-	await repeatUntilTripleCountConstant(() => {
-		return addRelatedToAgendaItemBatched(queryEnv, extraFilters);
-	}, queryEnv, 0, queryEnv.tempGraph);
+  await repeatUntilTripleCountConstant(() => {
+    return addRelatedToAgendaItemBatched(queryEnv, extraFilters);
+  }, queryEnv, 0, queryEnv.tempGraph);
 };
 
 const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
-	extraFilters = extraFilters || '';
+  extraFilters = extraFilters || '';
 
-	let query = `
+  let query = `
    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
    PREFIX dct: <http://purl.org/dc/terms/>
    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -520,75 +520,75 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
    SELECT ?s ?thing ?agenda WHERE {
-		 { SELECT ?target ?agenda WHERE {
-		   GRAPH <${queryEnv.tempGraph}> {
-			   ?target a dbpedia:UnitOfWork .
-			   ?target ext:tracesLineageTo ?agenda .
-		   }
-		 }}
+                 { SELECT ?target ?agenda WHERE {
+                   GRAPH <${queryEnv.tempGraph}> {
+                           ?target a dbpedia:UnitOfWork .
+                           ?target ext:tracesLineageTo ?agenda .
+                   }
+                 }}
 
      GRAPH <${queryEnv.adminGraph}> {
        ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
-       
+
        FILTER NOT EXISTS {
          GRAPH <${queryEnv.tempGraph}> {
            ?s ext:tracesLineageTo ?agenda .
-				 }
+                                 }
        }
-       
+
        ${extraFilters}
     }
   } LIMIT ${smallBatchSize}`;
 
   const result = await queryEnv.run(query, true);
 
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .
+  const targets = JSON.parse(result).results.bindings.map((binding) => {
+    return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .
 <${binding.s.value}> a <${binding.thing.value}> .`;
-	});
+  });
 
   if(targets.length < 1){
-		return;
+    return;
   }
-	const update = `
+  const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  
+
    INSERT DATA {
      GRAPH <${queryEnv.tempGraph}> {
        ${targets.join('\n')}
      }
    }`;
-	return queryEnv.run(update, true);
+  return queryEnv.run(update, true);
 };
 
 const addRelatedToSubcase = async (queryEnv, extraFilters) => {
-	await repeatUntilTripleCountConstant(() => {
-		return addRelatedToSubcaseBatched(queryEnv, extraFilters);
-	}, queryEnv, 0, queryEnv.tempGraph);
+  await repeatUntilTripleCountConstant(() => {
+    return addRelatedToSubcaseBatched(queryEnv, extraFilters);
+  }, queryEnv, 0, queryEnv.tempGraph);
 };
 
 const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
-	return Promise.all([
-		addRelatedToAgendaItem(queryEnv, extraFilters),
-	  addRelatedToSubcase(queryEnv, extraFilters)
-	]);
+  return Promise.all([
+    addRelatedToAgendaItem(queryEnv, extraFilters),
+    addRelatedToSubcase(queryEnv, extraFilters)
+  ]);
 };
 
 const runStage = async function(message, queryEnv, stage){
-	let stageStart = moment().utc();
-	await stage();
-	logStage(stageStart, message, queryEnv.targetGraph);
+  let stageStart = moment().utc();
+  await stage();
+  logStage(stageStart, message, queryEnv.targetGraph);
 };
 
 const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
-	if(!targetedAgendas){
-		return;
-	}
+  if(!targetedAgendas){
+    return;
+  }
 
-	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
-		  VALUES (?agenda) {
+                  VALUES (?agenda) {
         (<${targetedAgendas.join('>) (<')}>)
       }
       GRAPH <${queryEnv.targetGraph}> {
@@ -600,103 +600,103 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
         }
       }
     } LIMIT ${smallBatchSize}`, true);
-	  const targets = JSON.parse(result).results.bindings.map((binding) => {
-		  return binding.s.value;
-	  });
-	  if(targets.length == 0){
-  		return;
-  	}
+  const targets = JSON.parse(result).results.bindings.map((binding) => {
+    return binding.s.value;
+  });
+  if(targets.length == 0){
+    return;
+  }
 
-	  const queryRight = `
-		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const queryRight = `
+                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
-		  GRAPH <${queryEnv.targetGraph}> {
+                  GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
-		  }
-		} WHERE {
-		  VALUES ( ?s ) {
-		    ( <${targets.join('>) (<')}> )
-		  }
-		  GRAPH <${queryEnv.targetGraph}> {
-		    ?s ?p ?o .
-		  }
-		}`;
-	await queryEnv.run(queryRight);
-	const queryLeft = `
-		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+                  }
+                } WHERE {
+                  VALUES ( ?s ) {
+                    ( <${targets.join('>) (<')}> )
+                  }
+                  GRAPH <${queryEnv.targetGraph}> {
+                    ?s ?p ?o .
+                  }
+                }`;
+  await queryEnv.run(queryRight);
+  const queryLeft = `
+                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
-		  GRAPH <${queryEnv.targetGraph}> {
-		    ?oo ?pp ?s .
-		  }
-		} WHERE {
-		  VALUES ( ?s ) {
-		    ( <${targets.join('>) (<')}> )
-		  }
-		  GRAPH <${queryEnv.targetGraph}> {
-		    ?oo ?pp ?s .
-		  }
-		}`;
-	await queryEnv.run(queryLeft);
+                  GRAPH <${queryEnv.targetGraph}> {
+                    ?oo ?pp ?s .
+                  }
+                } WHERE {
+                  VALUES ( ?s ) {
+                    ( <${targets.join('>) (<')}> )
+                  }
+                  GRAPH <${queryEnv.targetGraph}> {
+                    ?oo ?pp ?s .
+                  }
+                }`;
+  await queryEnv.run(queryLeft);
 };
 
 const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
-	if(!targetedAgendas){
-		return;
-	}
+  if(!targetedAgendas){
+    return;
+  }
 
-	const result = await queryEnv.run(`
+  const result = await queryEnv.run(`
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   SELECT ?s ?agenda WHERE {
-		VALUES (?agenda) {
-			(<${targetedAgendas.join('>) (<')}>)
-		}
-		GRAPH <${queryEnv.targetGraph}> {
-			?s ext:tracesLineageTo ?agenda .
-		}
-		FILTER NOT EXISTS {
-			GRAPH <${queryEnv.tempGraph}> {
-				?s ext:tracesLineageTo ?agenda .
-			}
-		}
-	} LIMIT ${minimalBatchSize}
+                VALUES (?agenda) {
+                        (<${targetedAgendas.join('>) (<')}>)
+                }
+                GRAPH <${queryEnv.targetGraph}> {
+                        ?s ext:tracesLineageTo ?agenda .
+                }
+                FILTER NOT EXISTS {
+                        GRAPH <${queryEnv.tempGraph}> {
+                                ?s ext:tracesLineageTo ?agenda .
+                        }
+                }
+        } LIMIT ${minimalBatchSize}
   `, true);
 
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .`;
-	});
+  const targets = JSON.parse(result).results.bindings.map((binding) => {
+    return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .`;
+  });
 
   if(!targets || targets.length == 0){
-		return;
+    return;
   }
-	const query = `
-	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const query = `
+        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   DELETE DATA {
-		GRAPH <${queryEnv.targetGraph}> {
-			${targets.join("\n")}
-		}
-	}`;
-	await queryEnv.run(query);
+                GRAPH <${queryEnv.targetGraph}> {
+                        ${targets.join("\n")}
+                }
+        }`;
+  await queryEnv.run(query);
 };
 
 const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
-	await repeatUntilTripleCountConstant(() => {
-		return removeThingsWithLineageNoLongerInTempBatched(queryEnv,targetedAgendas);
-	}, queryEnv, 0, queryEnv.targetGraph);
-	await repeatUntilTripleCountConstant(() => {
-		return removeLineageWhereLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
-	}, queryEnv, 0, queryEnv.targetGraph);
+  await repeatUntilTripleCountConstant(() => {
+    return removeThingsWithLineageNoLongerInTempBatched(queryEnv,targetedAgendas);
+  }, queryEnv, 0, queryEnv.targetGraph);
+  await repeatUntilTripleCountConstant(() => {
+    return removeLineageWhereLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
+  }, queryEnv, 0, queryEnv.targetGraph);
 };
 
 const copyTempToTarget = async function(queryEnv){
-	return repeatUntilTripleCountConstant(() => {
-		return copySetOfTempToTarget(queryEnv);
-	}, queryEnv, 0, queryEnv.targetGraph);
+  return repeatUntilTripleCountConstant(() => {
+    return copySetOfTempToTarget(queryEnv);
+  }, queryEnv, 0, queryEnv.targetGraph);
 };
 
 const copySetOfTempToTarget = async function(queryEnv){
-	const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
-		  GRAPH <${queryEnv.tempGraph}> {
+                  GRAPH <${queryEnv.tempGraph}> {
         ?s a ?thing .
       }
       FILTER NOT EXISTS {
@@ -705,136 +705,136 @@ const copySetOfTempToTarget = async function(queryEnv){
         }
       }
     } LIMIT ${smallBatchSize}`, true);
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return binding.s.value;
-	});
-	if(targets.length == 0){
-		return;
-	}
-	const query = `
-		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const targets = JSON.parse(result).results.bindings.map((binding) => {
+    return binding.s.value;
+  });
+  if(targets.length == 0){
+    return;
+  }
+  const query = `
+                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT {
-		  GRAPH <${queryEnv.targetGraph}> {
+                  GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
       }
-		} WHERE {
+                } WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         VALUES (?s) {
           ( <${targets.join('>) (<')}> )
         }
-				?s ?p ?o .
-				FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
+                                ?s ?p ?o .
+                                FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
     }`;
-	await queryEnv.run(query);
+  await queryEnv.run(query);
 
-	// mark done as separate step because transactional behaviour of queries might not actually be trustworthy
-	const doneTriples = targets.map((target) => {
-		return `      <${target}> ext:yggdrasilMoved <${target}> .`;
-	});
-	await queryEnv.run(`
-	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+  const doneTriples = targets.map((target) => {
+    return `      <${target}> ext:yggdrasilMoved <${target}> .`;
+  });
+  await queryEnv.run(`
+        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   INSERT DATA {
-	  GRAPH <${queryEnv.tempGraph}> {
+          GRAPH <${queryEnv.tempGraph}> {
       ${doneTriples.join("\n")}
     }
-	}`, true);
+        }`, true);
 };
 
 const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas){
-	if(!targetedAgendas){
-		return;
-	}
-	const result = await queryEnv.run(`
+  if(!targetedAgendas){
+    return;
+  }
+  const result = await queryEnv.run(`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
       VALUES (?agenda) {
         (<${targetedAgendas.join('>) (<')}>)
       }
-  	  GRAPH <${queryEnv.targetGraph}> {
+          GRAPH <${queryEnv.targetGraph}> {
         ?s ext:tracesLineageTo ?agenda .
       }
       { {
-				GRAPH <${queryEnv.targetGraph}> {
-					?s ?p ?o .
-				}
-				FILTER NOT EXISTS {
-					GRAPH <${queryEnv.tempGraph}> {
-						?s ?p ?o.
-					}
-				}
-			 } UNION {
-				GRAPH <${queryEnv.targetGraph}> {
-					?oo ?pp ?s .
-				}
-				FILTER NOT EXISTS {
-					GRAPH <${queryEnv.tempGraph}> {
-						?oo ?pp ?s.
-					}
-				}
+                                GRAPH <${queryEnv.targetGraph}> {
+                                        ?s ?p ?o .
+                                }
+                                FILTER NOT EXISTS {
+                                        GRAPH <${queryEnv.tempGraph}> {
+                                                ?s ?p ?o.
+                                        }
+                                }
+                         } UNION {
+                                GRAPH <${queryEnv.targetGraph}> {
+                                        ?oo ?pp ?s .
+                                }
+                                FILTER NOT EXISTS {
+                                        GRAPH <${queryEnv.tempGraph}> {
+                                                ?oo ?pp ?s.
+                                        }
+                                }
       } }
     } LIMIT ${batchSize}`, true);
-	const targets = JSON.parse(result).results.bindings.map((binding) => {
-		return binding.s.value;
-	});
-	if(targets.length == 0){
-		return;
-	}
+  const targets = JSON.parse(result).results.bindings.map((binding) => {
+    return binding.s.value;
+  });
+  if(targets.length == 0){
+    return;
+  }
 
-	const query = `
-		PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const query = `
+                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
-		  GRAPH <${queryEnv.targetGraph}> {
+                  GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
-		    ?oo ?pp ?s .
-		  }
-		} WHERE {
-		  VALUES (?s) {
-		    ( <${targets.join('>) (<')}> )
-		  }
-			{ {
-				GRAPH <${queryEnv.targetGraph}> {
-					?s ?p ?o .
-				}
-				FILTER NOT EXISTS {
-					GRAPH <${queryEnv.tempGraph}> {
-						?s ?p ?o.
-					}
-				}
-			} UNION {
-				GRAPH <${queryEnv.targetGraph}> {
-					?oo ?pp ?s .
-				}
-				FILTER NOT EXISTS {
-					GRAPH <${queryEnv.tempGraph}> {
-						?oo ?pp ?s.
-					}
-				}
-		  } }
-		}`;
-	await queryEnv.run(query);
+                    ?oo ?pp ?s .
+                  }
+                } WHERE {
+                  VALUES (?s) {
+                    ( <${targets.join('>) (<')}> )
+                  }
+                        { {
+                                GRAPH <${queryEnv.targetGraph}> {
+                                        ?s ?p ?o .
+                                }
+                                FILTER NOT EXISTS {
+                                        GRAPH <${queryEnv.tempGraph}> {
+                                                ?s ?p ?o.
+                                        }
+                                }
+                        } UNION {
+                                GRAPH <${queryEnv.targetGraph}> {
+                                        ?oo ?pp ?s .
+                                }
+                                FILTER NOT EXISTS {
+                                        GRAPH <${queryEnv.tempGraph}> {
+                                                ?oo ?pp ?s.
+                                        }
+                                }
+                  } }
+                }`;
+  await queryEnv.run(query);
 };
 
 const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas) {
   return repeatUntilTripleCountConstant(() => {
-  	return removeStalePropertiesOfLineageBatch(queryEnv, targetedAgendas);
-	}, queryEnv, 0, queryEnv.targetGraph);
+    return removeStalePropertiesOfLineageBatch(queryEnv, targetedAgendas);
+  }, queryEnv, 0, queryEnv.targetGraph);
 };
 
 const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas){
-	await removeThingsWithLineageNoLongerInTemp(queryEnv, targetedAgendas);
-	await removeStalePropertiesOfLineage(queryEnv, targetedAgendas);
+  await removeThingsWithLineageNoLongerInTemp(queryEnv, targetedAgendas);
+  await removeStalePropertiesOfLineage(queryEnv, targetedAgendas);
 };
 
 const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
-	if(!subjects || !subjects.length){
-		return "";
-	}
-	return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
+  if(!subjects || !subjects.length){
+    return "";
+  }
+  return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
 
 const addVisibleDecisions = (queryEnv, extraFilters) => {
-	const query = `
+  const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -857,27 +857,27 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
       ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
       ?subcase ext:procedurestapHeeftBesluit ?s.
       ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-      
+
       ${extraFilters}
     }
   }`;
-	return queryEnv.run(query, true);
+  return queryEnv.run(query, true);
 };
 
 const generateTempGraph = async function(queryEnv){
-	const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
-	queryEnv.tempGraph = tempGraph;
-	await queryEnv.run(`
-  	PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
+  queryEnv.tempGraph = tempGraph;
+  await queryEnv.run(`
+        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT DATA {
-	  GRAPH <${tempGraph}> {
-	    <${tempGraph}> a ext:TempGraph .
-	  }
-	}`, true);
+          GRAPH <${tempGraph}> {
+            <${tempGraph}> a ext:TempGraph .
+          }
+        }`, true);
 };
 
 const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
-	const query = `
+  const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -896,51 +896,50 @@ const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?target (prov:generated | ext:algemeneNieuwsbrief ) ?s .
-      
+
       ?agenda besluit:isAangemaaktVoor ?session .
       ?session ext:releasedDecisions ?date .
       ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
-      
+
       ${extraFilters}
     }
   }`;
-	return queryEnv.run(query, true);
+  return queryEnv.run(query, true);
 };
 
 const configurableQuery = function(queryString, direct){
-	return query({
-		sudo: true,
-		url: direct?process.env.DIRECT_ENDPOINT:undefined
-	}, queryString);
+  return query({
+    sudo: true,
+    url: direct?process.env.DIRECT_ENDPOINT:undefined
+  }, queryString);
 };
 
 const directQuery = function(queryString){
-	return configurableQuery(queryString, true);
+  return configurableQuery(queryString, true);
 };
 
 module.exports = {
-	parseSparQlResults,
-	removeInfoNotInTemp,
-	notConfidentialFilter,
-	notInternRegeringFilter,
-	notInternOverheidFilter,
-	transformFilter,
-	addRelatedFiles,
-	cleanup,
-	fillOutDetailsOnVisibleItems,
-	addAllRelatedDocuments,
-	addVisibleDecisions,
-	addAllRelatedToAgenda,
-	addVisibleNewsletterInfo,
-	addRelatedToAgendaItemAndSubcase,
-	cleanupBasedOnLineage,
-	logStage,
-	addVisibleNotulen,
-	filterAgendaMustBeInSet,
-	generateTempGraph,
-	copyTempToTarget,
-	configurableQuery,
-	directQuery,
-	runStage
+  parseSparQlResults,
+  removeInfoNotInTemp,
+  notConfidentialFilter,
+  notInternRegeringFilter,
+  notInternOverheidFilter,
+  transformFilter,
+  addRelatedFiles,
+  cleanup,
+  fillOutDetailsOnVisibleItems,
+  addAllRelatedDocuments,
+  addVisibleDecisions,
+  addAllRelatedToAgenda,
+  addVisibleNewsletterInfo,
+  addRelatedToAgendaItemAndSubcase,
+  cleanupBasedOnLineage,
+  logStage,
+  addVisibleNotulen,
+  filterAgendaMustBeInSet,
+  generateTempGraph,
+  copyTempToTarget,
+  configurableQuery,
+  directQuery,
+  runStage
 };
-
