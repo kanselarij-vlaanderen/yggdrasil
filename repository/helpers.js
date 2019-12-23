@@ -32,6 +32,7 @@ const logStage = (start, logMessage, graph) => {
 };
 
 const removeInfoNotInTemp = (queryEnv) => {
+  // TODO should we not batch this delete?
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -41,14 +42,15 @@ const removeInfoNotInTemp = (queryEnv) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
   DELETE {
     GRAPH <${queryEnv.targetGraph}> {
       ?s ?p ?o.
     }
   } WHERE {
     GRAPH <${queryEnv.targetGraph}> {
-			?s ?p ?o.
-			?s a ?type.
+      ?s ?p ?o.
+      ?s a ?type.
 
       FILTER NOT EXISTS {
         GRAPH <${queryEnv.tempGraph}> {
@@ -96,7 +98,7 @@ const notInternOverheidFilter = `
 `;
 
 const transformFilter = (originalFilter, newTargetVariable, pathToTarget) => {
-  let newFilter = originalFilter.split("?s ").join(`${newTargetVariable} `);
+  const newFilter = originalFilter.split("?s ").join(`${newTargetVariable} `);
   return newFilter.split("NOT EXISTS {").join(`NOT EXISTS {
     ${pathToTarget}`);
 };
@@ -120,7 +122,7 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
       ?s ext:tracesLineageTo ?agenda .
       ?second ext:tracesLineageTo ?agenda .
     }
-        } WHERE {
+  } WHERE {
     GRAPH <${queryEnv.tempGraph}> {
       ?target a ?targetClass .
       ?target ext:tracesLineageTo ?agenda .
@@ -140,6 +142,7 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
 };
 
 const cleanup = (queryEnv) => {
+  // TODO should we not batch this delete?
   const query = `
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   DELETE {
@@ -156,7 +159,9 @@ const cleanup = (queryEnv) => {
 };
 
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
-  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
     SELECT DISTINCT ?s WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         ?s ext:tracesLineageTo ?agenda .
@@ -216,7 +221,9 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
 };
 
 const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
-  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
     SELECT DISTINCT ?s WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         ?s ext:tracesLineageTo ?agenda .
@@ -290,18 +297,19 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
     try {
       count = Number.parseInt(JSON.parse(result).results.bindings[0].count.value);
       console.log(`<${graph}> size is now ${count}... -- q: ${timeQuery}s, t: ${timeCount}s`);
-    }catch (e) {
+    } catch (e) {
       console.log('no matching results');
     }
-    if(count == previousCount){
+    if (count == previousCount){
       return funResult;
-    }else {
+    } else {
       return repeatUntilTripleCountConstant(fun, queryEnv, count, graph);
     }
   });
 };
 
 const fillOutDetailsOnVisibleItems = (queryEnv) => {
+  // TODO use for-loop instead of Promise.all
   return Promise.all([
     repeatUntilTripleCountConstant(() => {
       return fillOutDetailsOnVisibleItemsLeft(queryEnv);
@@ -314,6 +322,7 @@ const fillOutDetailsOnVisibleItems = (queryEnv) => {
 
 const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   extraFilters = extraFilters || '';
+
   const queryTemplate = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -324,6 +333,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ext:DocumentVersie .
@@ -356,11 +366,11 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
     }
   }`;
   const constraints = [`
-                ?s a ext:DocumentVersie .
                 ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
+                ?s a ext:DocumentVersie .
   `,`
-    ?s a ext:DocumentVersie .
     ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / besluitvorming:heeftVersie ?s .
+    ?s a ext:DocumentVersie .
   `];
 
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
@@ -370,6 +380,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
   extraFilters = extraFilters || '';
+  
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -485,10 +496,8 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
 <${binding.s.value}> a <${binding.thing.value}> .`;
   });
 
-  if(targets.length < 1){
-    return;
-  }
-  const update = `
+  if (targets.length){
+    const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
    INSERT DATA {
@@ -496,7 +505,8 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        ${targets.join('\n')}
      }
    }`;
-  return queryEnv.run(update, true);
+    return await queryEnv.run(update, true);
+  }
 };
 
 const addRelatedToAgendaItem = async (queryEnv, extraFilters) => {
@@ -548,10 +558,8 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
 <${binding.s.value}> a <${binding.thing.value}> .`;
   });
 
-  if(targets.length < 1){
-    return;
-  }
-  const update = `
+  if(targets.length){
+    const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
    INSERT DATA {
@@ -559,7 +567,8 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
        ${targets.join('\n')}
      }
    }`;
-  return queryEnv.run(update, true);
+    return await queryEnv.run(update, true);
+  }
 };
 
 const addRelatedToSubcase = async (queryEnv, extraFilters) => {
@@ -569,6 +578,7 @@ const addRelatedToSubcase = async (queryEnv, extraFilters) => {
 };
 
 const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
+  // TODO use for-loop instead of Promise.all
   return Promise.all([
     addRelatedToAgendaItem(queryEnv, extraFilters),
     addRelatedToSubcase(queryEnv, extraFilters)
@@ -576,7 +586,7 @@ const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
 };
 
 const runStage = async function(message, queryEnv, stage){
-  let stageStart = moment().utc();
+  const stageStart = moment().utc();
   await stage();
   logStage(stageStart, message, queryEnv.targetGraph);
 };
@@ -588,7 +598,7 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
 
   const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT DISTINCT ?s WHERE {
-                  VALUES (?agenda) {
+      VALUES (?agenda) {
         (<${targetedAgendas.join('>) (<')}>)
       }
       GRAPH <${queryEnv.targetGraph}> {
@@ -607,6 +617,7 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
     return;
   }
 
+  // TODO replace VALUES block with a for-loop
   const queryRight = `
                 PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
@@ -622,6 +633,8 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
                   }
                 }`;
   await queryEnv.run(queryRight);
+
+  // TODO replace VALUES block with a for-loop
   const queryLeft = `
                 PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
@@ -644,6 +657,7 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
     return;
   }
 
+  // TODO replace VALUES block with a for-loop
   const result = await queryEnv.run(`
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   SELECT ?s ?agenda WHERE {
@@ -711,19 +725,20 @@ const copySetOfTempToTarget = async function(queryEnv){
   if(targets.length == 0){
     return;
   }
+  // TODO replace VALUES block with a for-loop
   const query = `
-                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT {
-                  GRAPH <${queryEnv.targetGraph}> {
+      GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
       }
-                } WHERE {
+    } WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         VALUES (?s) {
           ( <${targets.join('>) (<')}> )
         }
-                                ?s ?p ?o .
-                                FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
+        ?s ?p ?o .
+        FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
     }`;
   await queryEnv.run(query);
@@ -751,27 +766,27 @@ const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAge
       VALUES (?agenda) {
         (<${targetedAgendas.join('>) (<')}>)
       }
-          GRAPH <${queryEnv.targetGraph}> {
+      GRAPH <${queryEnv.targetGraph}> {
         ?s ext:tracesLineageTo ?agenda .
       }
       { {
-                                GRAPH <${queryEnv.targetGraph}> {
-                                        ?s ?p ?o .
-                                }
-                                FILTER NOT EXISTS {
-                                        GRAPH <${queryEnv.tempGraph}> {
-                                                ?s ?p ?o.
-                                        }
-                                }
-                         } UNION {
-                                GRAPH <${queryEnv.targetGraph}> {
-                                        ?oo ?pp ?s .
-                                }
-                                FILTER NOT EXISTS {
-                                        GRAPH <${queryEnv.tempGraph}> {
-                                                ?oo ?pp ?s.
-                                        }
-                                }
+            GRAPH <${queryEnv.targetGraph}> {
+              ?s ?p ?o .
+            }
+            FILTER NOT EXISTS {
+              GRAPH <${queryEnv.tempGraph}> {
+                ?s ?p ?o.
+              }
+            }
+        } UNION {
+            GRAPH <${queryEnv.targetGraph}> {
+              ?oo ?pp ?s .
+            }
+            FILTER NOT EXISTS {
+              GRAPH <${queryEnv.tempGraph}> {
+                ?oo ?pp ?s.
+              }
+            }
       } }
     } LIMIT ${batchSize}`, true);
   const targets = JSON.parse(result).results.bindings.map((binding) => {
@@ -782,36 +797,36 @@ const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAge
   }
 
   const query = `
-                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
-                  GRAPH <${queryEnv.targetGraph}> {
+      GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
-                    ?oo ?pp ?s .
-                  }
-                } WHERE {
-                  VALUES (?s) {
-                    ( <${targets.join('>) (<')}> )
-                  }
-                        { {
-                                GRAPH <${queryEnv.targetGraph}> {
-                                        ?s ?p ?o .
-                                }
-                                FILTER NOT EXISTS {
-                                        GRAPH <${queryEnv.tempGraph}> {
-                                                ?s ?p ?o.
-                                        }
-                                }
-                        } UNION {
-                                GRAPH <${queryEnv.targetGraph}> {
-                                        ?oo ?pp ?s .
-                                }
-                                FILTER NOT EXISTS {
-                                        GRAPH <${queryEnv.tempGraph}> {
-                                                ?oo ?pp ?s.
-                                        }
-                                }
-                  } }
-                }`;
+        ?oo ?pp ?s .
+      }
+    } WHERE {
+      VALUES (?s) {
+        ( <${targets.join('>) (<')}> )
+      }
+      { {
+           GRAPH <${queryEnv.targetGraph}> {
+             ?s ?p ?o .
+           }
+           FILTER NOT EXISTS {
+             GRAPH <${queryEnv.tempGraph}> {
+               ?s ?p ?o.
+             }
+           }
+         } UNION {
+            GRAPH <${queryEnv.targetGraph}> {
+              ?oo ?pp ?s .
+            }
+            FILTER NOT EXISTS {
+              GRAPH <${queryEnv.tempGraph}> {
+                ?oo ?pp ?s.
+              }
+            }
+      } }
+    }`;
   await queryEnv.run(query);
 };
 
@@ -868,12 +883,12 @@ const generateTempGraph = async function(queryEnv){
   const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
   queryEnv.tempGraph = tempGraph;
   await queryEnv.run(`
-        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT DATA {
-          GRAPH <${tempGraph}> {
-            <${tempGraph}> a ext:TempGraph .
-          }
-        }`, true);
+      GRAPH <${tempGraph}> {
+        <${tempGraph}> a ext:TempGraph .
+      }
+    }`, true);
 };
 
 const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
