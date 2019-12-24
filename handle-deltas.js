@@ -142,10 +142,10 @@ const selectRelatedAgendasForSubjects = async function(subjects){
 
   const pathsToAgenda = getFullPathsToAgenda();
   const restrictions = Object.keys(pathsToAgenda).map((typeName) => {
-    return ` 
+    return `
       ?subject a ${typeUris[typeName]} .
       ?subject (${pathsToAgenda[typeName].join(") | (")}) ?agenda .
-    `
+    `;
   });
 
   restrictions.push(`
@@ -154,39 +154,40 @@ const selectRelatedAgendasForSubjects = async function(subjects){
   `);
 
   const agendas = new Set();
-  return Promise.all(restrictions.map(async (restriction) => {
+
+  for (let restriction of restrictions) {
     // the graph distinction here is meaningful. Only things in the original graph (kanselarij) should be examined,
     // otherwise the target can be in the public graph and can for instance be a type of document. in that case, almost all
     // documents will be examined
 
     const select = `
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX prov: <http://www.w3.org/ns/prov#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-  PREFIX schema: <http://schema.org>
-  
-  SELECT DISTINCT ?agenda WHERE {
-    GRAPH <http://mu.semte.ch/graphs/organizations/kanselarij> {
-      VALUES (?subject) {
-        (<${subjects.join('>) (<')}>)
-      }
-      ${restriction}
-      ?agenda a ${typeUris.agenda} .
-    }
-  }`;
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX dbpedia: <http://dbpedia.org/ontology/>
+      PREFIX dct: <http://purl.org/dc/terms/>
+      PREFIX prov: <http://www.w3.org/ns/prov#>
+      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+      PREFIX schema: <http://schema.org>
+
+      SELECT DISTINCT ?agenda WHERE {
+        GRAPH <http://mu.semte.ch/graphs/organizations/kanselarij> {
+          VALUES (?subject) {
+            (<${subjects.join('>) (<')}>)
+          }
+          ${restriction}
+          ?agenda a ${typeUris.agenda} .
+        }
+      }`;
+
     const results = await directQuery(select);
-    parseSparQlResults(JSON.parse(results)).map((item) => {
-      return item.agenda;
-    }).map((agenda) => {
-      agendas.add(agenda);
-    });
-  })).then(() => {
-    return Array.from(agendas);
-  });
+
+    const agendaItems = parseSparQlResults(JSON.parse(results))
+          .map((item) => item.agenda)
+          .forEach((agenda) => agendas.add(agenda));
+  }
+
+  return Array.from(agendas);
 };
 
 let subjectsToCheck = new Set();
