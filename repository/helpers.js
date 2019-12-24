@@ -610,46 +610,42 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
         }
       }
     } LIMIT ${smallBatchSize}`, true);
-  const targets = JSON.parse(result).results.bindings.map((binding) => {
-    return binding.s.value;
-  });
-  if(targets.length == 0){
-    return;
-  }
 
-  // TODO replace VALUES block with a for-loop
-  const queryRight = `
-                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const targets = JSON.parse(result).results.bindings.map((binding) => binding.s.value);
+
+  for (let target of targets) {
+    const queryRight = `
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
-                  GRAPH <${queryEnv.targetGraph}> {
+      GRAPH <${queryEnv.targetGraph}> {
         ?s ?p ?o .
-                  }
-                } WHERE {
-                  VALUES ( ?s ) {
-                    ( <${targets.join('>) (<')}> )
-                  }
-                  GRAPH <${queryEnv.targetGraph}> {
-                    ?s ?p ?o .
-                  }
-                }`;
-  await queryEnv.run(queryRight);
+      }
+    } WHERE {
+      VALUES ( ?s ) {
+        ( <${target}> )
+      }
+      GRAPH <${queryEnv.targetGraph}> {
+        ?s ?p ?o .
+      }
+    }`;
+    await queryEnv.run(queryRight);
 
-  // TODO replace VALUES block with a for-loop
-  const queryLeft = `
-                PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    const queryLeft = `
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE {
-                  GRAPH <${queryEnv.targetGraph}> {
-                    ?oo ?pp ?s .
-                  }
-                } WHERE {
-                  VALUES ( ?s ) {
-                    ( <${targets.join('>) (<')}> )
-                  }
-                  GRAPH <${queryEnv.targetGraph}> {
-                    ?oo ?pp ?s .
-                  }
-                }`;
-  await queryEnv.run(queryLeft);
+      GRAPH <${queryEnv.targetGraph}> {
+        ?oo ?pp ?s .
+      }
+    } WHERE {
+      VALUES ( ?s ) {
+        ( <${target}> )
+      }
+      GRAPH <${queryEnv.targetGraph}> {
+        ?oo ?pp ?s .
+      }
+    }`;
+    await queryEnv.run(queryLeft);
+  }
 };
 
 const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
@@ -657,39 +653,37 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
     return;
   }
 
-  // TODO replace VALUES block with a for-loop
   const result = await queryEnv.run(`
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   SELECT ?s ?agenda WHERE {
-                VALUES (?agenda) {
-                        (<${targetedAgendas.join('>) (<')}>)
-                }
-                GRAPH <${queryEnv.targetGraph}> {
-                        ?s ext:tracesLineageTo ?agenda .
-                }
-                FILTER NOT EXISTS {
-                        GRAPH <${queryEnv.tempGraph}> {
-                                ?s ext:tracesLineageTo ?agenda .
-                        }
-                }
-        } LIMIT ${minimalBatchSize}
+    VALUES (?agenda) {
+      (<${targetedAgendas.join('>) (<')}>)
+    }
+    GRAPH <${queryEnv.targetGraph}> {
+      ?s ext:tracesLineageTo ?agenda .
+    }
+    FILTER NOT EXISTS {
+      GRAPH <${queryEnv.tempGraph}> {
+        ?s ext:tracesLineageTo ?agenda .
+      }
+    }
+  } LIMIT ${minimalBatchSize}
   `, true);
 
   const targets = JSON.parse(result).results.bindings.map((binding) => {
     return `<${binding.s.value}> ext:tracesLineageTo <${binding.agenda.value}> .`;
   });
 
-  if(!targets || targets.length == 0){
-    return;
+  if (targets.length) {
+    const query = `
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    DELETE DATA {
+      GRAPH <${queryEnv.targetGraph}> {
+        ${targets.join("\n")}
+      }
+    }`;
+    await queryEnv.run(query);
   }
-  const query = `
-        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  DELETE DATA {
-                GRAPH <${queryEnv.targetGraph}> {
-                        ${targets.join("\n")}
-                }
-        }`;
-  await queryEnv.run(query);
 };
 
 const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
