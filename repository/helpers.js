@@ -722,14 +722,11 @@ const copySetOfTempToTarget = async function(queryEnv){
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT {
       GRAPH <${queryEnv.targetGraph}> {
-        ?s ?p ?o .
+        <${target}> ?p ?o .
       }
     } WHERE {
       GRAPH <${queryEnv.tempGraph}> {
-        VALUES (?s) {
-          ( <${target}> )
-        }
-        ?s ?p ?o .
+        <${target}> ?p ?o .
         FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
     }`;
