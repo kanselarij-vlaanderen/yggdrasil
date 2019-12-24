@@ -708,7 +708,9 @@ const copyTempToTarget = async function(queryEnv){
 };
 
 const copySetOfTempToTarget = async function(queryEnv){
-  const result = await queryEnv.run(`PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  const result = await queryEnv.run(`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
     SELECT DISTINCT ?s WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         ?s a ?thing .
@@ -719,14 +721,10 @@ const copySetOfTempToTarget = async function(queryEnv){
         }
       }
     } LIMIT ${smallBatchSize}`, true);
-  const targets = JSON.parse(result).results.bindings.map((binding) => {
-    return binding.s.value;
-  });
-  if(targets.length == 0){
-    return;
-  }
-  // TODO replace VALUES block with a for-loop
-  const query = `
+  const targets = JSON.parse(result).results.bindings.map((binding) => binding.s.value);
+
+  for (let target of targets) {
+    const query = `
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     INSERT {
       GRAPH <${queryEnv.targetGraph}> {
@@ -735,25 +733,23 @@ const copySetOfTempToTarget = async function(queryEnv){
     } WHERE {
       GRAPH <${queryEnv.tempGraph}> {
         VALUES (?s) {
-          ( <${targets.join('>) (<')}> )
+          ( <${target}> )
         }
         ?s ?p ?o .
         FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
     }`;
-  await queryEnv.run(query);
+    await queryEnv.run(query);
 
-  // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
-  const doneTriples = targets.map((target) => {
-    return `      <${target}> ext:yggdrasilMoved <${target}> .`;
-  });
-  await queryEnv.run(`
-        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT DATA {
-          GRAPH <${queryEnv.tempGraph}> {
-      ${doneTriples.join("\n")}
-    }
-        }`, true);
+    // mark done as separate step because transactional behaviour of queries might not actually be trustworthy
+    await queryEnv.run(`
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      INSERT DATA {
+        GRAPH <${queryEnv.tempGraph}> {
+          <${target}> ext:yggdrasilMoved <${target}>
+        }
+      }`, true);
+  }
 };
 
 const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas){
