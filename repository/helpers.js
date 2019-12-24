@@ -297,24 +297,7 @@ const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCou
   });
 };
 
-const logVisibleItemsSummary = async (queryEnv) => {
-  console.log('== Temp graph summary ==');
-  const result = await queryEnv.run(`
-    SELECT (COUNT(?s) AS ?count) ?thing WHERE {
-      GRAPH <${queryEnv.tempGraph}> {
-        ?s a ?thing
-      }
-    } GROUP BY ?thing
-  `, true);
-
-  const bindings = JSON.parse(result).results.bindings;
-  for (let binding of bindings) {
-    console.log(`[${binding['count'].value}] ${binding['thing'].value}`);
-  }
-};
-
 const fillOutDetailsOnVisibleItems = async (queryEnv) => {
-  await logVisibleItemsSummary(queryEnv);
   await repeatUntilTripleCountConstant(() => {
     return fillOutDetailsOnVisibleItemsLeft(queryEnv);
   }, queryEnv, 0);
@@ -695,7 +678,24 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
   }, queryEnv, 0, queryEnv.targetGraph);
 };
 
+const logTempGraphSummary = async (queryEnv) => {
+  console.log('== Temp graph summary ==');
+  const result = await queryEnv.run(`
+    SELECT (COUNT(?s) AS ?count) ?thing WHERE {
+      GRAPH <${queryEnv.tempGraph}> {
+        ?s a ?thing
+      }
+    } GROUP BY ?thing
+  `, true);
+
+  const bindings = JSON.parse(result).results.bindings;
+  for (let binding of bindings) {
+    console.log(`[${binding['count'].value}] ${binding['thing'].value}`);
+  }
+};
+
 const copyTempToTarget = async function(queryEnv){
+  await logTempGraphSummary(queryEnv);
   return repeatUntilTripleCountConstant(() => {
     return copySetOfTempToTarget(queryEnv);
   }, queryEnv, 0, queryEnv.tempGraph);
@@ -827,10 +827,8 @@ const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas)
 };
 
 const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas){
-  await logVisibleItemsSummary(queryEnv);
   await removeThingsWithLineageNoLongerInTemp(queryEnv, targetedAgendas);
   await removeStalePropertiesOfLineage(queryEnv, targetedAgendas);
-  await logVisibleItemsSummary(queryEnv);
 };
 
 const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
