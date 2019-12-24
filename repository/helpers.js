@@ -698,7 +698,7 @@ const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedA
 const copyTempToTarget = async function(queryEnv){
   return repeatUntilTripleCountConstant(() => {
     return copySetOfTempToTarget(queryEnv);
-  }, queryEnv, 0, queryEnv.targetGraph);
+  }, queryEnv, 0, queryEnv.tempGraph);
 };
 
 const copySetOfTempToTarget = async function(queryEnv){
