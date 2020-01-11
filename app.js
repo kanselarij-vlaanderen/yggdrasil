@@ -3,14 +3,14 @@ const app = mu.app;
 const bodyParser = require('body-parser');
 const cors = require('cors');
 import {handleDelta} from './handle-deltas';
-import {directQuery, configurableQuery} from './repository/helpers';
+import { cleanup, directQuery, configurableQuery} from './repository/helpers';
 
 const fillInterneOverheid = require('./repository/fill-intern-overheid');
 const fillInterneRegering = require('./repository/fill-intern-regering');
 const fillPublic = require('./repository/fill-public');
 
 if (!process.env.DIRECT_ENDPOINT) {
-  throw new Error("DIRECT_ENDPOINT not set!")
+  throw new Error("DIRECT_ENDPOINT not set!");
 }
 
 app.use(bodyParser.json({ type: 'application/json' , limit: '50mb' }));
@@ -59,7 +59,7 @@ const builders = {
   }
 };
 
-const initialLoad = function(){
+async function initialLoad(){
   let toFillUp = '';
   if(process.env.RELOAD_ALL_DATA_ON_INIT == "true") {
     toFillUp = 'public,intern-overheid,intern-regering,minister';
@@ -88,10 +88,15 @@ const initialLoad = function(){
       }
     }
   };
-  fillAll();
+  await fillAll();
 };
 
-initialLoad();
+async function startup() {
+    await cleanup();
+    await initialLoad();
+}
+
+startup();
 
 const deltaBuilders = Object.assign({}, builders);
 delete deltaBuilders.public;
