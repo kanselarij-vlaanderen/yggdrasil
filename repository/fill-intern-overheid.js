@@ -35,16 +35,15 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
 };
 
 export const fillUp = async (queryEnv, agendas) => {
-
   try {
     const start = moment().utc();
     await generateTempGraph(queryEnv);
-    const filter = [notConfidentialFilter, notInternRegeringFilter].join("\n");
+    const filter = [notConfidentialFilter, notInternRegeringFilter].join('\n');
     const agendaFilter = filterAgendaMustBeInSet(agendas);
-    const filterAgendasWithAccess=[
+    const filterAgendasWithAccess = [
       notConfidentialFilter, notInternRegeringFilter,
       agendaFilter
-    ].join("\n");
+    ].join('\n');
     let targetGraph = queryEnv.targetGraph;
     logStage(start, `fill overheid started at: ${start.format()}`, targetGraph);
     await runStage(`overheid agendas added`, queryEnv, () => {
@@ -76,7 +75,7 @@ export const fillUp = async (queryEnv, agendas) => {
       `);
     });
     await runStage('related files added', queryEnv, () => {
-      return addRelatedFiles(queryEnv, transformFilter(filter, "?docVersion", "?docVersion (ext:file | ext:convertedFile ) ?s ."));
+      return addRelatedFiles(queryEnv, transformFilter(filter, '?docVersion', '?docVersion (ext:file | ext:convertedFile ) ?s .'));
     });
     await runStage('details added', queryEnv, () => {
       return fillOutDetailsOnVisibleItems(queryEnv);
@@ -84,7 +83,7 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('lineage updated', queryEnv, () => {
       return cleanupBasedOnLineage(queryEnv, agendas);
     });
-    if(queryEnv.fullRebuild){
+    if (queryEnv.fullRebuild) {
       await runStage('removed info not in temp', queryEnv, () => {
         return removeInfoNotInTemp(queryEnv);
       });
@@ -96,12 +95,12 @@ export const fillUp = async (queryEnv, agendas) => {
       return cleanup(queryEnv);
     });
     const end = moment().utc();
-    logStage(start,`fill overheid ended at: ${end.format()}`, targetGraph);
+    logStage(start, `fill overheid ended at: ${end.format()}`, targetGraph);
   } catch (e) {
     logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {
       cleanup(queryEnv);
-    }catch (e2) {
+    } catch (e2) {
       console.log(e2);
     }
   }
