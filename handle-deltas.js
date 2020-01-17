@@ -1,109 +1,111 @@
 import debounce from 'debounce';
 import { ok } from 'assert';
 import moment from 'moment';
-const DEBUG = process.env.DEBUG == "true";
-const DELTA_TIMEOUT = parseInt(process.env.DELTA_TIMEOUT) || (5 * 60 * 1000);
+
 import { parseSparQlResults, directQuery } from './repository/helpers';
+
+const DEBUG = process.env.DEBUG === 'true';
+const DELTA_TIMEOUT = parseInt(process.env.DELTA_TIMEOUT) || (5 * 60 * 1000);
 
 let builders = {};
 
-const handleDeltaRelatedToAgenda = async function(subjects, queryEnv){
-  if(DEBUG){
+const handleDeltaRelatedToAgenda = async function(subjects, queryEnv) {
+  if (DEBUG) {
     console.log(`Found subjects: ${JSON.stringify(subjects)}`);
   }
   const start = moment();
   const relatedAgendas = await selectRelatedAgendasForSubjects(subjects);
-  if(DEBUG){
+  if (DEBUG) {
     const diff = moment().diff(start, 'seconds', true).toFixed(3);
     console.log(`Related to subjects: ${relatedAgendas} -- ${diff}s`);
   }
-  if(!relatedAgendas || !relatedAgendas.length){
+  if (!relatedAgendas || !relatedAgendas.length) {
     return;
   }
 
-  for(let builderName in builders){
+  for (let builderName in builders) {
     let targetEnv = builders[builderName];
     await targetEnv.builder.fillUp(targetEnv.env, relatedAgendas);
   }
 };
 
 const pathsToAgenda = {
-  "agendaitem": ["^dct:hasPart"],
-  "subcase": ["besluitvorming:isGeagendeerdVia / ^dct:hasPart"],
-  "meeting": ["^besluit:isAangemaaktVoor"],
-  "newsletter-info":[
-    {path: "^prov:generated", nextRDFType: "subcase"},
-    {path: "^ext:algemeneNieuwsbrief", nextRDFType: "meeting"},
+  'agendaitem': ['^dct:hasPart'],
+  'subcase': ['besluitvorming:isGeagendeerdVia / ^dct:hasPart'],
+  'meeting': ['^besluit:isAangemaaktVoor'],
+  'newsletter-info': [
+    { path: '^prov:generated', nextRDFType: 'subcase' },
+    { path: '^ext:algemeneNieuwsbrief', nextRDFType: 'meeting' }
   ],
-  "consultation-request": [
-    {path: "^ext:bevatConsultatievraag", nextRDFType: "subcase"}
+  'consultation-request': [
+    { path: '^ext:bevatConsultatievraag', nextRDFType: 'subcase' }
   ],
-  "subcase-phase": [
-    {path: "^ext:subcaseProcedurestapFase", nextRDFType: "subcase"},
-    {path: "^ext:subcaseAgendapuntFase", nextRDFType: "agendaitem"}
+  'subcase-phase': [
+    { path: '^ext:subcaseProcedurestapFase', nextRDFType: 'subcase' },
+    { path: '^ext:subcaseAgendapuntFase', nextRDFType: 'agendaitem' }
   ],
-  "decision": [
-    {path: "^ext:procedurestapHeeftBesluit", nextRDFType: "subcase"},
-    {path: "^ext:agendapuntHeeftBesluit", nextRDFType: "agendaitem"}
+  'decision': [
+    { path: '^ext:procedurestapHeeftBesluit', nextRDFType: 'subcase' },
+    { path: '^ext:agendapuntHeeftBesluit', nextRDFType: 'agendaitem' }
   ],
-  "meeting-record": [
-    {path: "^ext:notulenVanAgendaPunt", nextRDFType: "agendaitem"},
-    {path: "^ext:algemeneNotulen", nextRDFType: "meeting"}
+  'meeting-record': [
+    { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
+    { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
   ],
-  "case": [
-    {path: "dct:hasPart", nextRDFType: "subcase"}
+  'case': [
+    {path: 'dct:hasPart', nextRDFType: 'subcase'}
   ],
-  "remark": [
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "meeting"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "newsletter-info"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "document"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "agendaitem"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "decision"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "case"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "subcase"},
-    {path: "^ext:antwoorden* / ^besluitvorming:opmerking", nextRDFType: "decision"}
+  'remark': [
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'meeting' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'newsletter-info' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'document' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'agendaitem' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'case' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' }
   ],
-  "document": [
-    {path: "^ext:beslissingFiche", nextRDFType: "decision" },
-    {path: "besluitvorming:heeftVersie", nextRDFType: "document-version"},
-    {path: "^ext:getekendeNotulen", nextRDFType: "meeting-record"}
+  'document': [
+    { path: '^ext:beslissingFiche', nextRDFType: 'decision' },
+    { path: 'besluitvorming:heeftVersie', nextRDFType: 'document-version' },
+    { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
-  "announcement": [
-    "ext:mededeling"
+  'announcement': [
+    'ext:mededeling'
   ],
-  "document-version": [
-    {path: "^ext:bevatDocumentversie", nextRDFType: "subcase"},
-    {path: "^ext:zittingDocumentversie", nextRDFType: "meeting"},
-    {path: "^ext:bevatAgendapuntDocumentversie", nextRDFType: "agendaitem"},
-    {path: "^ext:documentenVoorPublicatie", nextRDFType: "newsletter-info" },
-    {path: "^ext:documentenVoorPublicatie", nextRDFType: "newsletter-info" },
-    {path: "^ext:mededelingBevatDocumentversie", nextRDFType: "announcement" },
-    {path: "^ext:documentenVoorBeslissing", nextRDFType: "decision"},
-    {path: "^ext:getekendeDocumentVersiesVoorNotulen", nextRDFType: "meeting-record"}
+  'document-version': [
+    { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
+    { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
+    { path: '^ext:bevatAgendapuntDocumentversie', nextRDFType: 'agendaitem' },
+    { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
+    { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
+    { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
+    { path: '^ext:documentenVoorBeslissing', nextRDFType: 'decision' },
+    { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
   ]
 };
 
 const typeUris = {
-  "agenda": "besluitvorming:Agenda",
-  "agendaitem": "besluit:Agendapunt",
-  "subcase": "dbpedia:UnitOfWork",
-  "meeting": "besluit:Zitting",
-  "newsletter-info": "besluitvorming:NieuwsbriefInfo",
-  "consultation-request": "besluitvorming:Consultatievraag" ,
-  "subcase-phase": "ext:ProcedurestapFase",
-  "decision": "besluit:Besluit",
-  "meeting-record": "ext:Notule",
-  "case": "dbpedia:Case",
-  "remark": "schema:Comment",
-  "document": "foaf:Document",
-  "announcement": "besluitvorming:Mededeling",
-  "document-version": "ext:DocumentVersie"
+  'agenda': 'besluitvorming:Agenda',
+  'agendaitem': 'besluit:Agendapunt',
+  'subcase': 'dbpedia:UnitOfWork',
+  'meeting': 'besluit:Zitting',
+  'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
+  'consultation-request': 'besluitvorming:Consultatievraag',
+  'subcase-phase': 'ext:ProcedurestapFase',
+  'decision': 'besluit:Besluit',
+  'meeting-record': 'ext:Notule',
+  'case': 'dbpedia:Case',
+  'remark': 'schema:Comment',
+  'document': 'foaf:Document',
+  'announcement': 'besluitvorming:Mededeling',
+  'document-version': 'ext:DocumentVersie'
 };
 
 let fullPathsCache = null;
 
-const getFullPathsToAgenda = function(){
-  if(fullPathsCache){
+const getFullPathsToAgenda = function() {
+  if (fullPathsCache) {
     return fullPathsCache;
   }
   fullPathsCache = {};
@@ -113,22 +115,22 @@ const getFullPathsToAgenda = function(){
   return fullPathsCache;
 };
 
-const buildFullPathsToAgendaForType = function(type){
-  if(fullPathsCache[type]){
+const buildFullPathsToAgendaForType = function(type) {
+  if (fullPathsCache[type]) {
     return fullPathsCache[type];
   }
 
   let paths = pathsToAgenda[type];
-  if(!paths){
+  if (!paths) {
     return [];
   }
 
   let result = paths.map((path) => {
-    if(path.nextRDFType){
+    if (path.nextRDFType) {
       return buildFullPathsToAgendaForType(path.nextRDFType).map((next) => {
         return `${path.path} / ${next}`;
       });
-    }else{
+    } else {
       return path;
     }
   });
@@ -138,13 +140,13 @@ const buildFullPathsToAgendaForType = function(type){
   return result;
 };
 
-const selectRelatedAgendasForSubjects = async function(subjects){
+const selectRelatedAgendasForSubjects = async function(subjects) {
 
   const pathsToAgenda = getFullPathsToAgenda();
   const restrictions = Object.keys(pathsToAgenda).map((typeName) => {
     return `
       ?subject a ${typeUris[typeName]} .
-      ?subject (${pathsToAgenda[typeName].join(") | (")}) ?agenda .
+      ?subject (${pathsToAgenda[typeName].join(') | (')}) ?agenda .
     `;
   });
 
@@ -182,9 +184,9 @@ const selectRelatedAgendasForSubjects = async function(subjects){
 
     const results = await directQuery(select);
 
-    const agendaItems = parseSparQlResults(JSON.parse(results))
-          .map((item) => item.agenda)
-          .forEach((agenda) => agendas.add(agenda));
+    const agendaItems = parseSparQlResults(JSON.parse(results)) // TODO: looks like this doesn't get used ... remove?
+      .map((item) => item.agenda)
+      .forEach((agenda) => agendas.add(agenda));
   }
 
   return Array.from(agendas);
@@ -192,11 +194,11 @@ const selectRelatedAgendasForSubjects = async function(subjects){
 
 let subjectsToCheck = new Set();
 
-const rememberDeltaSubjects = function(deltaset){
+const rememberDeltaSubjects = function(deltaset) {
   let subjects = subjectsToCheck;
   const addTripleUris = (triple) => {
     subjects.add(triple.subject.value);
-    if(triple.object.type == "uri"){
+    if (triple.object.type === 'uri') {
       subjects.add(triple.object.value);
     }
   };
@@ -207,8 +209,8 @@ const rememberDeltaSubjects = function(deltaset){
 
 
 let checkingDeltas = false;
-const checkAllDeltas = async function(){
-  if(checkingDeltas){
+const checkAllDeltas = async function() {
+  if (checkingDeltas) {
     return debouncedDelta();
   }
   checkingDeltas = true;
@@ -221,7 +223,7 @@ const checkAllDeltas = async function(){
 
 const debouncedDelta = debounce(checkAllDeltas, DELTA_TIMEOUT);
 
-const handleDelta = async function(req,res, newBuilders){
+const handleDelta = async function(req, res, newBuilders) {
   let body = req.body;
   builders = newBuilders;
 
@@ -229,7 +231,7 @@ const handleDelta = async function(req,res, newBuilders){
     rememberDeltaSubjects(deltaset);
   });
   debouncedDelta();
-  res.send({ status: ok, statusCode: 200});
+  res.send({ status: ok, statusCode: 200 });
 };
 
 module.exports = {
