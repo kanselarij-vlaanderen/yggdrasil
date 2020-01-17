@@ -34,15 +34,6 @@ const logStage = (start, logMessage, graph) => {
 const removeInfoNotInTemp = (queryEnv) => {
   // TODO should we not batch this delete?
   const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-
   DELETE {
     GRAPH <${queryEnv.targetGraph}> {
       ?s ?p ?o.
