@@ -105,7 +105,6 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a nfo:FileDataObject .
@@ -168,14 +167,7 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
 
   for (let target of targets) {
     const query = `
-      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-      PREFIX dct: <http://purl.org/dc/terms/>
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-      PREFIX dbpedia: <http://dbpedia.org/ontology/>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
       INSERT {
         GRAPH <${queryEnv.tempGraph}> {
           <${target}> ?p ?o.
@@ -224,14 +216,6 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
 
   for (let target of targets) {
     const query = `
-      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-      PREFIX dct: <http://purl.org/dc/terms/>
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-      PREFIX dbpedia: <http://dbpedia.org/ontology/>
-      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
       INSERT {
         GRAPH <${queryEnv.tempGraph}> {
           ?oo ?pp ?s.
@@ -309,7 +293,6 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
 
   INSERT {
@@ -447,8 +430,8 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
+   
    SELECT ?s ?thing ?agenda WHERE {
      { SELECT ?target ?agenda WHERE {
        GRAPH <${queryEnv.tempGraph}> {
@@ -508,8 +491,8 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
+   
    SELECT ?s ?thing ?agenda WHERE {
                  { SELECT ?target ?agenda WHERE {
                    GRAPH <${queryEnv.tempGraph}> {
