@@ -67,7 +67,7 @@ const pathsToAgenda = {
   ],
   'document-container': [
     { path: '^ext:beslissingFiche', nextRDFType: 'decision' },
-    { path: 'besluitvorming:heeftVersie', nextRDFType: 'document' },
+    { path: '<https://data.vlaanderen.be/ns/dossier#dossier:collectie.bestaatUit>', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
   'announcement': [
