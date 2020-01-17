@@ -379,7 +379,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?agenda a besluitvorming:Agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?agenda ( ${relationProperties.join(" | ")} ) ?s .
+      ?agenda ( ${relationProperties.join(' | ')} ) ?s .
       ?s a ?thing .
 
       { { ?s a dbpedia:Case .
