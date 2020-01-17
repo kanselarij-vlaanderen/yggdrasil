@@ -58,22 +58,22 @@ const pathsToAgenda = {
   'remark': [
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'meeting' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'newsletter-info' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'document' },
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'document-container' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'agendaitem' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'case' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' }
   ],
-  'document': [
+  'document-container': [
     { path: '^ext:beslissingFiche', nextRDFType: 'decision' },
-    { path: 'besluitvorming:heeftVersie', nextRDFType: 'document-version' },
+    { path: 'besluitvorming:heeftVersie', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
   'announcement': [
     'ext:mededeling'
   ],
-  'document-version': [
+  'document': [
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^ext:bevatAgendapuntDocumentversie', nextRDFType: 'agendaitem' },
@@ -97,9 +97,9 @@ const typeUris = {
   'meeting-record': 'ext:Notule',
   'case': 'dbpedia:Case',
   'remark': 'schema:Comment',
-  'document': 'foaf:Document',
+  'document-container': '<https://data.vlaanderen.be/ns/dossier#Serie>',
   'announcement': 'besluitvorming:Mededeling',
-  'document-version': 'ext:DocumentVersie'
+  'document': '<https://data.vlaanderen.be/ns/dossier#Stuk>'
 };
 
 let fullPathsCache = null;
