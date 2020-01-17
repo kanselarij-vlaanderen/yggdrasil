@@ -343,13 +343,16 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 
     }
   }`;
-  const constraints = [`
-                ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
-                ?s a dossier:Stuk .
-  `,`
-    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
-    ?s a dossier:Stuk .
-  `];
+  const constraints = [
+    `
+      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
+      ?s a dossier:Stuk .
+    `,
+    `
+      ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+      ?s a dossier:Stuk .
+    `
+  ];
 
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
