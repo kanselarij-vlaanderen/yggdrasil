@@ -53,7 +53,7 @@ const pathsToAgenda = {
     { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
   ],
   'case': [
-    {path: 'dct:hasPart', nextRDFType: 'subcase'}
+    { path: 'dct:hasPart', nextRDFType: 'subcase' }
   ],
   'remark': [
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'meeting' },
