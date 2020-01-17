@@ -1,6 +1,6 @@
 import mu from 'mu';
 import moment from 'moment';
-import {query} from './direct-sparql-endpoint';
+import { query } from './direct-sparql-endpoint';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
@@ -12,13 +12,13 @@ const parseSparQlResults = (data, multiValueProperties = []) => {
     let obj = {};
 
     vars.forEach(varKey => {
-      if (binding[varKey]){
+      if (binding[varKey]) {
         let val = binding[varKey].value;
-        if (multiValueProperties.includes(varKey)){
+        if (multiValueProperties.includes(varKey)) {
           val = val.split('|');
         }
         obj[varKey] = val;
-      }else {
+      } else {
         obj[varKey] = null;
       }
     });
@@ -89,8 +89,8 @@ const notInternOverheidFilter = `
 `;
 
 const transformFilter = (originalFilter, newTargetVariable, pathToTarget) => {
-  const newFilter = originalFilter.split("?s ").join(`${newTargetVariable} `);
-  return newFilter.split("NOT EXISTS {").join(`NOT EXISTS {
+  const newFilter = originalFilter.split('?s ').join(`${newTargetVariable} `);
+  return newFilter.split('NOT EXISTS {').join(`NOT EXISTS {
     ${pathToTarget}`);
 };
 
@@ -260,7 +260,7 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
   }
 };
 
-const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
+const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph) {
   const startQ = moment();
   const funResult = await fun();
   const timeQuery = moment().diff(startQ, 'seconds', true).toFixed(3);
@@ -477,7 +477,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
 <${binding.s.value}> a <${binding.thing.value}> .`;
   });
 
-  if (targets.length){
+  if (targets.length) {
     const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
@@ -539,7 +539,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
 <${binding.s.value}> a <${binding.thing.value}> .`;
   });
 
-  if(targets.length){
+  if (targets.length) {
     const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
@@ -563,14 +563,14 @@ const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
   await addRelatedToSubcase(queryEnv, extraFilters);
 };
 
-const runStage = async function(message, queryEnv, stage){
+const runStage = async function(message, queryEnv, stage) {
   const stageStart = moment().utc();
   await stage();
   logStage(stageStart, message, queryEnv.targetGraph);
 };
 
-const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
-  if(!targetedAgendas){
+const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas) {
+  if (!targetedAgendas) {
     return;
   }
 
@@ -626,8 +626,8 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
   }
 };
 
-const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
-  if(!targetedAgendas){
+const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas) {
+  if (!targetedAgendas) {
     return;
   }
 
@@ -657,16 +657,16 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE DATA {
       GRAPH <${queryEnv.targetGraph}> {
-        ${targets.join("\n")}
+        ${targets.join('\n')}
       }
     }`;
     await queryEnv.run(query);
   }
 };
 
-const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
+const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas) {
   await repeatUntilTripleCountConstant(() => {
-    return removeThingsWithLineageNoLongerInTempBatched(queryEnv,targetedAgendas);
+    return removeThingsWithLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
   }, queryEnv, 0, queryEnv.targetGraph);
   await repeatUntilTripleCountConstant(() => {
     return removeLineageWhereLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
@@ -689,14 +689,14 @@ const logTempGraphSummary = async (queryEnv) => {
   }
 };
 
-const copyTempToTarget = async function(queryEnv){
+const copyTempToTarget = async function(queryEnv) {
   await logTempGraphSummary(queryEnv);
   return repeatUntilTripleCountConstant(() => {
     return copySetOfTempToTarget(queryEnv);
   }, queryEnv, 0, queryEnv.tempGraph);
 };
 
-const copySetOfTempToTarget = async function(queryEnv){
+const copySetOfTempToTarget = async function(queryEnv) {
   const result = await queryEnv.run(`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
@@ -738,8 +738,8 @@ const copySetOfTempToTarget = async function(queryEnv){
   }
 };
 
-const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas){
-  if(!targetedAgendas){
+const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas) {
+  if (!targetedAgendas) {
     return;
   }
   const result = await queryEnv.run(`
@@ -774,7 +774,7 @@ const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAge
   const targets = JSON.parse(result).results.bindings.map((binding) => {
     return binding.s.value;
   });
-  if(targets.length == 0){
+  if (targets.length === 0) {
     return;
   }
 
@@ -818,14 +818,14 @@ const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas)
   }, queryEnv, 0, queryEnv.targetGraph);
 };
 
-const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas){
+const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas) {
   await removeThingsWithLineageNoLongerInTemp(queryEnv, targetedAgendas);
   await removeStalePropertiesOfLineage(queryEnv, targetedAgendas);
 };
 
-const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
-  if(!subjects || !subjects.length){
-    return "";
+const filterAgendaMustBeInSet = function(subjects, agendaVariable = 's') {
+  if (!subjects || !subjects.length) {
+    return '';
   }
   return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
@@ -861,7 +861,7 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const generateTempGraph = async function(queryEnv){
+const generateTempGraph = async function(queryEnv) {
   const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
   queryEnv.tempGraph = tempGraph;
   await queryEnv.run(`
