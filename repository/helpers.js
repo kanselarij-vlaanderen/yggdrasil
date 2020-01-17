@@ -65,7 +65,6 @@ const notInternRegeringFilter = `
       ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> .
       VALUES (?accessPredicate ) {
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> )
-        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
       }
@@ -81,7 +80,6 @@ const notInternOverheidFilter = `
       }
       VALUES (?accessPredicate ) {
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> )
-        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
       }
