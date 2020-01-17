@@ -310,13 +310,14 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
 
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a ext:DocumentVersie .
+      ?s a dossier:Stuk .
       ?s ext:tracesLineageTo ?agenda .
-      ?document a foaf:Document .
-      ?document ext:tracesLineageTo ?agenda .
+      ?container a dossier:Serie .
+      ?container ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     { SELECT ?target ?agenda WHERE {
@@ -329,11 +330,11 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       $REPLACECONSTRAINT
       FILTER NOT EXISTS {
         GRAPH <${queryEnv.tempGraph}> {
-          ?s a ext:DocumentVersie .
+          ?s a dossier:Stuk .
         }
       }
       OPTIONAL {
-        ?document besluitvorming:heeftVersie ?s .
+        ?container dossier:collectie.bestaatUit ?s .
       }
 
       ?s <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> ?anyAccessLevel .
@@ -344,10 +345,10 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   }`;
   const constraints = [`
                 ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
-                ?s a ext:DocumentVersie .
+                ?s a dossier:Stuk .
   `,`
-    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / besluitvorming:heeftVersie ?s .
-    ?s a ext:DocumentVersie .
+    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+    ?s a dossier:Stuk .
   `];
 
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
