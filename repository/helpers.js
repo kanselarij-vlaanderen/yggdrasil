@@ -1,6 +1,7 @@
 import mu from 'mu';
 import moment from 'moment';
 import {query} from './direct-sparql-endpoint';
+import { sparqlEscapeUri } from 'mu';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
@@ -729,6 +730,11 @@ const copySetOfTempToTarget = async function(queryEnv){
         <${target}> ?p ?o .
         FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
+      FILTER ( NOT EXISTS {
+         GRAPH <${queryEnv.targetGraph}> {
+            <${target}> ?p ?o.
+         }
+      })
     }`;
     await queryEnv.run(query);
 
