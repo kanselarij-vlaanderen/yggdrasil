@@ -1,6 +1,7 @@
 import mu from 'mu';
 import moment from 'moment';
 import {query} from './direct-sparql-endpoint';
+import { sparqlEscapeUri } from 'mu';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
@@ -141,22 +142,16 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const cleanup = (queryEnv) => {
-  // TODO should we not batch this delete?
-  const query = `
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  DELETE {
-    GRAPH ?g {
-      ?s ?p ?o.
-    }
-  } WHERE {
-    GRAPH ?g {
-      ?g a ext:TempGraph .
-      ?s ?p ?o.
-    }
-  }`;
-  return queryEnv.run(query, true);
-};
+async function cleanup() {
+  const result = JSON.parse(await directQuery("PREFIX ext: <http://mu.semte.ch/vocabularies/ext/> SELECT ?g WHERE { GRAPH ?g { ?g a ext:TempGraph }}"));
+  if (result.results && result.results.bindings) {
+	  console.log(`found ${result.results.bindings.length} old temporary graphs, removing before going further`);
+	  for (let binding of result.results.bindings) {
+	    console.log(`dropping graph ${binding.g.value}`);
+	    await directQuery(`DROP SILENT GRAPH <${binding.g.value}>`);
+	  }
+  }
+}
 
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
   const result = await queryEnv.run(`
@@ -729,6 +724,11 @@ const copySetOfTempToTarget = async function(queryEnv){
         <${target}> ?p ?o .
         FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
+      FILTER ( NOT EXISTS {
+         GRAPH <${queryEnv.targetGraph}> {
+            <${target}> ?p ?o.
+         }
+      })
     }`;
     await queryEnv.run(query);
 
@@ -916,7 +916,7 @@ const configurableQuery = function(queryString, direct){
   }, queryString);
 };
 
-const directQuery = function(queryString){
+function directQuery(queryString){
   return configurableQuery(queryString, true);
 };
 
