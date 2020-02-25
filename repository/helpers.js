@@ -1,7 +1,6 @@
 import mu from 'mu';
 import moment from 'moment';
-import {query} from './direct-sparql-endpoint';
-import { sparqlEscapeUri } from 'mu';
+import { query } from './direct-sparql-endpoint';
 
 const batchSize = process.env.BATCH_SIZE || 3000;
 const smallBatchSize = process.env.SMALL_BATCH_SIZE || 100;
@@ -13,13 +12,13 @@ const parseSparQlResults = (data, multiValueProperties = []) => {
     let obj = {};
 
     vars.forEach(varKey => {
-      if (binding[varKey]){
+      if (binding[varKey]) {
         let val = binding[varKey].value;
-        if (multiValueProperties.includes(varKey)){
+        if (multiValueProperties.includes(varKey)) {
           val = val.split('|');
         }
         obj[varKey] = val;
-      }else {
+      } else {
         obj[varKey] = null;
       }
     });
@@ -35,15 +34,6 @@ const logStage = (start, logMessage, graph) => {
 const removeInfoNotInTemp = (queryEnv) => {
   // TODO should we not batch this delete?
   const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX dbpedia: <http://dbpedia.org/ontology/>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-
   DELETE {
     GRAPH <${queryEnv.targetGraph}> {
       ?s ?p ?o.
@@ -75,7 +65,6 @@ const notInternRegeringFilter = `
       ?s ?accessPredicate <http://kanselarij.vo.data.gift/id/concept/toegangs-niveaus/d335f7e3-aefd-4f93-81a2-1629c2edafa3> .
       VALUES (?accessPredicate ) {
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> )
-        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
       }
@@ -91,7 +80,6 @@ const notInternOverheidFilter = `
       }
       VALUES (?accessPredicate ) {
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorProcedurestap> )
-        ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocument> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> )
         ( <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDossier> )
       }
@@ -99,8 +87,8 @@ const notInternOverheidFilter = `
 `;
 
 const transformFilter = (originalFilter, newTargetVariable, pathToTarget) => {
-  const newFilter = originalFilter.split("?s ").join(`${newTargetVariable} `);
-  return newFilter.split("NOT EXISTS {").join(`NOT EXISTS {
+  const newFilter = originalFilter.split('?s ').join(`${newTargetVariable} `);
+  return newFilter.split('NOT EXISTS {').join(`NOT EXISTS {
     ${pathToTarget}`);
 };
 
@@ -115,7 +103,6 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a nfo:FileDataObject .
@@ -142,16 +129,22 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-async function cleanup() {
-  const result = JSON.parse(await directQuery("PREFIX ext: <http://mu.semte.ch/vocabularies/ext/> SELECT ?g WHERE { GRAPH ?g { ?g a ext:TempGraph }}"));
-  if (result.results && result.results.bindings) {
-	  console.log(`found ${result.results.bindings.length} old temporary graphs, removing before going further`);
-	  for (let binding of result.results.bindings) {
-	    console.log(`dropping graph ${binding.g.value}`);
-	    await directQuery(`DROP SILENT GRAPH <${binding.g.value}>`);
-	  }
-  }
-}
+const cleanup = (queryEnv) => {
+  // TODO should we not batch this delete?
+  const query = `
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  DELETE {
+    GRAPH ?g {
+      ?s ?p ?o.
+    }
+  } WHERE {
+    GRAPH ?g {
+      ?g a ext:TempGraph .
+      ?s ?p ?o.
+    }
+  }`;
+  return queryEnv.run(query, true);
+};
 
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
   const result = await queryEnv.run(`
@@ -172,14 +165,7 @@ const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
 
   for (let target of targets) {
     const query = `
-      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-      PREFIX dct: <http://purl.org/dc/terms/>
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-      PREFIX dbpedia: <http://dbpedia.org/ontology/>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
       INSERT {
         GRAPH <${queryEnv.tempGraph}> {
           <${target}> ?p ?o.
@@ -228,14 +214,6 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
 
   for (let target of targets) {
     const query = `
-      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-      PREFIX dct: <http://purl.org/dc/terms/>
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-      PREFIX dbpedia: <http://dbpedia.org/ontology/>
-      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
       INSERT {
         GRAPH <${queryEnv.tempGraph}> {
           ?oo ?pp ?s.
@@ -264,7 +242,7 @@ const fillOutDetailsOnVisibleItemsRight = async (queryEnv) => {
   }
 };
 
-const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph){
+const repeatUntilTripleCountConstant = async function(fun, queryEnv, previousCount, graph) {
   const startQ = moment();
   const funResult = await fun();
   const timeQuery = moment().diff(startQ, 'seconds', true).toFixed(3);
@@ -313,14 +291,14 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
 
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a ext:DocumentVersie .
+      ?s a dossier:Stuk .
       ?s ext:tracesLineageTo ?agenda .
-      ?document a foaf:Document .
-      ?document ext:tracesLineageTo ?agenda .
+      ?container a dossier:Serie .
+      ?container ext:tracesLineageTo ?agenda .
     }
   } WHERE {
     { SELECT ?target ?agenda WHERE {
@@ -333,11 +311,11 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       $REPLACECONSTRAINT
       FILTER NOT EXISTS {
         GRAPH <${queryEnv.tempGraph}> {
-          ?s a ext:DocumentVersie .
+          ?s a dossier:Stuk .
         }
       }
       OPTIONAL {
-        ?document besluitvorming:heeftVersie ?s .
+        ?container dossier:collectie.bestaatUit ?s .
       }
 
       ?s <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> ?anyAccessLevel .
@@ -346,13 +324,16 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 
     }
   }`;
-  const constraints = [`
-                ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
-                ?s a ext:DocumentVersie .
-  `,`
-    ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / besluitvorming:heeftVersie ?s .
-    ?s a ext:DocumentVersie .
-  `];
+  const constraints = [
+    `
+      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:mededelingBevatDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
+      ?s a dossier:Stuk .
+    `,
+    `
+      ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+      ?s a dossier:Stuk .
+    `
+  ];
 
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
@@ -379,7 +360,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?agenda a besluitvorming:Agenda .
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?agenda ( ${relationProperties.join(" | ")} ) ?s .
+      ?agenda ( ${relationProperties.join(' | ')} ) ?s .
       ?s a ?thing .
 
       { { ?s a dbpedia:Case .
@@ -447,8 +428,8 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
+   
    SELECT ?s ?thing ?agenda WHERE {
      { SELECT ?target ?agenda WHERE {
        GRAPH <${queryEnv.tempGraph}> {
@@ -477,7 +458,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
 <${binding.s.value}> a <${binding.thing.value}> .`;
   });
 
-  if (targets.length){
+  if (targets.length) {
     const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
@@ -508,8 +489,8 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
    PREFIX schema: <http://schema.org>
+   
    SELECT ?s ?thing ?agenda WHERE {
                  { SELECT ?target ?agenda WHERE {
                    GRAPH <${queryEnv.tempGraph}> {
@@ -539,7 +520,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
 <${binding.s.value}> a <${binding.thing.value}> .`;
   });
 
-  if(targets.length){
+  if (targets.length) {
     const update = `
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
@@ -563,14 +544,14 @@ const addRelatedToAgendaItemAndSubcase = async (queryEnv, extraFilters) => {
   await addRelatedToSubcase(queryEnv, extraFilters);
 };
 
-const runStage = async function(message, queryEnv, stage){
+const runStage = async function(message, queryEnv, stage) {
   const stageStart = moment().utc();
   await stage();
   logStage(stageStart, message, queryEnv.targetGraph);
 };
 
-const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
-  if(!targetedAgendas){
+const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas) {
+  if (!targetedAgendas) {
     return;
   }
 
@@ -626,8 +607,8 @@ const removeThingsWithLineageNoLongerInTempBatched = async function(queryEnv, ta
   }
 };
 
-const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas){
-  if(!targetedAgendas){
+const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, targetedAgendas) {
+  if (!targetedAgendas) {
     return;
   }
 
@@ -657,16 +638,16 @@ const removeLineageWhereLineageNoLongerInTempBatched = async function(queryEnv, 
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     DELETE DATA {
       GRAPH <${queryEnv.targetGraph}> {
-        ${targets.join("\n")}
+        ${targets.join('\n')}
       }
     }`;
     await queryEnv.run(query);
   }
 };
 
-const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas){
+const removeThingsWithLineageNoLongerInTemp = async function(queryEnv, targetedAgendas) {
   await repeatUntilTripleCountConstant(() => {
-    return removeThingsWithLineageNoLongerInTempBatched(queryEnv,targetedAgendas);
+    return removeThingsWithLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
   }, queryEnv, 0, queryEnv.targetGraph);
   await repeatUntilTripleCountConstant(() => {
     return removeLineageWhereLineageNoLongerInTempBatched(queryEnv, targetedAgendas);
@@ -689,14 +670,14 @@ const logTempGraphSummary = async (queryEnv) => {
   }
 };
 
-const copyTempToTarget = async function(queryEnv){
+const copyTempToTarget = async function(queryEnv) {
   await logTempGraphSummary(queryEnv);
   return repeatUntilTripleCountConstant(() => {
     return copySetOfTempToTarget(queryEnv);
   }, queryEnv, 0, queryEnv.tempGraph);
 };
 
-const copySetOfTempToTarget = async function(queryEnv){
+const copySetOfTempToTarget = async function(queryEnv) {
   const result = await queryEnv.run(`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
@@ -724,11 +705,6 @@ const copySetOfTempToTarget = async function(queryEnv){
         <${target}> ?p ?o .
         FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
-      FILTER ( NOT EXISTS {
-         GRAPH <${queryEnv.targetGraph}> {
-            <${target}> ?p ?o.
-         }
-      })
     }`;
     await queryEnv.run(query);
 
@@ -743,8 +719,8 @@ const copySetOfTempToTarget = async function(queryEnv){
   }
 };
 
-const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas){
-  if(!targetedAgendas){
+const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAgendas) {
+  if (!targetedAgendas) {
     return;
   }
   const result = await queryEnv.run(`
@@ -779,7 +755,7 @@ const removeStalePropertiesOfLineageBatch = async function(queryEnv, targetedAge
   const targets = JSON.parse(result).results.bindings.map((binding) => {
     return binding.s.value;
   });
-  if(targets.length == 0){
+  if (targets.length === 0) {
     return;
   }
 
@@ -823,14 +799,14 @@ const removeStalePropertiesOfLineage = async function(queryEnv, targetedAgendas)
   }, queryEnv, 0, queryEnv.targetGraph);
 };
 
-const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas){
+const cleanupBasedOnLineage = async function(queryEnv, targetedAgendas) {
   await removeThingsWithLineageNoLongerInTemp(queryEnv, targetedAgendas);
   await removeStalePropertiesOfLineage(queryEnv, targetedAgendas);
 };
 
-const filterAgendaMustBeInSet = function(subjects, agendaVariable = "s"){
-  if(!subjects || !subjects.length){
-    return "";
+const filterAgendaMustBeInSet = function(subjects, agendaVariable = 's') {
+  if (!subjects || !subjects.length) {
+    return '';
   }
   return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
@@ -866,7 +842,7 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const generateTempGraph = async function(queryEnv){
+const generateTempGraph = async function(queryEnv) {
   const tempGraph = `http://mu.semte.ch/temp/${mu.uuid()}`;
   queryEnv.tempGraph = tempGraph;
   await queryEnv.run(`
@@ -916,7 +892,7 @@ const configurableQuery = function(queryString, direct){
   }, queryString);
 };
 
-function directQuery(queryString){
+const directQuery = function(queryString){
   return configurableQuery(queryString, true);
 };
 
