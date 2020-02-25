@@ -129,21 +129,15 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-const cleanup = (queryEnv) => {
-  // TODO should we not batch this delete?
-  const query = `
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  DELETE {
-    GRAPH ?g {
-      ?s ?p ?o.
+async function cleanup() {
+  const result = JSON.parse(await directQuery("PREFIX ext: <http://mu.semte.ch/vocabularies/ext/> SELECT ?g WHERE { GRAPH ?g { ?g a ext:TempGraph }}"));
+  if (result.results && result.results.bindings) {
+    console.log(`found ${result.results.bindings.length} old temporary graphs, removing before going further`);
+    for (let binding of result.results.bindings) {
+      console.log(`dropping graph ${binding.g.value}`);
+      await directQuery(`DROP SILENT GRAPH <${binding.g.value}>`);
     }
-  } WHERE {
-    GRAPH ?g {
-      ?g a ext:TempGraph .
-      ?s ?p ?o.
-    }
-  }`;
-  return queryEnv.run(query, true);
+  }
 };
 
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
@@ -892,7 +886,7 @@ const configurableQuery = function(queryString, direct){
   }, queryString);
 };
 
-const directQuery = function(queryString){
+function directQuery(queryString){
   return configurableQuery(queryString, true);
 };
 

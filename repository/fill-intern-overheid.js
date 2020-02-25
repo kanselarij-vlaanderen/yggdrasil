@@ -91,9 +91,8 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('copy temp to target', queryEnv, () => {
       return copyTempToTarget(queryEnv);
     });
-    await runStage('done filling overheid', queryEnv, () => {
-      return cleanup(queryEnv);
-    });
+    await runStage('done filling overheid', queryEnv, cleanup);
+    
     const end = moment().utc();
     logStage(start, `fill overheid ended at: ${end.format()}`, targetGraph);
   } catch (e) {
