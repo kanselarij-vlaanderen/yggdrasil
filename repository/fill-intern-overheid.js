@@ -99,7 +99,7 @@ export const fillUp = async (queryEnv, agendas) => {
   } catch (e) {
     logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {
-      cleanup(queryEnv);
+      await cleanup(queryEnv);
     } catch (e2) {
       console.log(e2);
     }
