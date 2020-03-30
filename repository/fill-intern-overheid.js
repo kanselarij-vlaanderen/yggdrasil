@@ -70,7 +70,7 @@ export const fillUp = async (queryEnv, agendas) => {
         { {
           ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date .
           } UNION {
-          ?target (ext:zittingDocumentversie | (ext:beslissingsfiche / <https://data.vlaanderen.be/ns/dossier#dossier:collectie.bestaatUit> ))  ?s .
+          ?target (ext:zittingDocumentversie | (ext:beslissingsfiche / dossier:collectie.bestaatUit ))  ?s .
         } }
       `);
     });
