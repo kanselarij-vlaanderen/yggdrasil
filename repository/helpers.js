@@ -699,6 +699,11 @@ const copySetOfTempToTarget = async function(queryEnv) {
         <${target}> ?p ?o .
         FILTER (?p NOT IN ( ext:yggdrasilLeft, ext:yggdrasilRight ) )
       }
+      FILTER ( NOT EXISTS {
+        GRAPH <${queryEnv.targetGraph}> {
+           <${target}> ?p ?o.
+        }
+     })
     }`;
     await queryEnv.run(query);
 
