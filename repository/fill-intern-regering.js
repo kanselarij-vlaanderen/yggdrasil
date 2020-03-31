@@ -4,7 +4,7 @@ import {configurableQuery} from './helpers';
 mu.query = querySudo;
 import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup, addVisibleNewsletterInfo,
-  fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
+  fillOutDetailsOnVisibleItems, addAllVisibleRelatedDocuments, generateTempGraph,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage, addVisibleDecisions,
   notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
@@ -38,7 +38,7 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
 
 
 
-export const fillUp = async (queryEnv, agendas, toFile = false) => {
+export const fillUp = async (queryEnv, agendas) => {
   try{
     const start = moment().utc();
     await generateTempGraph(queryEnv);
@@ -65,7 +65,7 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
       return addVisibleNewsletterInfo(queryEnv, additionalFilter);
     });
     await runStage('related documents added', queryEnv, () => {
-      return addAllRelatedDocuments(queryEnv, '');
+      return addAllVisibleRelatedDocuments(queryEnv, '');
     });
     await runStage('related files added', queryEnv, () => {
       return addRelatedFiles(queryEnv, transformFilter(additionalFilter, "?docVersion", "?docVersion (ext:file | ext:convertedFile ) ?s ."));
@@ -74,32 +74,13 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
       return fillOutDetailsOnVisibleItems(queryEnv);
     });
 
-    if (toFile) {
-      const queryString = `
-PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
-CONSTRUCT {?s ?p ?o} WHERE {
-GRAPH <${queryEnv.tempGraph}> {
-?s ?p ?o.
-}
-}
-`;
-      const result = await configurableQuery(queryString, true, {
-          overrideFormHeaders : {
-              'content-type': 'text/turtle',
-              'format': 'text/turtle'
-          }
-      });
-      return result;
-    }
-    else{
-      await runStage('lineage updated', queryEnv, () => {
-        return cleanupBasedOnLineage(queryEnv, agendas);
+    await runStage('lineage updated', queryEnv, () => {
+      return cleanupBasedOnLineage(queryEnv, agendas);
     });
-     if (queryEnv.fullRebuild){
-       await runStage('removed info not in temp', queryEnv, () => {
+    if (queryEnv.fullRebuild){
+      await runStage('removed info not in temp', queryEnv, () => {
         return removeInfoNotInTemp(queryEnv);
-       });
-      }
+      });
     }
 
     await runStage('copy temp to target', queryEnv, () => {

@@ -8,6 +8,7 @@ import {cleanup, directQuery, configurableQuery} from './repository/helpers';
 
 const fillInterneOverheid = require('./repository/fill-intern-overheid');
 const fillInterneRegering = require('./repository/fill-intern-regering');
+const fillKanselarij = require('./repository/fill-kanselarij');
 const fillPublic = require('./repository/fill-public');
 
 if (!process.env.DIRECT_ENDPOINT) {
@@ -46,6 +47,16 @@ const builders = {
             run: configurableQuery
         },
         builder: fillInterneRegering
+    },
+    'kanselarij': {
+        skipInitialLoad: true,
+        env: {
+            adminGraph: adminGraph,
+            targetGraph: `http://mu.semte.ch/graphs/organizations/kanselarij-mirror`,
+            fullRebuild: false,
+            run: configurableQuery
+        },
+        builder: fillKanselarij
     },
     // uses intern-regering builder with other graph and filter
     'minister': {
@@ -97,7 +108,7 @@ async function startup() {
     await initialLoad();
 }
 
-//startup();
+startup();
 
 const deltaBuilders = Object.assign({}, builders);
 delete deltaBuilders.public;

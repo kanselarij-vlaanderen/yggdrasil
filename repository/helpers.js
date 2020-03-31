@@ -312,8 +312,6 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
         ?container dossier:collectie.bestaatUit ?s .
       }
 
-      ?s <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> ?anyAccessLevel .
-
       ${extraFilters}
 
     }
@@ -331,6 +329,14 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[0]), true);
   await queryEnv.run(queryTemplate.split('$REPLACECONSTRAINT').join(constraints[1]), true);
+};
+
+const addAllVisibleRelatedDocuments = async (queryEnv, extraFilters = "") => {
+  return addAllRelatedDocuments(queryEnv, `
+      ?s <http://mu.semte.ch/vocabularies/ext/toegangsniveauVoorDocumentVersie> ?anyAccessLevel .
+
+      ${extraFilters}
+`);
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
@@ -378,38 +384,6 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   return queryEnv.run(query, true);
 };
 
-const addVisibleNotulen = (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ext:Notule .
-      ?s ext:tracesLineageTo ?agenda.
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agenda a besluitvorming:Agenda.
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDecisions ?date.
-
-      { {
-        ?session ext:algemeneNotulen ?s  .
-        } UNION {
-        ?agenda dct:hasPart / ext:notulenVanAgendaPunt ?s .
-      } }
-
-      ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
-};
-
 const addAllNotulen = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -428,7 +402,6 @@ const addAllNotulen = (queryEnv, extraFilters) => {
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDecisions ?date.
 
       { {
         ?session ext:algemeneNotulen ?s  .
@@ -440,6 +413,15 @@ const addAllNotulen = (queryEnv, extraFilters) => {
     }
   }`;
   return queryEnv.run(query, true);
+};
+
+
+const addVisibleNotulen = (queryEnv, extraFilters) => {
+  return addAllNotulen(queryEnv, `
+    ?session ext:releasedDecisions ?date.
+
+    ${extraFilters}
+`);
 };
 
 const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
@@ -837,37 +819,6 @@ const filterAgendaMustBeInSet = function(subjects, agendaVariable = 's') {
   return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
 
-const addVisibleDecisions = (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a besluit:Besluit.
-      ?s ext:tracesLineageTo ?agenda.
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agendaitem a besluit:Agendapunt.
-      ?agendaitem ext:tracesLineageTo ?agenda.
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?agenda dct:hasPart ?agendaitem.
-      ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDecisions ?date.
-      ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
-      ?subcase ext:procedurestapHeeftBesluit ?s.
-      ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-
-      ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
-};
-
 const addAllDecisions = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -887,14 +838,22 @@ const addAllDecisions = (queryEnv, extraFilters) => {
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?agenda dct:hasPart ?agendaitem.
-      ?agenda besluit:isAangemaaktVoor ?session.
-      ?session ext:releasedDecisions ?date.
       ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
-
+      ?subcase ext:procedurestapHeeftBesluit ?s.
       ${extraFilters}
     }
   }`;
   return queryEnv.run(query, true);
+};
+
+const addVisibleDecisions = (queryEnv, extraFilters) => {
+  return addAllDecisions(queryEnv, `
+    ?agenda besluit:isAangemaaktVoor ?session.
+    ?session ext:releasedDecisions ?date.
+    ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+ 
+    ${extraFilters}
+`);
 };
 
 const generateTempGraph = async function(queryEnv) {
@@ -907,37 +866,6 @@ const generateTempGraph = async function(queryEnv) {
         <${tempGraph}> a ext:TempGraph .
       }
     }`, true);
-};
-
-const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX prov: <http://www.w3.org/ns/prov#>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a besluitvorming:NieuwsbriefInfo .
-      ?s ext:tracesLineageTo ?agenda.
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?target a ?thing .
-      ?target ext:tracesLineageTo ?agenda.
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?target (prov:generated | ext:algemeneNieuwsbrief ) ?s .
-
-      ?agenda besluit:isAangemaaktVoor ?session .
-      ?session ext:releasedDecisions ?date .
-      ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
-
-      ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
 };
 
 const addAllNewsletterInfo = async (queryEnv, extraFilters) => {
@@ -961,14 +889,21 @@ const addAllNewsletterInfo = async (queryEnv, extraFilters) => {
     GRAPH <${queryEnv.adminGraph}> {
       ?target (prov:generated | ext:algemeneNieuwsbrief ) ?s .
 
+      ${extraFilters}
+    }
+  }`;
+  return queryEnv.run(query, true);
+};
+
+
+const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
+  return addAllNewsletterInfo(queryEnv, `
       ?agenda besluit:isAangemaaktVoor ?session .
       ?session ext:releasedDecisions ?date .
       ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
 
       ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
+`);
 };
 
 const configurableQuery = function(queryString, direct, args = {}){
@@ -995,6 +930,7 @@ module.exports = {
   cleanup,
   fillOutDetailsOnVisibleItems,
   addAllRelatedDocuments,
+  addAllVisibleRelatedDocuments,
   addVisibleDecisions,
   addAllDecisions,
   addAllRelatedToAgenda,
@@ -1003,8 +939,8 @@ module.exports = {
   addRelatedToAgendaItemAndSubcase,
   cleanupBasedOnLineage,
   logStage,
-  addVisibleNotulen,
   addAllNotulen,
+  addVisibleNotulen,
   filterAgendaMustBeInSet,
   generateTempGraph,
   copyTempToTarget,

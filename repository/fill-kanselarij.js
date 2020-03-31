@@ -3,12 +3,11 @@ import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import {configurableQuery} from './helpers';
 mu.query = querySudo;
 import moment from 'moment';
-import { removeInfoNotInTemp, addRelatedFiles, cleanup, addVisibleNewsletterInfo,
-  fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
-  addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage, addVisibleDecisions,
-  notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
+import { removeInfoNotInTemp, addRelatedFiles, cleanup, addAllNewsletterInfo,
+  fillOutDetailsOnVisibleItems, generateTempGraph, addAllRelatedDocuments,
+  addRelatedToAgendaItemAndSubcase, runStage, addAllDecisions,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
-  addVisibleNotulen, transformFilter
+  addAllNotulen, transformFilter
 } from './helpers';
 
 const addAgendas = (queryEnv, extraFilter) => {
@@ -33,6 +32,52 @@ const addAgendas = (queryEnv, extraFilter) => {
     }
   }`;
   return queryEnv.run(query, true);
+};
+
+const addAllRelatedToAgenda = function(queryEnv){
+  const query = `
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX dbpedia: <http://dbpedia.org/ontology/>
+  INSERT {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?s a ?thing .
+      ?s ext:tracesLineageTo ?agenda .
+    }
+  } WHERE {
+    GRAPH <${queryEnv.tempGraph}> {
+      ?agenda a besluitvorming:Agenda .
+    }
+    GRAPH <${queryEnv.adminGraph}> {
+      ?agenda ?p ?s .
+      ?s a ?thing .
+    }
+  }`;
+  return queryEnv.run(query, true);
+};
+
+const writeResultToFile = async function(queryEnv, start){
+  const queryString = `
+PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
+CONSTRUCT {?s ?p ?o} WHERE {
+GRAPH <${queryEnv.tempGraph}> {
+?s ?p ?o.
+}
+}
+`;
+  const result = await configurableQuery(queryString, true, {
+    overrideFormHeaders : {
+      'content-type': 'text/turtle',
+      'format': 'text/turtle'
+    }
+  });
+  await runStage('cleaned up', queryEnv, cleanup);
+  const end = moment().utc();
+  logStage(start, `fill kanselarij ended at: ${end.format()}`, queryEnv.targetGraph);
+  return result;
 };
 
 
@@ -61,7 +106,7 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
       return addAllNotulen(queryEnv, additionalFilter);
     });
     await runStage('visible newsletter info added', queryEnv, () => {
-      return addVisibleNewsletterInfo(queryEnv, additionalFilter);
+      return addAllNewsletterInfo(queryEnv, additionalFilter);
     });
     await runStage('related documents added', queryEnv, () => {
       return addAllRelatedDocuments(queryEnv, '');
@@ -74,31 +119,16 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
     });
 
     if (toFile) {
-      const queryString = `
-PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
-CONSTRUCT {?s ?p ?o} WHERE {
-GRAPH <${queryEnv.tempGraph}> {
-?s ?p ?o.
-}
-}
-`;
-      const result = await configurableQuery(queryString, true, {
-          overrideFormHeaders : {
-              'content-type': 'text/turtle',
-              'format': 'text/turtle'
-          }
-      });
-      return result;
+      return writeResultToFile(queryEnv, start);
     }
-    else{
-      await runStage('lineage updated', queryEnv, () => {
-        return cleanupBasedOnLineage(queryEnv, agendas);
+
+    await runStage('lineage updated', queryEnv, () => {
+      return cleanupBasedOnLineage(queryEnv, agendas);
     });
-     if (queryEnv.fullRebuild){
-       await runStage('removed info not in temp', queryEnv, () => {
+    if (queryEnv.fullRebuild){
+      await runStage('removed info not in temp', queryEnv, () => {
         return removeInfoNotInTemp(queryEnv);
-       });
-      }
+      });
     }
 
     await runStage('copy temp to target', queryEnv, () => {
@@ -106,7 +136,7 @@ GRAPH <${queryEnv.tempGraph}> {
     });
     await runStage('cleaned up', queryEnv, cleanup);
     const end = moment().utc();
-    logStage(start, `fill regering ended at: ${end.format()}`, targetGraph);
+    logStage(start, `fill kanselarij ended at: ${end.format()}`, targetGraph);
   }catch (e) {
     logStage(moment(), `${e}\n${e.stack}`, queryEnv.targetGraph);
     try {
