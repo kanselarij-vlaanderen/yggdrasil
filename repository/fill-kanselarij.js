@@ -11,7 +11,7 @@ import { removeInfoNotInTemp, addRelatedFiles, cleanup, addVisibleNewsletterInfo
   addVisibleNotulen, transformFilter
 } from './helpers';
 
-const addVisibleAgendas = (queryEnv, extraFilter) => {
+const addAgendas = (queryEnv, extraFilter) => {
   extraFilter = extraFilter || "";
 
   const query = `
@@ -29,7 +29,6 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
       ?s ext:agendaNaam ?naam.
-      FILTER(?naam != "Ontwerpagenda")
       ${extraFilter}
     }
   }`;
@@ -44,10 +43,10 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
     await generateTempGraph(queryEnv);
     const agendaFilter = filterAgendaMustBeInSet(agendas);
     const targetGraph = queryEnv.targetGraph;
-    const additionalFilter = queryEnv.extraFilter || notConfidentialFilter;
-    console.log(`fill regering started at: ${start.format()}`);
+    const additionalFilter = "";
+    console.log(`fill kanselarij started at: ${start.format()}`);
     await runStage(`agendas added`, queryEnv, () => {
-      return addVisibleAgendas(queryEnv, agendaFilter);
+      return addAgendas(queryEnv, agendaFilter);
     });
     await runStage('related to agenda added', queryEnv, () => {
       return addAllRelatedToAgenda(queryEnv);
@@ -56,10 +55,10 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
       return addRelatedToAgendaItemAndSubcase(queryEnv, additionalFilter);
     });
     await runStage('visible decisions added', queryEnv, () => {
-      return addVisibleDecisions(queryEnv, additionalFilter);
+      return addAllDecisions(queryEnv, additionalFilter);
     });
     await runStage('visible notulen added', queryEnv, () => {
-      return addVisibleNotulen(queryEnv, additionalFilter);
+      return addAllNotulen(queryEnv, additionalFilter);
     });
     await runStage('visible newsletter info added', queryEnv, () => {
       return addVisibleNewsletterInfo(queryEnv, additionalFilter);

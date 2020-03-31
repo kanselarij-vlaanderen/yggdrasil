@@ -1,6 +1,7 @@
 import mu from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import moment from 'moment';
+
 mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles, addVisibleNewsletterInfo,
