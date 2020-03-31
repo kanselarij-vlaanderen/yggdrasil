@@ -62,9 +62,17 @@ const addAllRelatedToAgenda = function(queryEnv){
 const writeResultToFile = async function(queryEnv, start){
   const queryString = `
 PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 CONSTRUCT {?s ?p ?o} WHERE {
 GRAPH <${queryEnv.tempGraph}> {
-?s ?p ?o.
+  { { 
+    ?s ?p ?o.
+    FILTER(DATATYPE(?o) != xsd:string) 
+  } UNION {
+    ?s ?p ?oNotSafe.
+    FILTER(DATATYPE(?oNotSafe) = xsd:string)
+    BIND(STR(?s) as ?o) 
+  } }
 }
 }
 `;
