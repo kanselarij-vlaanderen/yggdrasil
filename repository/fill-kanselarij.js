@@ -59,27 +59,32 @@ const addAllRelatedToAgenda = function(queryEnv){
   return queryEnv.run(query, true);
 };
 
-const writeResultToFile = async function(queryEnv, start){
-  const queryString = `
+const writeResultToFile = async function(queryEnv, start, anonymize=true){
+  let queryString = `
+PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+CONSTRUCT {?s ?p ?newo} WHERE {
+  GRAPH <${queryEnv.tempGraph}> {
+    ?s ?p ?o.
+    BIND(IF(DATATYPE(?o) = xsd:string && ?p != <http://mu.semte.ch/vocabularies/core/uuid>, STR(?s), ?o) AS ?newo )
+  }
+}
+`;
+
+  if (!anonymize){
+    queryString = `
 PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
 PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 CONSTRUCT {?s ?p ?o} WHERE {
-GRAPH <${queryEnv.tempGraph}> {
-  { { 
+  GRAPH <${queryEnv.tempGraph}> {
     ?s ?p ?o.
-    FILTER(DATATYPE(?o) != xsd:string) 
-  } UNION {
-    ?s ?p ?oNotSafe.
-    FILTER(DATATYPE(?oNotSafe) = xsd:string)
-    BIND(STR(?s) as ?o) 
-  } }
-}
-}
-`;
+  } 
+}`
+  }
   const result = await configurableQuery(queryString, true, {
     overrideFormHeaders : {
-      'content-type': 'text/turtle',
-      'format': 'text/turtle'
+      'content-type': 'application/n-triples',
+      'format': 'application/n-triples'
     }
   });
   await runStage('cleaned up', queryEnv, cleanup);
@@ -90,8 +95,9 @@ GRAPH <${queryEnv.tempGraph}> {
 
 
 
-export const fillUp = async (queryEnv, agendas, toFile = false) => {
+export const fillUp = async (queryEnv, agendas, options) => {
   try{
+    const {toFile, anonymize} = options;
     const start = moment().utc();
     await generateTempGraph(queryEnv);
     const agendaFilter = filterAgendaMustBeInSet(agendas);
@@ -127,7 +133,7 @@ export const fillUp = async (queryEnv, agendas, toFile = false) => {
     });
 
     if (toFile) {
-      return writeResultToFile(queryEnv, start);
+      return writeResultToFile(queryEnv, start, anonymize);
     }
 
     await runStage('lineage updated', queryEnv, () => {

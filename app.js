@@ -117,8 +117,9 @@ app.post('/delta', (req, res) => {
     return handleDelta(req, res, deltaBuilders, directQuery);
 });
 
-app.get('/downloadZitting', async (req, res) => {
-    let queryString = `
+if(process.env.ALLOW_DOWNLOADS === "true"){
+    app.get('/downloadZitting', async (req, res) => {
+        let queryString = `
 prefix mu: <http://mu.semte.ch/vocabularies/core/>
 prefix besluit: <http://data.vlaanderen.be/ns/besluit#>
 
@@ -130,19 +131,19 @@ select distinct(?agenda) where {
  ?zitting mu:uuid "${req.query.zitting}"
  
 }`;
-    const queryResult = await directQuery(queryString);
-    const json = JSON.parse(queryResult);
+        const queryResult = await directQuery(queryString);
+        const json = JSON.parse(queryResult);
 
-    const agendas = json.results.bindings.map((binding) => {
-        console.log('binding');
-        console.log(binding);
-        return binding.agenda.value;
+        const agendas = json.results.bindings.map((binding) => {
+            console.log('binding');
+            console.log(binding);
+            return binding.agenda.value;
+        });
+        res.setHeader('Content-disposition', 'attachment; filename=zitting.ttl' );
+        res.send(await builders["kanselarij"].builder.fillUp(builders["kanselarij"].env, agendas, {
+          toFile: true,
+          anonymize: req.query.anonymize !== "false"
+        }));
+
     });
-    res.setHeader('Content-disposition', 'attachment; filename=zitting.ttl' );
-    res.send(await builders["kanselarij"].builder.fillUp(builders["kanselarij"].env, agendas, true));
-
-});
-
-
-
-
+}
