@@ -1,11 +1,12 @@
 import mu from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import moment from 'moment';
+
 mu.query = querySudo;
 
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles, addVisibleNewsletterInfo,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
-  notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllRelatedDocuments,
+  notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllVisibleRelatedDocuments,
   addVisibleNotulen, transformFilter,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget, addVisibleDecisions
 } from './helpers';
@@ -66,7 +67,7 @@ export const fillUp = async (queryEnv, agendas) => {
     });
 
     await runStage('documents added', queryEnv, () => {
-      return addAllRelatedDocuments(queryEnv, `
+      return addAllVisibleRelatedDocuments(queryEnv, `
         { {
           ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date .
           } UNION {
@@ -92,7 +93,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return copyTempToTarget(queryEnv);
     });
     await runStage('done filling overheid', queryEnv, cleanup);
-    
+
     const end = moment().utc();
     logStage(start, `fill overheid ended at: ${end.format()}`, targetGraph);
   } catch (e) {
