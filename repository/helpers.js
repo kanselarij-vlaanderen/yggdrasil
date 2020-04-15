@@ -340,7 +340,7 @@ const addAllVisibleRelatedDocuments = async (queryEnv, extraFilters = "") => {
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluit:isAangemaaktVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
+  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
   extraFilters = extraFilters || '';
 
   const query = `
@@ -401,7 +401,8 @@ const addAllNotulen = (queryEnv, extraFilters) => {
       ?agenda a besluitvorming:Agenda.
     }
     GRAPH <${queryEnv.adminGraph}> {
-      ?agenda besluit:isAangemaaktVoor ?session.
+      ?agenda besluitvorming:isAgendaVoor ?session.
+      ?session ext:releasedDecisions ?date.
 
       { {
         ?session ext:algemeneNotulen ?s  .
@@ -838,6 +839,8 @@ const addAllDecisions = (queryEnv, extraFilters) => {
     }
     GRAPH <${queryEnv.adminGraph}> {
       ?agenda dct:hasPart ?agendaitem.
+      ?agenda besluitvorming:isAgendaVoor ?session.
+      ?session ext:releasedDecisions ?date.
       ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
       ?subcase ext:procedurestapHeeftBesluit ?s.
       ${extraFilters}
@@ -848,7 +851,7 @@ const addAllDecisions = (queryEnv, extraFilters) => {
 
 const addVisibleDecisions = (queryEnv, extraFilters) => {
   return addAllDecisions(queryEnv, `
-    ?agenda besluit:isAangemaaktVoor ?session.
+    ?agenda besluitvorming:isAgendaVoor ?session.
     ?session ext:releasedDecisions ?date.
     ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
  
@@ -898,7 +901,7 @@ const addAllNewsletterInfo = async (queryEnv, extraFilters) => {
 
 const addVisibleNewsletterInfo = async (queryEnv, extraFilters) => {
   return addAllNewsletterInfo(queryEnv, `
-      ?agenda besluit:isAangemaaktVoor ?session .
+      ?agenda besluitvorming:isAgendaVoor ?session .
       ?session ext:releasedDecisions ?date .
       ?session ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
 

@@ -27,7 +27,7 @@ const addAgendas = (queryEnv, extraFilter) => {
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
-      ?s ext:agendaNaam ?naam.
+      
       ${extraFilter}
     }
   }`;
