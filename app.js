@@ -1,5 +1,4 @@
 import mu from 'mu';
-import { ok } from 'assert';
 
 const app = mu.app;
 const bodyParser = require('body-parser');
@@ -112,6 +111,7 @@ async function startup() {
 startup();
 
 const deltaBuilders = Object.assign({}, builders);
+delete deltaBuilders.kanselarij;
 delete deltaBuilders.public;
 
 app.post('/delta', (req, res) => {
