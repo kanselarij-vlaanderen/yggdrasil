@@ -1,4 +1,5 @@
 import mu from 'mu';
+import { ok } from 'assert';
 
 const app = mu.app;
 const bodyParser = require('body-parser');
@@ -118,6 +119,26 @@ app.post('/delta', (req, res) => {
 });
 
 if(process.env.ALLOW_DOWNLOADS === "true"){
+    const downloadRequests = {};
+    app.get('/downloadZittingResult', async (req, res) => {
+        const downloadId = req.query.id;
+        const downloadRequest = downloadRequests[downloadId];
+        if(!downloadRequest){
+          res.status(404).send({ status: "not found" } );
+          return;
+        }
+        let done = downloadRequest.status != "loading";
+        if(done){
+            if(downloadRequest.status == "error"){
+              res.status(500).send(downloadRequest.result);
+            }
+            res.status(200).send(downloadRequest.result);
+            delete downloadRequests[downloadId];
+        }else{
+            res.send(downloadRequest.status);
+        }
+    });
+
     app.get('/downloadZitting', async (req, res) => {
         let queryString = `
 prefix mu: <http://mu.semte.ch/vocabularies/core/>
@@ -140,10 +161,23 @@ select distinct(?agenda) where {
             return binding.agenda.value;
         });
         res.setHeader('Content-disposition', 'attachment; filename=zitting.ttl' );
-        res.send(await builders["kanselarij"].builder.fillUp(builders["kanselarij"].env, agendas, {
-          toFile: true,
-          anonymize: req.query.anonymize !== "false"
-        }));
-
+        const downloadId = mu.uuid();
+        downloadRequests[downloadId] = {status: "loading"};
+        res.send(downloadId);
+        try{
+            const result = await builders["kanselarij"].builder.fillUp(builders["kanselarij"].env, agendas, {
+                toFile: true,
+                anonymize: req.query.anonymize !== "false"
+            });
+            downloadRequests[downloadId] = {
+              status: "done",
+              result: result
+            }
+        }catch(e){
+          downloadRequests[downloadId] = {
+            status: "error",
+            result: "" + e
+          }
+        }
     });
 }
