@@ -484,6 +484,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
    PREFIX schema: <http://schema.org>
+   PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
    
    SELECT ?s ?thing ?agenda WHERE {
                  { SELECT ?target ?agenda WHERE {
@@ -494,7 +495,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
                  }}
 
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dossier:doorloopt | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {

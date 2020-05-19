@@ -53,7 +53,7 @@ const pathsToAgenda = {
     { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
   ],
   'case': [
-    { path: 'dct:hasPart', nextRDFType: 'subcase' }
+    { path: 'dossier:doorloopt', nextRDFType: 'subcase' }
   ],
   'remark': [
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'meeting' },
@@ -67,7 +67,7 @@ const pathsToAgenda = {
   ],
   'document-container': [
     { path: '^ext:beslissingFiche', nextRDFType: 'decision' },
-    { path: '<https://data.vlaanderen.be/ns/dossier#collectie.bestaatUit>', nextRDFType: 'document' },
+    { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
   'announcement': [
@@ -97,9 +97,9 @@ const typeUris = {
   'meeting-record': 'ext:Notule',
   'case': 'dbpedia:Case',
   'remark': 'schema:Comment',
-  'document-container': '<https://data.vlaanderen.be/ns/dossier#Serie>',
+  'document-container': 'dossier:Serie',
   'announcement': 'besluitvorming:Mededeling',
-  'document': '<https://data.vlaanderen.be/ns/dossier#Stuk>'
+  'document': 'dossier:Stuk'
 };
 
 let fullPathsCache = null;
@@ -171,6 +171,7 @@ const selectRelatedAgendasForSubjects = async function(subjects) {
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX foaf: <http://xmlns.com/foaf/0.1/>
       PREFIX schema: <http://schema.org>
+      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
 
       SELECT DISTINCT ?agenda WHERE {
         GRAPH <http://mu.semte.ch/graphs/organizations/kanselarij> {
@@ -184,7 +185,7 @@ const selectRelatedAgendasForSubjects = async function(subjects) {
 
     const results = await directQuery(select);
 
-    const agendaItems = parseSparQlResults(JSON.parse(results)) // TODO: looks like this doesn't get used ... remove?
+    parseSparQlResults(JSON.parse(results))
       .map((item) => item.agenda)
       .forEach((agenda) => agendas.add(agenda));
   }
