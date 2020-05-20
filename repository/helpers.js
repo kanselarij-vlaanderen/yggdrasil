@@ -357,7 +357,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?agenda ( ${relationProperties.join(' | ')} ) ?s .
       ?s a ?thing .
 
-      { { ?s a dbpedia:Case .
+      { { ?s a dossier:Dossier .
           ?s ^besluitvorming:isGeagendeerdVia ?agendaitem .
           ?agenda dct:hasPart ?agendaitem .
           ?agendaitem besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636>.
@@ -367,7 +367,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
         UNION
         { FILTER NOT EXISTS {
             VALUES (?restrictedType) {
-              (dbpedia:Case) (besluit:AgendaPunt)
+              (dossier:Dossier) (besluit:AgendaPunt)
             }
             ?s a ?restrictedType.
           } }}

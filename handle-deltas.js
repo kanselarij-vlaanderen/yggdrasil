@@ -95,7 +95,7 @@ const typeUris = {
   'subcase-phase': 'ext:ProcedurestapFase',
   'decision': 'besluit:Besluit',
   'meeting-record': 'ext:Notule',
-  'case': 'dbpedia:Case',
+  'case': 'dossier:Dossier',
   'remark': 'schema:Comment',
   'document-container': 'dossier:Serie',
   'announcement': 'besluitvorming:Mededeling',
