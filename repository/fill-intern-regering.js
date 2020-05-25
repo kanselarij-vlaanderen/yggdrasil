@@ -20,6 +20,7 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX statusid: <http://kanselarij.vo.data.gift/id/agendastatus/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
@@ -28,8 +29,10 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
-      ?s ext:agendaNaam ?naam.
-      FILTER(?naam != "Ontwerpagenda")
+      FILTER NOT EXISTS {
+         ?s besluitvorming:agendaStatus statusid:2735d084-63d1-499f-86f4-9b69eb33727f .
+      } 
+
       ${extraFilter}
     }
   }`;

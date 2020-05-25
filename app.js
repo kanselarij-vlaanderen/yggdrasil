@@ -148,7 +148,7 @@ PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
 
 select distinct(?agenda) where {
    
-  ?agenda besluit:isAangemaaktVoor ?zitting.
+  ?agenda besluitvorming:isAgendaVoor ?zitting.
  ?zitting mu:uuid "${req.query.zitting}"
  
 }`;

@@ -18,6 +18,7 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX statusid: <http://kanselarij.vo.data.gift/id/agendastatus/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a besluitvorming:Agenda.
@@ -26,8 +27,9 @@ const addVisibleAgendas = (queryEnv, extraFilters) => {
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a besluitvorming:Agenda.
-      ?s ext:agendaNaam ?naam.
-      FILTER(?naam != "Ontwerpagenda")
+      FILTER NOT EXISTS {
+         ?s besluitvorming:agendaStatus statusid:2735d084-63d1-499f-86f4-9b69eb33727f .
+      } 
       
       ${extraFilters}
     }
@@ -69,7 +71,7 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('documents added', queryEnv, () => {
       return addAllVisibleRelatedDocuments(queryEnv, `
         { {
-          ?agenda (besluit:isAangemaaktVoor / ext:releasedDocuments) ?date .
+          ?agenda (besluitvorming:isAgendaVoor / ext:releasedDocuments) ?date .
           } UNION {
           ?target (ext:zittingDocumentversie | (ext:beslissingsfiche / dossier:collectie.bestaatUit ))  ?s .
         } }
