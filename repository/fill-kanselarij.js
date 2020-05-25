@@ -59,6 +59,23 @@ const addAllRelatedToAgenda = function(queryEnv){
   return queryEnv.run(query, true);
 };
 
+const jsonToNtriples = function(json){
+  const triples = JSON.parse(json).results.bindings.map((binding) => {
+    let object = binding.o.value;
+    if(binding.o.type == "uri"){
+      object =`<${object}>`;
+    }else{
+      object = `"${object}"`;
+    }
+    if(binding.o.datatype){
+      object = `${object}^^<${binding.o.datatype}>`;
+    }
+
+    return `<${binding.s.value}> <${binding.p.value}> ${object} . `;
+  });
+  return triples.join("\n")
+};
+
 const writeResultToFile = async function(queryEnv, start, anonymize=true){
   let queryString = `
 PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>\n 
@@ -81,16 +98,12 @@ CONSTRUCT {?s ?p ?o} WHERE {
   } 
 }`
   }
-  const result = await configurableQuery(queryString, true, {
-    overrideFormHeaders : {
-      'content-type': 'application/n-triples',
-      'format': 'application/n-triples'
-    }
-  });
+  const result = await configurableQuery(queryString, true);
   await runStage('cleaned up', queryEnv, cleanup);
   const end = moment().utc();
   logStage(start, `fill kanselarij ended at: ${end.format()}`, queryEnv.targetGraph);
-  return result;
+  // can't use ntriples directly as it does not utf8 encode
+  return jsonToNtriples(result);
 };
 
 
