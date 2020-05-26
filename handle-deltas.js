@@ -32,7 +32,7 @@ const handleDeltaRelatedToAgenda = async function(subjects, queryEnv) {
 const pathsToAgenda = {
   'agendaitem': ['^dct:hasPart'],
   'subcase': ['besluitvorming:isGeagendeerdVia / ^dct:hasPart'],
-  'meeting': ['^besluit:isAangemaaktVoor'],
+  'meeting': ['^besluitvorming:isAgendaVoor'],
   'newsletter-info': [
     { path: '^prov:generated', nextRDFType: 'subcase' },
     { path: '^ext:algemeneNieuwsbrief', nextRDFType: 'meeting' }
@@ -89,7 +89,7 @@ const typeUris = {
   'agenda': 'besluitvorming:Agenda',
   'agendaitem': 'besluit:Agendapunt',
   'subcase': 'dbpedia:UnitOfWork',
-  'meeting': 'besluit:Zitting',
+  'meeting': 'besluit:Vergaderactiviteit',
   'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
   'consultation-request': 'besluitvorming:Consultatievraag',
   'subcase-phase': 'ext:ProcedurestapFase',

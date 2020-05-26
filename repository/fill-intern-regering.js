@@ -1,9 +1,10 @@
 import mu from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
+import {configurableQuery} from './helpers';
 mu.query = querySudo;
 import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup, addVisibleNewsletterInfo,
-  fillOutDetailsOnVisibleItems, addAllRelatedDocuments, generateTempGraph,
+  fillOutDetailsOnVisibleItems, addAllVisibleRelatedDocuments, generateTempGraph,
   addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase, runStage, addVisibleDecisions,
   notInternRegeringFilter, notInternOverheidFilter, notConfidentialFilter,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
@@ -19,6 +20,7 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+  PREFIX statusid: <http://kanselarij.vo.data.gift/id/agendastatus/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
@@ -27,14 +29,17 @@ const addVisibleAgendas = (queryEnv, extraFilter) => {
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
       ?s a <http://data.vlaanderen.be/ns/besluitvorming#Agenda>.
-      ?s ext:agendaNaam ?naam.
-      FILTER(?naam != "Ontwerpagenda")
-      
+      FILTER NOT EXISTS {
+         ?s besluitvorming:agendaStatus statusid:2735d084-63d1-499f-86f4-9b69eb33727f .
+      } 
+
       ${extraFilter}
     }
   }`;
   return queryEnv.run(query, true);
 };
+
+
 
 export const fillUp = async (queryEnv, agendas) => {
   try{
@@ -63,7 +68,7 @@ export const fillUp = async (queryEnv, agendas) => {
       return addVisibleNewsletterInfo(queryEnv, additionalFilter);
     });
     await runStage('related documents added', queryEnv, () => {
-      return addAllRelatedDocuments(queryEnv, '');
+      return addAllVisibleRelatedDocuments(queryEnv, '');
     });
     await runStage('related files added', queryEnv, () => {
       return addRelatedFiles(queryEnv, transformFilter(additionalFilter, "?docVersion", "?docVersion (ext:file | ext:convertedFile ) ?s ."));
@@ -71,14 +76,16 @@ export const fillUp = async (queryEnv, agendas) => {
     await runStage('details added', queryEnv, () => {
       return fillOutDetailsOnVisibleItems(queryEnv);
     });
+
     await runStage('lineage updated', queryEnv, () => {
       return cleanupBasedOnLineage(queryEnv, agendas);
     });
-    if(queryEnv.fullRebuild){
+    if (queryEnv.fullRebuild){
       await runStage('removed info not in temp', queryEnv, () => {
         return removeInfoNotInTemp(queryEnv);
       });
     }
+
     await runStage('copy temp to target', queryEnv, () => {
       return copyTempToTarget(queryEnv);
     });
