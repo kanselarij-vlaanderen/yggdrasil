@@ -44,9 +44,8 @@ const pathsToAgenda = {
     { path: '^ext:subcaseProcedurestapFase', nextRDFType: 'subcase' },
     { path: '^ext:subcaseAgendapuntFase', nextRDFType: 'agendaitem' }
   ],
-  'decision': [
-    { path: '^ext:procedurestapHeeftBesluit', nextRDFType: 'subcase' },
-    { path: '^ext:agendapuntHeeftBesluit', nextRDFType: 'agendaitem' }
+  'treatment': [
+    { path: '^besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
   ],
   'meeting-record': [
     { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
@@ -60,13 +59,11 @@ const pathsToAgenda = {
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'newsletter-info' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'document-container' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'agendaitem' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'case' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' }
   ],
   'document-container': [
-    { path: '^ext:beslissingFiche', nextRDFType: 'decision' },
     { path: '<https://data.vlaanderen.be/ns/dossier#collectie.bestaatUit>', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
@@ -74,13 +71,13 @@ const pathsToAgenda = {
     'ext:mededeling'
   ],
   'document': [
+    { path: '^besluitvorming:beschrijft', nextRDFType: 'treatment' },
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^ext:bevatAgendapuntDocumentversie', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
-    { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
-    { path: '^ext:documentenVoorBeslissing', nextRDFType: 'decision' },
+    //{ path: '^ext:documentenVoorBeslissing', nextRDFType: 'treatment' }, // Currently not used in the frontend.
     { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
   ]
 };
@@ -93,7 +90,7 @@ const typeUris = {
   'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
   'consultation-request': 'besluitvorming:Consultatievraag',
   'subcase-phase': 'ext:ProcedurestapFase',
-  'decision': 'besluit:Besluit',
+  'treatment': 'besluit:BehandelingVanAgendapunt',
   'meeting-record': 'ext:Notule',
   'case': 'dbpedia:Case',
   'remark': 'schema:Comment',
