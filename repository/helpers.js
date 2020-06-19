@@ -340,7 +340,7 @@ const addAllVisibleRelatedDocuments = async (queryEnv, extraFilters = "") => {
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens )'];
+  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt','(dct:hasPart / ^besluitvorming:genereertAgendapunt)', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens )'];
   extraFilters = extraFilters || '';
 
   const query = `
@@ -448,7 +448,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens) ?s .
+       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
