@@ -64,6 +64,7 @@ const pathsToAgenda = {
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' }
   ],
   'document-container': [
+    { path: '^besluitvorming:beschrijft', nextRDFType: 'treatment' },
     { path: '<https://data.vlaanderen.be/ns/dossier#collectie.bestaatUit>', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
@@ -71,7 +72,6 @@ const pathsToAgenda = {
     'ext:mededeling'
   ],
   'document': [
-    { path: '^besluitvorming:beschrijft', nextRDFType: 'treatment' },
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^ext:bevatAgendapuntDocumentversie', nextRDFType: 'agendaitem' },
