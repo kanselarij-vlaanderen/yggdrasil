@@ -340,7 +340,7 @@ const addAllVisibleRelatedDocuments = async (queryEnv, extraFilters = "") => {
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
+  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt','(dct:hasPart / ^besluitvorming:genereertAgendapunt)', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens )'];
   extraFilters = extraFilters || '';
 
   const query = `
@@ -365,7 +365,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?s a ?thing .
 
       { { ?s a dossier:Dossier .
-          ?s ^besluitvorming:isGeagendeerdVia ?agendaitem .
+          ?s dossier:doorloopt / ^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt ?agendaitem .
           ?agenda dct:hasPart ?agendaitem .
           ?agendaitem besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636>.
         }
@@ -448,7 +448,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ext:heeftVerdaagd | besluitvorming:opmerking | ^besluitvorming:isGeagendeerdVia) ?s .
+       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
@@ -511,7 +511,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
                  }}
 
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dossier:doorloopt | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dossier:doorloopt | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
@@ -843,7 +843,7 @@ const addAllDecisions = (queryEnv, extraFilters) => {
       ?agenda dct:hasPart ?agendaitem.
       ?agenda besluitvorming:isAgendaVoor ?session.
       ?session ext:releasedDecisions ?date.
-      ?subcase besluitvorming:isGeagendeerdVia ?agendaitem.
+      ?subcase ^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt ?agendaitem.
       ?subcase ext:procedurestapHeeftBesluit ?s.
       ${extraFilters}
     }
