@@ -341,7 +341,7 @@ const addAllVisibleRelatedDocuments = async (queryEnv, extraFilters = "") => {
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt', '( dct:hasPart / ^besluitvorming:isGeagendeerdVia )'];
+  relationProperties = relationProperties || ['dct:hasPart', 'ext:mededeling', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt','(dct:hasPart / ^besluitvorming:genereertAgendapunt)', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens )'];
   extraFilters = extraFilters || '';
 
   const query = `
@@ -351,6 +351,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
+  PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
@@ -364,8 +365,8 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       ?agenda ( ${relationProperties.join(' | ')} ) ?s .
       ?s a ?thing .
 
-      { { ?s a dbpedia:Case .
-          ?s ^besluitvorming:isGeagendeerdVia ?agendaitem .
+      { { ?s a dossier:Dossier .
+          ?s dossier:doorloopt / ^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt ?agendaitem .
           ?agenda dct:hasPart ?agendaitem .
           ?agendaitem besluitvorming:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636>.
         }
@@ -374,7 +375,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
         UNION
         { FILTER NOT EXISTS {
             VALUES (?restrictedType) {
-              (dbpedia:Case) (besluit:AgendaPunt)
+              (dossier:Dossier) (besluit:AgendaPunt)
             }
             ?s a ?restrictedType.
           } }}
@@ -448,7 +449,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target (ext:subcaseAgendapuntFase | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ext:heeftVerdaagd | besluitvorming:opmerking | ^besluitvorming:isGeagendeerdVia | ^besluitvorming:heeftOnderwerp) ?s .
+       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens | ^besluitvorming:heeftOnderwerp) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
@@ -500,6 +501,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
    PREFIX schema: <http://schema.org>
+   PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
    
    SELECT ?s ?thing ?agenda WHERE {
                  { SELECT ?target ?agenda WHERE {
@@ -510,7 +512,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
                  }}
 
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dct:hasPart | ext:subcaseProcedurestapFase | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dossier:doorloopt | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {

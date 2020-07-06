@@ -31,7 +31,8 @@ const handleDeltaRelatedToAgenda = async function(subjects, queryEnv) {
 
 const pathsToAgenda = {
   'agendaitem': ['^dct:hasPart'],
-  'subcase': ['besluitvorming:isGeagendeerdVia / ^dct:hasPart'],
+  'agenda-activity' : ['besluitvorming:genereertAgendapunt / ^dct:hasPart'],
+  'subcase': ['^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt / ^dct:hasPart'],
   'meeting': ['^besluitvorming:isAgendaVoor'],
   'newsletter-info': [
     { path: '^prov:generated', nextRDFType: 'subcase' },
@@ -39,10 +40,6 @@ const pathsToAgenda = {
   ],
   'consultation-request': [
     { path: '^ext:bevatConsultatievraag', nextRDFType: 'subcase' }
-  ],
-  'subcase-phase': [
-    { path: '^ext:subcaseProcedurestapFase', nextRDFType: 'subcase' },
-    { path: '^ext:subcaseAgendapuntFase', nextRDFType: 'agendaitem' }
   ],
   'treatment': [
     { path: '^besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
@@ -52,7 +49,7 @@ const pathsToAgenda = {
     { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
   ],
   'case': [
-    { path: 'dct:hasPart', nextRDFType: 'subcase' }
+    { path: 'dossier:doorloopt', nextRDFType: 'subcase' }
   ],
   'remark': [
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'meeting' },
@@ -65,7 +62,7 @@ const pathsToAgenda = {
   ],
   'document-container': [
     { path: '^besluitvorming:beschrijft', nextRDFType: 'treatment' },
-    { path: '<https://data.vlaanderen.be/ns/dossier#collectie.bestaatUit>', nextRDFType: 'document' },
+    { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
   'announcement': [
@@ -85,18 +82,18 @@ const pathsToAgenda = {
 const typeUris = {
   'agenda': 'besluitvorming:Agenda',
   'agendaitem': 'besluit:Agendapunt',
+  'agenda-activity': 'besluitvorming:Agendering',
   'subcase': 'dbpedia:UnitOfWork',
   'meeting': 'besluit:Vergaderactiviteit',
   'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
   'consultation-request': 'besluitvorming:Consultatievraag',
-  'subcase-phase': 'ext:ProcedurestapFase',
   'treatment': 'besluit:BehandelingVanAgendapunt',
   'meeting-record': 'ext:Notule',
-  'case': 'dbpedia:Case',
+  'case': 'dossier:Dossier',
   'remark': 'schema:Comment',
-  'document-container': '<https://data.vlaanderen.be/ns/dossier#Serie>',
+  'document-container': 'dossier:Serie',
   'announcement': 'besluitvorming:Mededeling',
-  'document': '<https://data.vlaanderen.be/ns/dossier#Stuk>'
+  'document': 'dossier:Stuk'
 };
 
 let fullPathsCache = null;
@@ -168,6 +165,7 @@ const selectRelatedAgendasForSubjects = async function(subjects) {
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX foaf: <http://xmlns.com/foaf/0.1/>
       PREFIX schema: <http://schema.org>
+      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
 
       SELECT DISTINCT ?agenda WHERE {
         GRAPH <http://mu.semte.ch/graphs/organizations/kanselarij> {
@@ -181,7 +179,7 @@ const selectRelatedAgendasForSubjects = async function(subjects) {
 
     const results = await directQuery(select);
 
-    const agendaItems = parseSparQlResults(JSON.parse(results)) // TODO: looks like this doesn't get used ... remove?
+    parseSparQlResults(JSON.parse(results))
       .map((item) => item.agenda)
       .forEach((agenda) => agendas.add(agenda));
   }
