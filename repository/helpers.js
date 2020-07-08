@@ -826,13 +826,14 @@ const filterAgendaMustBeInSet = function(subjects, agendaVariable = 's') {
 const addAllTreatments = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX brc: <http://kanselarij.vo.data.gift/id/concept/beslissings-resultaat-codes/>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a besluitvorming:BehandelingVanAgendapunt.
+      ?s a besluit:BehandelingVanAgendapunt.
       ?s ext:tracesLineageTo ?agenda.
     }
   } WHERE {
@@ -855,7 +856,7 @@ const addVisibleDecisions = (queryEnv, extraFilters) => {
   return addAllTreatments(queryEnv, `
     ?agenda besluitvorming:isAgendaVoor ?session.
     ?session ext:releasedDecisions ?date.
-    ?s besluitvorming:resultaat # TODO KAS-1420: add URI for beslissingresultaatcode here.
+    ?s besluitvorming:resultaat brc:56312c4b-9d2a-4735-b0b1-2ff14bb524fd .
  
     ${extraFilters}
 `);
