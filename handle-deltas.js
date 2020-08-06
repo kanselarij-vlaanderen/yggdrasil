@@ -42,7 +42,7 @@ const pathsToAgenda = {
     { path: '^ext:bevatConsultatievraag', nextRDFType: 'subcase' }
   ],
   'treatment': [
-    { path: '^besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
+    { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
   ],
   'meeting-record': [
     { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
