@@ -323,7 +323,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
       ?s a dossier:Stuk .
     `,
     `
-      ?target (dct:hasPart | ^besluitvorming:beschrijft | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+      ?target (dct:hasPart | besluitvorming:genereertVerslag | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
       ?s a dossier:Stuk .
     `
   ];

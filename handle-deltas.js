@@ -60,7 +60,7 @@ const pathsToAgenda = {
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' }
   ],
   'document-container': [
-    { path: '^besluitvorming:beschrijft', nextRDFType: 'treatment' },
+    { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
     { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],

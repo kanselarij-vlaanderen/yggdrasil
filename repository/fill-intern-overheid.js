@@ -73,7 +73,7 @@ export const fillUp = async (queryEnv, agendas) => {
         { {
           ?agenda (besluitvorming:isAgendaVoor / ext:releasedDocuments) ?date .
           } UNION {
-          ?target (ext:zittingDocumentversie | (^besluitvorming:beschrijft / dossier:collectie.bestaatUit ))  ?s .
+          ?target (ext:zittingDocumentversie | (besluitvorming:genereertVerslag / dossier:collectie.bestaatUit ))  ?s .
         } }
       `);
     });
