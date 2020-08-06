@@ -57,8 +57,7 @@ const pathsToAgenda = {
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'document-container' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'agendaitem' },
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'case' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'decision' }
+    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' }
   ],
   'document-container': [
     { path: '^besluitvorming:beschrijft', nextRDFType: 'treatment' },
