@@ -53,7 +53,7 @@ const copyClassesBatched = async function(queryEnv, classes, extraFilter) {
     }
   }`;
   await queryEnv.run(query);
-  return updatePropertiesOnAgendaItemsBatched(classesToDo);
+  return copyClassesBatched(classesToDo);
 }
 
 const fillUp = async function(queryEnv, extraFilter){
@@ -66,7 +66,7 @@ const fillUp = async function(queryEnv, extraFilter){
 
   const end = moment().utc();
   logStage(start, `fill public ended at: ${end.format()}`, queryEnv.targetGraph);
-  return result;
+  return;
 };
 
 export {
