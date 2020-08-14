@@ -31,12 +31,13 @@ const copyClassesBatched = async function(queryEnv, classes, extraFilter) {
     return;
   }
 
-  let classesToDo = [];
-  const batchSize = 5;
-  if (classes.length > batchSize) {
-    classesToDo = classes.splice(0, batchSize);
+  let classesBatched = [];
+  const batchSize = 2;
+  if (classes.length > 0) {
+    classesBatched = classes.splice(0, batchSize);
   }
 
+  console.log(`processing public classes: ${JSON.stringify(classesBatched)}`);
   const query = `
   INSERT {
     GRAPH <${queryEnv.targetGraph}> {
@@ -45,7 +46,7 @@ const copyClassesBatched = async function(queryEnv, classes, extraFilter) {
   } WHERE {
     GRAPH <${queryEnv.adminGraph}> {
       VALUES ?class {
-        <${classes.join('> <')}>
+        <${classesBatched.join('> <')}>
       }
       ?s a ?class .
       ?s ?p ?o .
@@ -53,7 +54,7 @@ const copyClassesBatched = async function(queryEnv, classes, extraFilter) {
     }
   }`;
   await queryEnv.run(query);
-  return copyClassesBatched(classesToDo);
+  return copyClassesBatched(queryEnv, classes, extraFilter);
 }
 
 const fillUp = async function(queryEnv, extraFilter){
