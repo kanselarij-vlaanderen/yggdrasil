@@ -25,19 +25,19 @@ const unconfidentialClasses = async function(queryEnv){
   return unconfidentialClassesCache;
 };
 
-const fillUp = async function(queryEnv, extraFilter){
-  const start = moment().utc();
-  logStage(start, `fill public started at: ${start.format()}`, queryEnv.targetGraph);
+const copyClassesBatched = async function(queryEnv, classes, extraFilter) {
+  if (!classes || classes.length == 0) {
+    console.log("all done updating classes in public graph");
+    return;
+  }
 
-  extraFilter = extraFilter || "";
-  const classes = await unconfidentialClasses(queryEnv);
+  let classesToDo = [];
+  const batchSize = 5;
+  if (classes.length > batchSize) {
+    classesToDo = classes.splice(0, batchSize);
+  }
 
   const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   INSERT {
     GRAPH <${queryEnv.targetGraph}> {
       ?s ?p ?o .
@@ -52,7 +52,18 @@ const fillUp = async function(queryEnv, extraFilter){
       ${extraFilter}
     }
   }`;
-  const result = await queryEnv.run(query);
+  await queryEnv.run(query);
+  return updatePropertiesOnAgendaItemsBatched(classesToDo);
+}
+
+const fillUp = async function(queryEnv, extraFilter){
+  const start = moment().utc();
+  logStage(start, `fill public started at: ${start.format()}`, queryEnv.targetGraph);
+
+  extraFilter = extraFilter || "";
+  const classes = await unconfidentialClasses(queryEnv);
+  await copyClassesBatched(queryEnv, classes, extraFilter);
+
   const end = moment().utc();
   logStage(start, `fill public ended at: ${end.format()}`, queryEnv.targetGraph);
   return result;
