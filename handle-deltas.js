@@ -73,7 +73,7 @@ const pathsToAgenda = {
   'document': [
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
-    { path: '^ext:bevatAgendapuntDocumentversie', nextRDFType: 'agendaitem' },
+    { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
