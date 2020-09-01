@@ -5,7 +5,7 @@ mu.query = querySudo;
 import moment from 'moment';
 import { removeInfoNotInTemp, addRelatedFiles, cleanup, addAllNewsletterInfo,
   fillOutDetailsOnVisibleItems, generateTempGraph, addAllRelatedDocuments,
-  addRelatedToAgendaItemAndSubcase, runStage, addAllDecisions,
+  addRelatedToAgendaItemAndSubcase, runStage, addAllTreatments,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
   addAllNotulen, transformFilter
 } from './helpers';
@@ -127,7 +127,7 @@ export const fillUp = async (queryEnv, agendas, options) => {
       return addRelatedToAgendaItemAndSubcase(queryEnv, additionalFilter);
     });
     await runStage('visible decisions added', queryEnv, () => {
-      return addAllDecisions(queryEnv, additionalFilter);
+      return addAllTreatments(queryEnv, additionalFilter);
     });
     await runStage('visible notulen added', queryEnv, () => {
       return addAllNotulen(queryEnv, additionalFilter);
