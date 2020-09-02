@@ -316,13 +316,14 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
 
     }
   }`;
+  // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
   const constraints = [
     `
       ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | ext:bevatAgendapuntDocumentversie | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
       ?s a dossier:Stuk .
     `,
     `
-      ?target (dct:hasPart | ext:beslissingsfiche | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+      ?target (dct:hasPart | besluitvorming:genereertVerslag | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
       ?s a dossier:Stuk .
     `
   ];
@@ -448,7 +449,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens) ?s .
+       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens | ^besluitvorming:heeftOnderwerp) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
@@ -822,16 +823,17 @@ const filterAgendaMustBeInSet = function(subjects, agendaVariable = 's') {
   return `VALUES (?${agendaVariable}) {(<${subjects.join('>) (<')}>)}`;
 };
 
-const addAllDecisions = (queryEnv, extraFilters) => {
+const addAllTreatments = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX brc: <http://kanselarij.vo.data.gift/id/concept/beslissings-resultaat-codes/>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
   PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
-      ?s a besluit:Besluit.
+      ?s a besluit:BehandelingVanAgendapunt.
       ?s ext:tracesLineageTo ?agenda.
     }
   } WHERE {
@@ -843,8 +845,7 @@ const addAllDecisions = (queryEnv, extraFilters) => {
       ?agenda dct:hasPart ?agendaitem.
       ?agenda besluitvorming:isAgendaVoor ?session.
       ?session ext:releasedDecisions ?date.
-      ?subcase ^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt ?agendaitem.
-      ?subcase ext:procedurestapHeeftBesluit ?s.
+      ?s besluitvorming:heeftOnderwerp ?agendaitem.
       ${extraFilters}
     }
   }`;
@@ -852,10 +853,10 @@ const addAllDecisions = (queryEnv, extraFilters) => {
 };
 
 const addVisibleDecisions = (queryEnv, extraFilters) => {
-  return addAllDecisions(queryEnv, `
+  return addAllTreatments(queryEnv, `
     ?agenda besluitvorming:isAgendaVoor ?session.
     ?session ext:releasedDecisions ?date.
-    ?s besluitvorming:goedgekeurd "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+    ?s besluitvorming:resultaat brc:56312c4b-9d2a-4735-b0b1-2ff14bb524fd .
  
     ${extraFilters}
 `);
@@ -937,7 +938,7 @@ module.exports = {
   addAllRelatedDocuments,
   addAllVisibleRelatedDocuments,
   addVisibleDecisions,
-  addAllDecisions,
+  addAllTreatments,
   addAllRelatedToAgenda,
   addVisibleNewsletterInfo,
   addAllNewsletterInfo,
