@@ -506,7 +506,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    SELECT ?s ?thing ?agenda WHERE {
                  { SELECT ?target ?agenda WHERE {
                    GRAPH <${queryEnv.tempGraph}> {
-                           ?target a dbpedia:UnitOfWork .
+                           ?target a dossier:Procedurestap .
                            ?target ext:tracesLineageTo ?agenda .
                    }
                  }}

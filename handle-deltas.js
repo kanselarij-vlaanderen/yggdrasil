@@ -82,7 +82,7 @@ const typeUris = {
   'agenda': 'besluitvorming:Agenda',
   'agendaitem': 'besluit:Agendapunt',
   'agenda-activity': 'besluitvorming:Agendering',
-  'subcase': 'dbpedia:UnitOfWork',
+  'subcase': 'dossier:Procedurestap',
   'meeting': 'besluit:Vergaderactiviteit',
   'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
   'consultation-request': 'besluitvorming:Consultatievraag',
