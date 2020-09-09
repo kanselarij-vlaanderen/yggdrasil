@@ -64,15 +64,11 @@ const pathsToAgenda = {
     { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
-  'announcement': [
-    'ext:mededeling'
-  ],
   'document': [
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
-    { path: '^ext:bevatAgendapuntDocumentversie', nextRDFType: 'agendaitem' },
+    { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
-    { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
     //{ path: '^ext:documentenVoorBeslissing', nextRDFType: 'treatment' }, // Currently not used in the frontend.
     { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
   ]
@@ -91,7 +87,6 @@ const typeUris = {
   'case': 'dossier:Dossier',
   'remark': 'schema:Comment',
   'document-container': 'dossier:Serie',
-  'announcement': 'besluitvorming:Mededeling',
   'document': 'dossier:Stuk'
 };
 
