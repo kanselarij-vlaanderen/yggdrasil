@@ -42,7 +42,12 @@ const pathsToAgenda = {
     { path: '^ext:bevatConsultatievraag', nextRDFType: 'subcase' }
   ],
   'treatment': [
+<<<<<<< Updated upstream
     { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
+=======
+    { path: '^besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
+    { path: 'besluit:BehandelingVanAgendapunt.genereertVerslag', nextRDFType: 'document' },
+>>>>>>> Stashed changes
   ],
   'meeting-record': [
     { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
@@ -69,7 +74,8 @@ const pathsToAgenda = {
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
-    //{ path: '^ext:documentenVoorBeslissing', nextRDFType: 'treatment' }, // Currently not used in the frontend.
+    { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
+    { path: '^besluit:BehandelingVanAgendapunt.genereertVerslag', nextRDFType: 'treatment' },
     { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
   ]
 };
