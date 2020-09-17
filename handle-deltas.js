@@ -42,12 +42,8 @@ const pathsToAgenda = {
     { path: '^ext:bevatConsultatievraag', nextRDFType: 'subcase' }
   ],
   'treatment': [
-<<<<<<< Updated upstream
-    { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
-=======
     { path: '^besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
     { path: 'besluit:BehandelingVanAgendapunt.genereertVerslag', nextRDFType: 'document' },
->>>>>>> Stashed changes
   ],
   'meeting-record': [
     { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
