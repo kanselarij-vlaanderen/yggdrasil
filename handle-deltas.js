@@ -42,8 +42,7 @@ const pathsToAgenda = {
     { path: '^ext:bevatConsultatievraag', nextRDFType: 'subcase' }
   ],
   'treatment': [
-    { path: '^besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
-    { path: 'besluit:BehandelingVanAgendapunt.genereertVerslag', nextRDFType: 'document' },
+    { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
   ],
   'meeting-record': [
     { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
@@ -61,7 +60,6 @@ const pathsToAgenda = {
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' }
   ],
   'document-container': [
-    { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
     { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
     { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
@@ -71,7 +69,7 @@ const pathsToAgenda = {
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
-    { path: '^besluit:BehandelingVanAgendapunt.genereertVerslag', nextRDFType: 'treatment' },
+    { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
     { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
   ]
 };
