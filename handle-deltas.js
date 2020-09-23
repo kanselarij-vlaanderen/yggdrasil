@@ -45,7 +45,6 @@ const pathsToAgenda = {
     { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
   ],
   'meeting-record': [
-    { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
     { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
   ],
   'case': [
@@ -61,8 +60,7 @@ const pathsToAgenda = {
   ],
   'document-container': [
     { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
-    { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
-    { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
+    { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' }
   ],
   'document': [
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
@@ -70,7 +68,7 @@ const pathsToAgenda = {
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     //{ path: '^ext:documentenVoorBeslissing', nextRDFType: 'treatment' }, // Currently not used in the frontend.
-    { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
+    // { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' } //Currently not used in the frontend.
   ]
 };
 

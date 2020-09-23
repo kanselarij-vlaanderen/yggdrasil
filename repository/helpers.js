@@ -317,13 +317,14 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
     }
   }`;
   // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
+  // Nota: KAS-1465: ext:getekendeDocumentVersiesVoorNotulen wordt niet meer gebruikt.  en is verwijderd uit deze lijst.
   const constraints = [
     `
-      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated ) ?s .
+      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | dct:hasPart | prov:generated ) ?s .
       ?s a dossier:Stuk .
     `,
     `
-      ?target (dct:hasPart | besluitvorming:genereertVerslag | ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+      ?target (dct:hasPart | besluitvorming:genereertVerslag ) / dossier:collectie.bestaatUit ?s .
       ?s a dossier:Stuk .
     `
   ];
