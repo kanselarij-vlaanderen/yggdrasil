@@ -407,11 +407,9 @@ const addAllNotulen = (queryEnv, extraFilters) => {
       ?agenda besluitvorming:isAgendaVoor ?session.
       ?session ext:releasedDecisions ?date.
 
-      { {
-        ?session ext:algemeneNotulen ?s  .
-        } UNION {
+      { 
         ?agenda dct:hasPart / ext:notulenVanAgendaPunt ?s .
-      } }
+      } 
 
       ${extraFilters}
     }

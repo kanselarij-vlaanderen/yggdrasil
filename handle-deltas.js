@@ -44,9 +44,6 @@ const pathsToAgenda = {
   'treatment': [
     { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
   ],
-  'meeting-record': [
-    { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
-  ],
   'case': [
     { path: 'dossier:doorloopt', nextRDFType: 'subcase' }
   ],
