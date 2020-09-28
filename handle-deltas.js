@@ -68,7 +68,6 @@ const pathsToAgenda = {
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
-    { path: '^ext:mededelingBevatDocumentversie', nextRDFType: 'announcement' },
     { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
     { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
   ]
