@@ -387,6 +387,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   return queryEnv.run(query, true);
 };
 
+// TODO KAS-1465 delete this ???
 const addAllNotulen = (queryEnv, extraFilters) => {
   const query = `
   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
