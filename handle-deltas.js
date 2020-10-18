@@ -56,15 +56,14 @@ const pathsToAgenda = {
     { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' }
   ],
   'document-container': [
-    { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
-    { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' }
+    { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
   ],
   'document': [
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
-    //{ path: '^ext:documentenVoorBeslissing', nextRDFType: 'treatment' }, // Currently not used in the frontend.
+    { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
     // { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' } //Currently not used in the frontend. // TODO KAS-1465 relation is a piece now
   ]
 };

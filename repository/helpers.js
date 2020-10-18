@@ -320,11 +320,11 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   // Nota: KAS-1465: ext:getekendeDocumentVersiesVoorNotulen wordt niet meer gebruikt.  en is verwijderd uit deze lijst.
   const constraints = [
     `
-      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | dct:hasPart | prov:generated ) ?s .
+      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | dct:hasPart | prov:generated | besluitvorming:genereertVerslag ) ?s .
       ?s a dossier:Stuk .
     `,
     `
-      ?target (dct:hasPart | besluitvorming:genereertVerslag ) / dossier:collectie.bestaatUit ?s .
+      ?target ( dct:hasPart ) / dossier:collectie.bestaatUit ?s .
       ?s a dossier:Stuk .
     `
   ];
