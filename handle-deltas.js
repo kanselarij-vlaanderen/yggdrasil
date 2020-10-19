@@ -64,7 +64,7 @@ const pathsToAgenda = {
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
-    // { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' } //Currently not used in the frontend. // TODO KAS-1465 relation is a piece now
+    // { path: '^dossier:genereert', nextRDFType: 'meeting' } //Currently not used in the frontend, legacy data. there is no propagation set up for this
   ]
 };
 
@@ -77,7 +77,6 @@ const typeUris = {
   'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
   'consultation-request': 'besluitvorming:Consultatievraag',
   'treatment': 'besluit:BehandelingVanAgendapunt',
-  'meeting-record': 'ext:Notule', // TODO KAS-1465 delete ?
   'case': 'dossier:Dossier',
   'remark': 'schema:Comment',
   'document-container': 'dossier:Serie',
