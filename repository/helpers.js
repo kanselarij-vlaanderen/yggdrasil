@@ -398,7 +398,6 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   PREFIX schema: <http://schema.org>
    
    SELECT ?s ?thing ?agenda WHERE {
      { SELECT ?target ?agenda WHERE {
@@ -408,7 +407,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | besluitvorming:opmerking | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens | ^besluitvorming:heeftOnderwerp) ?s .
+       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens | ^besluitvorming:heeftOnderwerp) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
@@ -459,7 +458,6 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   PREFIX schema: <http://schema.org>
    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
    
    SELECT ?s ?thing ?agenda WHERE {
@@ -471,7 +469,7 @@ const addRelatedToSubcaseBatched = async (queryEnv, extraFilters) => {
                  }}
 
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dossier:doorloopt | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring | besluitvorming:opmerking ) ?s .
+       ?target ( ext:bevatReedsBezorgdeDocumentversie | ^dossier:doorloopt | ext:bevatConsultatievraag | ext:procedurestapGoedkeuring ) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
