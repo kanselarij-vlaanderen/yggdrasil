@@ -47,14 +47,6 @@ const pathsToAgenda = {
   'case': [
     { path: 'dossier:doorloopt', nextRDFType: 'subcase' }
   ],
-  'remark': [
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'meeting' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'newsletter-info' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'document-container' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'agendaitem' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'case' },
-    { path: '^ext:antwoorden* / ^besluitvorming:opmerking', nextRDFType: 'subcase' }
-  ],
   'document-container': [
     { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
   ],
@@ -78,7 +70,6 @@ const typeUris = {
   'consultation-request': 'besluitvorming:Consultatievraag',
   'treatment': 'besluit:BehandelingVanAgendapunt',
   'case': 'dossier:Dossier',
-  'remark': 'schema:Comment',
   'document-container': 'dossier:Serie',
   'document': 'dossier:Stuk'
 };
