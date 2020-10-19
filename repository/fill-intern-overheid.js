@@ -7,7 +7,7 @@ mu.query = querySudo;
 import { removeInfoNotInTemp, notConfidentialFilter, addRelatedFiles, addVisibleNewsletterInfo,
   cleanup, fillOutDetailsOnVisibleItems, addAllRelatedToAgenda, addRelatedToAgendaItemAndSubcase,
   notInternRegeringFilter, notInternOverheidFilter, logStage, runStage, addAllVisibleRelatedDocuments,
-  addVisibleNotulen, transformFilter,
+  transformFilter,
   cleanupBasedOnLineage, filterAgendaMustBeInSet, generateTempGraph, copyTempToTarget, addVisibleDecisions
 } from './helpers';
 
@@ -60,9 +60,6 @@ export const fillUp = async (queryEnv, agendas) => {
     });
     await runStage('visible decisions added', queryEnv, () => {
       return addVisibleDecisions(queryEnv, filter);
-    });
-    await runStage('visible notulen added', queryEnv, () => {
-      return addVisibleNotulen(queryEnv, filter);
     });
     await runStage('visible newsletter info added', queryEnv, () => {
       return addVisibleNewsletterInfo(queryEnv, filter);
