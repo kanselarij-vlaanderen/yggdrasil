@@ -7,7 +7,7 @@ import { removeInfoNotInTemp, addRelatedFiles, cleanup, addAllNewsletterInfo,
   fillOutDetailsOnVisibleItems, generateTempGraph, addAllRelatedDocuments,
   addRelatedToAgendaItemAndSubcase, runStage, addAllTreatments,
   logStage, cleanupBasedOnLineage, filterAgendaMustBeInSet, copyTempToTarget,
-  addAllNotulen, transformFilter
+  transformFilter
 } from './helpers';
 
 const addAgendas = (queryEnv, extraFilter) => {
@@ -128,9 +128,6 @@ export const fillUp = async (queryEnv, agendas, options) => {
     });
     await runStage('visible decisions added', queryEnv, () => {
       return addAllTreatments(queryEnv, additionalFilter);
-    });
-    await runStage('visible notulen added', queryEnv, () => {
-      return addAllNotulen(queryEnv, additionalFilter);
     });
     await runStage('visible newsletter info added', queryEnv, () => {
       return addAllNewsletterInfo(queryEnv, additionalFilter);

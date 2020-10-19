@@ -44,16 +44,11 @@ const pathsToAgenda = {
   'treatment': [
     { path: 'besluitvorming:heeftOnderwerp', nextRDFType: 'agendaitem' },
   ],
-  'meeting-record': [
-    { path: '^ext:notulenVanAgendaPunt', nextRDFType: 'agendaitem' },
-    { path: '^ext:algemeneNotulen', nextRDFType: 'meeting' }
-  ],
   'case': [
     { path: 'dossier:doorloopt', nextRDFType: 'subcase' }
   ],
   'document-container': [
     { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
-    { path: '^ext:getekendeNotulen', nextRDFType: 'meeting-record' }
   ],
   'document': [
     { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
@@ -61,7 +56,7 @@ const pathsToAgenda = {
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
     { path: '^besluitvorming:genereertVerslag', nextRDFType: 'treatment' },
-    { path: '^ext:getekendeDocumentVersiesVoorNotulen', nextRDFType: 'meeting-record' }
+    // { path: '^dossier:genereert', nextRDFType: 'meeting' } //Currently not used in the frontend, legacy data. there is no propagation set up for this
   ]
 };
 
@@ -74,7 +69,6 @@ const typeUris = {
   'newsletter-info': 'besluitvorming:NieuwsbriefInfo',
   'consultation-request': 'besluitvorming:Consultatievraag',
   'treatment': 'besluit:BehandelingVanAgendapunt',
-  'meeting-record': 'ext:Notule',
   'case': 'dossier:Dossier',
   'document-container': 'dossier:Serie',
   'document': 'dossier:Stuk'

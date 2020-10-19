@@ -319,11 +319,11 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
   const constraints = [
     `
-      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | ext:getekendeDocumentVersiesVoorNotulen | dct:hasPart | prov:generated | besluitvorming:genereertVerslag) ?s .
+      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | dct:hasPart | prov:generated | besluitvorming:genereertVerslag ) ?s .
       ?s a dossier:Stuk .
     `,
     `
-      ?target (dct:hasPart |  ext:getekendeNotulen ) / dossier:collectie.bestaatUit ?s .
+      ?target ( dct:hasPart ) / dossier:collectie.bestaatUit ?s .
       ?s a dossier:Stuk .
     `
   ];
@@ -384,47 +384,6 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
     }
   }`;
   return queryEnv.run(query, true);
-};
-
-const addAllNotulen = (queryEnv, extraFilters) => {
-  const query = `
-  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-  PREFIX dct: <http://purl.org/dc/terms/>
-  PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-  PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  INSERT {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?s a ext:Notule .
-      ?s ext:tracesLineageTo ?agenda.
-    }
-  } WHERE {
-    GRAPH <${queryEnv.tempGraph}> {
-      ?agenda a besluitvorming:Agenda.
-    }
-    GRAPH <${queryEnv.adminGraph}> {
-      ?agenda besluitvorming:isAgendaVoor ?session.
-      ?session ext:releasedDecisions ?date.
-
-      { {
-        ?session ext:algemeneNotulen ?s  .
-        } UNION {
-        ?agenda dct:hasPart / ext:notulenVanAgendaPunt ?s .
-      } }
-
-      ${extraFilters}
-    }
-  }`;
-  return queryEnv.run(query, true);
-};
-
-
-const addVisibleNotulen = (queryEnv, extraFilters) => {
-  return addAllNotulen(queryEnv, `
-    ?session ext:releasedDecisions ?date.
-
-    ${extraFilters}
-`);
 };
 
 const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
@@ -945,8 +904,6 @@ module.exports = {
   addRelatedToAgendaItemAndSubcase,
   cleanupBasedOnLineage,
   logStage,
-  addAllNotulen,
-  addVisibleNotulen,
   filterAgendaMustBeInSet,
   generateTempGraph,
   copyTempToTarget,
