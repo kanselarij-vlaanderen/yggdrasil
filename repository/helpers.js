@@ -341,7 +341,7 @@ const addAllVisibleRelatedDocuments = async (queryEnv, extraFilters = "") => {
 };
 
 const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
-  relationProperties = relationProperties || ['dct:hasPart', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt','(dct:hasPart / ^besluitvorming:genereertAgendapunt)', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens )'];
+  relationProperties = relationProperties || ['dct:hasPart', 'besluitvorming:isAgendaVoor', '^besluitvorming:behandelt','(dct:hasPart / ^besluitvorming:genereertAgendapunt)', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens )', '( dct:hasPart / ^besluitvorming:genereertAgendapunt / prov:wasInformedBy )'];
   extraFilters = extraFilters || '';
 
   const query = `
@@ -352,6 +352,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX dbpedia: <http://dbpedia.org/ontology/>
   PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
   INSERT {
     GRAPH <${queryEnv.tempGraph}> {
       ?s a ?thing .
@@ -375,7 +376,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
         UNION
         { FILTER NOT EXISTS {
             VALUES (?restrictedType) {
-              (dossier:Dossier) (besluit:AgendaPunt)
+              (dossier:Dossier) (besluit:Agendapunt)
             }
             ?s a ?restrictedType.
           } }}
@@ -398,7 +399,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
    PREFIX prov: <http://www.w3.org/ns/prov#>
    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-   
+
    SELECT ?s ?thing ?agenda WHERE {
      { SELECT ?target ?agenda WHERE {
        GRAPH <${queryEnv.tempGraph}> {
@@ -407,7 +408,7 @@ const addRelatedToAgendaItemBatched = async (queryEnv, extraFilters) => {
        }
      }}
      GRAPH <${queryEnv.adminGraph}> {
-       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens | ^besluitvorming:heeftOnderwerp) ?s .
+       ?target ( ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:agendapuntGoedkeuring | ^besluitvorming:genereertAgendapunt | ^besluitvorming:genereertAgendapunt / besluitvorming:vindtPlaatsTijdens | ^besluitvorming:genereertAgendapunt / prov:wasInformedBy | ^besluitvorming:heeftOnderwerp) ?s .
        ?s a ?thing .
 
        FILTER NOT EXISTS {
