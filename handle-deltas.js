@@ -35,7 +35,7 @@ const pathsToAgenda = {
   'subcase': ['^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt / ^dct:hasPart'],
   'meeting': ['^besluitvorming:isAgendaVoor'],
   'submission-activity': [
-    { path: '^prov:wasInformedBy', nextRDFType: 'agenda-activity' }
+    { path: 'ext:indieningVindtPlaatsTijdens', nextRDFType: 'subcase' }
   ],
   'newsletter-info': [
     { path: '^prov:generated', nextRDFType: 'subcase' },
@@ -54,7 +54,7 @@ const pathsToAgenda = {
     { path: 'dossier:collectie.bestaatUit', nextRDFType: 'document' },
   ],
   'document': [
-    { path: '^ext:bevatDocumentversie', nextRDFType: 'subcase' },
+    { path: '^prov:generated', nextRDFType: 'submission-activity' },
     { path: '^ext:zittingDocumentversie', nextRDFType: 'meeting' },
     { path: '^besluitvorming:geagendeerdStuk', nextRDFType: 'agendaitem' },
     { path: '^ext:documentenVoorPublicatie', nextRDFType: 'newsletter-info' },
