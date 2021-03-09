@@ -319,7 +319,7 @@ const addAllRelatedDocuments = async (queryEnv, extraFilters) => {
   // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
   const constraints = [
     `
-      ?target ( ext:bevatDocumentversie | ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | dct:hasPart | prov:generated | besluitvorming:genereertVerslag ) ?s .
+      ?target ( ext:zittingDocumentversie | ext:bevatReedsBezorgdeDocumentversie | besluitvorming:geagendeerdStuk | ext:bevatReedsBezorgdAgendapuntDocumentversie | ext:documentenVoorPublicatie | ext:documentenVoorBeslissing | dct:hasPart | prov:generated | besluitvorming:genereertVerslag ) ?s .
       ?s a dossier:Stuk .
     `,
     `
