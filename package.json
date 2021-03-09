@@ -1,8 +1,17 @@
 {
   "name": "yggdrasil",
-  "version": "1.0.0",
-  "description": "",
+  "version": "3.7.0",
+  "description": "Microservice propagating data to graphs according to the authorization rules",
   "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanselarij-vlaanderen/yggdrasil.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "redpencil.io",
+  "license": "MIT",
   "dependencies": {
     "@lblod/mu-auth-sudo": "^0.2.0",
     "body-parser": "^1.18.3",
@@ -14,11 +23,5 @@
     "node-fetch": "^2.3.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC"
+  }
 }
