@@ -2,7 +2,6 @@ import mu from 'mu';
 
 const app = mu.app;
 const bodyParser = require('body-parser');
-const cors = require('cors');
 import {handleDelta} from './handle-deltas';
 import {cleanup, directQuery, configurableQuery} from './repository/helpers';
 
@@ -16,7 +15,6 @@ if (!process.env.DIRECT_ENDPOINT) {
 }
 
 app.use(bodyParser.json({type: 'application/json', limit: '50mb'}));
-app.use(cors());
 
 const adminGraph = `http://mu.semte.ch/graphs/organizations/kanselarij`;
 
