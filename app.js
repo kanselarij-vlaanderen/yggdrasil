@@ -13,7 +13,10 @@ if (!process.env.DIRECT_ENDPOINT) {
     throw new Error("DIRECT_ENDPOINT not set!");
 }
 
-app.use(bodyParser.json({type: 'application/json', limit: '50mb'}));
+app.use(bodyParser.json({
+  type: function(req) { return /^application\/json/.test(req.get('content-type')); },
+  limit: '50mb'
+}));
 
 const adminGraph = `http://mu.semte.ch/graphs/organizations/kanselarij`;
 
