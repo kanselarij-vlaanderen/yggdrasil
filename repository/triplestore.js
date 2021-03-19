@@ -1,11 +1,12 @@
 import httpContext from 'express-http-context';
-import SC2 from 'sparql-client-2';
-const { SparqlClient } = SC2;
-
-const directSparqlEndpoint = process.env.TRIPLESTORE_SPARQL_ENDPOINT || "http://triplestore:8890/sparql";
-const LOG_TRIPLESTORE_QUERIES = [true, 'true', 1, '1', 'yes', 'Y', 'on'].includes(process.env.LOG_TRIPLESTORE_QUERIES);
-const NB_OF_RETRIES = 6;
-const RETRY_TIMEOUT_MS = parseInt(process.env.RETRY_TIMEOUT || '1000');
+import { SparqlClient } from 'sparql-client-2';
+import {
+  ADMIN_GRAPH,
+  DIRECT_SPARQL_ENDPOINT,
+  LOG_DIRECT_QUERIES,
+  NB_OF_QUERY_RETRIES,
+  RETRY_TIMEOUT_MS
+} from '../config';
 
 function triplestoreSparqlClient() {
   let options = {
@@ -20,18 +21,18 @@ function triplestoreSparqlClient() {
     options.requestDefaults.headers['mu-call-id'] = httpContext.get('request').get('mu-call-id');
   }
 
-  return new SparqlClient(directSparqlEndpoint, options);
+  return new SparqlClient(DIRECT_SPARQL_ENDPOINT, options);
 }
 
 async function queryTriplestore(queryString) {
-  if (LOG_TRIPLESTORE_QUERIES)
+  if (LOG_DIRECT_QUERIES)
     console.log(queryString);
 
   const client = triplestoreSparqlClient();
   return await executeQuery(client, queryString);
 }
 
-async function executeQuery(client, queryString, { retries = NB_OF_RETRIES }) {
+async function executeQuery(client, queryString, { retries = NB_OF_QUERY_RETRIES }) {
   try {
     const response = await client.query(queryString).executeRaw();
 
@@ -47,9 +48,9 @@ async function executeQuery(client, queryString, { retries = NB_OF_RETRIES }) {
   } catch (ex) {
     const retriesLeft = retries - 1;
     if (retriesLeft > 0) {
-      const current = NB_OF_RETRIES - retriesLeft;
+      const current = NB_OF_QUERY_RETRIES - retriesLeft;
       const timeout = current * RETRY_TIMEOUT_MS; // TODO make logarithmic
-      console.log(`Failed to execute query (attempt ${current} out of ${NB_OF_RETRIES}). Will retry.`);
+      console.log(`Failed to execute query (attempt ${current} out of ${NB_OF_QUERY_RETRIES}). Will retry.`);
       return new Promise(function(resolve, reject) {
         setTimeout(() => {
           try {

@@ -129,17 +129,6 @@ const addRelatedFiles = (queryEnv, extraFilters) => {
   return queryEnv.run(query, true);
 };
 
-async function cleanup() {
-  const result = JSON.parse(await directQuery("PREFIX ext: <http://mu.semte.ch/vocabularies/ext/> SELECT ?g WHERE { GRAPH ?g { ?g a ext:TempGraph }}"));
-  if (result.results && result.results.bindings) {
-    console.log(`found ${result.results.bindings.length} old temporary graphs, removing before going further`);
-    for (let binding of result.results.bindings) {
-      console.log(`dropping graph ${binding.g.value}`);
-      await directQuery(`DROP SILENT GRAPH <${binding.g.value}>`);
-    }
-  }
-};
-
 const fillOutDetailsOnVisibleItemsLeft = async (queryEnv) => {
   const result = await queryEnv.run(`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>

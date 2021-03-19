@@ -2,120 +2,19 @@ import mu, { app } from 'mu';
 import bodyParser from 'body-parser';
 
 import {handleDelta} from './handle-deltas';
-import {cleanup, directQuery, configurableQuery} from './repository/helpers';
-
-import fillInterneOverheid from './repository/fill-intern-overheid';
-import fillInterneRegering from './repository/fill-intern-regering';
-import fillKanselarij from './repository/fill-kanselarij';
-import fillPublic from './repository/fill-public';
-
-if (!process.env.DIRECT_ENDPOINT) {
-    throw new Error("DIRECT_ENDPOINT not set!");
-}
+import { directQuery } from './repository/helpers';
+import Yggdrasil from './repository/yggdrasil';
 
 app.use(bodyParser.json({
   type: function(req) { return /^application\/json/.test(req.get('content-type')); },
   limit: '50mb'
 }));
 
-const adminGraph = `http://mu.semte.ch/graphs/organizations/kanselarij`;
-
-const builders = {
-    'public': {
-        env: {
-            adminGraph: adminGraph,
-            targetGraph: `http://mu.semte.ch/graphs/public`,
-            fullRebuild: false,
-            run: configurableQuery
-        },
-        builder: fillPublic
-    },
-    'intern-overheid': {
-        env: {
-            adminGraph: adminGraph,
-            targetGraph: `http://mu.semte.ch/graphs/organizations/intern-overheid`,
-            fullRebuild: false,
-            run: configurableQuery
-        },
-        builder: fillInterneOverheid
-    },
-    'intern-regering': {
-        env: {
-            adminGraph: adminGraph,
-            targetGraph: `http://mu.semte.ch/graphs/organizations/intern-regering`,
-            fullRebuild: false,
-            run: configurableQuery
-        },
-        builder: fillInterneRegering
-    },
-    'kanselarij': {
-        skipInitialLoad: true,
-        env: {
-            adminGraph: adminGraph,
-            targetGraph: `http://mu.semte.ch/graphs/organizations/kanselarij-mirror`,
-            fullRebuild: false,
-            run: configurableQuery
-        },
-        builder: fillKanselarij
-    },
-    // uses intern-regering builder with other graph and filter
-    'minister': {
-        env: {
-            adminGraph: adminGraph,
-            targetGraph: `http://mu.semte.ch/graphs/organizations/minister`,
-            fullRebuild: false,
-            extraFilter: ' ',
-            run: configurableQuery
-        },
-        builder: fillInterneRegering
-    }
-};
-
-async function initialLoad() {
-    let toFillUp = '';
-    if (process.env.RELOAD_ALL_DATA_ON_INIT == "true") {
-        toFillUp = 'public,intern-overheid,intern-regering,minister';
-    } else if (process.env.RELOAD_ALL_DATA_ON_INIT) {
-        toFillUp = process.env.RELOAD_ALL_DATA_ON_INIT;
-    }
-
-    toFillUp = toFillUp.split(",");
-    const fillOptions = {};
-    Object.keys(builders).map((key) => {
-        const env = Object.assign({}, builders[key].env);
-        env.fullRebuild = true;
-        env.run = directQuery;
-        fillOptions[key] = {
-            env: env,
-            builder: builders[key].builder
-        };
-    });
-
-    const fillAll = async function () {
-        while (toFillUp.length > 0) {
-            let target = toFillUp.pop();
-            let toFill = fillOptions[target];
-            if (toFill) {
-                await toFill.builder.fillUp(toFill.env);
-            }
-        }
-    };
-    await fillAll();
-};
-
-async function startup() {
-    await cleanup();
-    await initialLoad();
-}
-
-startup();
-
-const deltaBuilders = Object.assign({}, builders);
-delete deltaBuilders.kanselarij;
-delete deltaBuilders.public;
+const yggdrasil = new Yggdrasil();
+yggdrasil.initialize();
 
 app.post('/delta', (req, res) => {
-    return handleDelta(req, res, deltaBuilders, directQuery);
+  return handleDelta(req, res, yggdrasil.deltaBuilders, directQuery);
 });
 
 if(process.env.ALLOW_DOWNLOADS === "true"){
@@ -147,10 +46,10 @@ prefix besluit: <http://data.vlaanderen.be/ns/besluit#>
 PREFIX  besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
 
 select distinct(?agenda) where {
-   
+
   ?agenda besluitvorming:isAgendaVoor ?zitting.
  ?zitting mu:uuid "${req.query.zitting}"
- 
+
 }`;
         const queryResult = await directQuery(queryString);
         const json = JSON.parse(queryResult);

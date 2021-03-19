@@ -78,9 +78,9 @@ function query( args, queryString, retries ) {
 
     }
     console.log(`Error: failed executing query in final try: ${queryString}
-    
+
     ${e.message}
-    
+
     ${e.stack}`);
 
     throw e;
