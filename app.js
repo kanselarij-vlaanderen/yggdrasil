@@ -1,14 +1,13 @@
-import mu from 'mu';
+import mu, { app } from 'mu';
+import bodyParser from 'body-parser';
 
-const app = mu.app;
-const bodyParser = require('body-parser');
 import {handleDelta} from './handle-deltas';
 import {cleanup, directQuery, configurableQuery} from './repository/helpers';
 
-const fillInterneOverheid = require('./repository/fill-intern-overheid');
-const fillInterneRegering = require('./repository/fill-intern-regering');
-const fillKanselarij = require('./repository/fill-kanselarij');
-const fillPublic = require('./repository/fill-public');
+import fillInterneOverheid from './repository/fill-intern-overheid';
+import fillInterneRegering from './repository/fill-intern-regering';
+import fillKanselarij from './repository/fill-kanselarij';
+import fillPublic from './repository/fill-public';
 
 if (!process.env.DIRECT_ENDPOINT) {
     throw new Error("DIRECT_ENDPOINT not set!");
