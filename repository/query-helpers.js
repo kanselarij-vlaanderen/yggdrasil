@@ -1,5 +1,5 @@
-import { querySudo as query } from './auth-sudo';
-import { SELECT_PAGE_SIZE } from '../config';
+import { querySudo as query, updateSudo as update } from './auth-sudo';
+import { VIRTUOSO_RESOURCE_PAGE_SIZE } from '../config';
 
 /**
  * Convert results of select query to an array of objects.
@@ -20,6 +20,20 @@ function parseResult(result) {
     return obj;
   });
 };
+
+async function countTriples({ graph }) {
+  const queryResult = await query(`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT (COUNT(?s) as ?count)
+    WHERE {
+      GRAPH <${graph}> {
+        ?s ?p ?o .
+      }
+    }
+  `);
+
+  return parseInt(queryResult.results.bindings[0].count.value);
+}
 
 async function countResources({ graph, type = null, lineage = null }) {
   const statements = [];
@@ -54,13 +68,18 @@ async function getPagedResourceUris({ graph, type = null, lineage = null, offset
   if (lineage)
     statements.push(`?s ext:tracesLineageTo <${lineage}> .`);
 
+  // Using subquery to select all distinct subjects.
+  // More info: http://vos.openlinksw.com/owiki/wiki/VOS/VirtTipsAndTricksHowToHandleBandwidthLimitExceed
   const queryResult = await query(`
-    SELECT DISTINCT ?s {
-      GRAPH <${graph}> {
-        ${statements.join('\n')}
+    SELECT ?s
+    WHERE {
+      SELECT DISTINCT ?s {
+        GRAPH <${graph}> {
+          ${statements.join('\n')}
+        }
       }
+      ORDER BY ?s
     }
-    ORDER BY ?s
     LIMIT ${limit} OFFSET ${offset}
   `);
 
@@ -72,7 +91,7 @@ async function getResourceUris({ graph, type = null, lineage = null }) {
 
   const resourceSet = new Set();
   if (count > 0) {
-    const limit = SELECT_PAGE_SIZE;
+    const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
     const totalBatches = Math.ceil(count / limit);
     let currentBatch = 0;
 
@@ -103,6 +122,7 @@ async function copyResource(subject, source, target) {
 
 export {
   parseResult,
+  countTriples,
   countResources,
   getPagedResourceUris,
   getResourceUris,

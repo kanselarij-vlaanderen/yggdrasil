@@ -32,7 +32,9 @@ async function queryTriplestore(queryString) {
   return await executeQuery(client, queryString);
 }
 
-async function executeQuery(client, queryString, { retries = NB_OF_QUERY_RETRIES }) {
+async function executeQuery(client, queryString, options = { }) {
+  const retries = options.retries || NB_OF_QUERY_RETRIES;
+
   try {
     const response = await client.query(queryString).executeRaw();
 

@@ -64,7 +64,7 @@ class Yggdrasil {
   }
 
   async cleanupTempGraphs() {
-    const result = await queryTripleStore(`
+    const result = await queryTriplestore(`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT ?g
     WHERE {
