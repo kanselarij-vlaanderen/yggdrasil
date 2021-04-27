@@ -1,5 +1,5 @@
 import { uuid } from 'mu';
-import { querySudo, updateSudo } from './auth-sudo';
+import { updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
 import { countResources, countTriples } from './query-helpers';
@@ -10,6 +10,12 @@ class Distributor {
     this.sourceGraph = sourceGraph;
     this.targetGraph = targetGraph;
     this.tempGraph = `http://mu.semte.ch/temp/${uuid()}`;
+
+    this.releaseOptions = {
+      validateDecisionsRelease: false,
+      validateDocumentsRelease: false,
+      validateNewsitemsRelease: false
+    };
   }
 
   async perform(options = { agendaUris: [], isInitialDistribution: false }) {
@@ -90,6 +96,8 @@ class Distributor {
       while (currentBatch < totalBatches) {
         await runStage(`Copy details of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
           const offset = limit * currentBatch;
+
+          // Outgoing triples
           await updateTriplestore(`
           INSERT {
             GRAPH <${this.tempGraph}> {
@@ -116,6 +124,8 @@ class Distributor {
             }
           }
         `);
+
+          // Incoming triples
           await updateTriplestore(`
           INSERT {
             GRAPH <${this.tempGraph}> {
@@ -233,6 +243,13 @@ class Distributor {
     });
   }
 
+  /*
+   * Copy all triples from the temp graph to the target graph
+   *
+   * Depending on the configuration of USE_DIRECT_QUERIES the copy queries
+   * are executed via mu-authorization (resulting in delta notifications being sent)
+   * or directly on Virtuoso (without delta notifications)
+  */
   async copyTempGraph() {
     const source = this.tempGraph;
     const target = this.targetGraph;

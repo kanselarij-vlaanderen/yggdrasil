@@ -11,8 +11,8 @@ import { updateTriplestore } from '../triplestore';
  * Collect related documents for any of the relevant resources
  * from the distributor's source graph in the temp graph.
  *
- * Documents are only copied if the documents have been released.
- * I.e. triple ?meeting ext:releasedDocuments ?date . exists
+ * If 'validateDocumentsRelease' is enabled on the distributor's release options
+ * documents are only copied if the documents of the meeting have already been released.
  *
  * Some documents are always visible, regardless of the documents release
  *
@@ -22,12 +22,19 @@ import { updateTriplestore } from '../triplestore';
 async function collectReleasedDocuments(distributor) {
   const releasedDocumentPaths = [
     { type: 'besluit:Agendapunt', predicate: 'besluitvorming:geagendeerdStuk' },
+    // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
     { type: 'besluit:BehandelingVanAgendapunt', predicate: 'ext:documentenVoorBeslissing' },
     { type: 'besluit:BehandelingVanAgendapunt', predicate: 'besluitvorming:genereertVerslag' },
     { type: 'besluitvorming:NieuwsbriefInfo', predicate: 'ext:documentenVoorPublicatie' },
     { type: 'ext:Indieningsactiviteit', predicate: 'prov:generated' },
     { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit' }
   ];
+
+  let releaseDateFilter = '';
+  if (distributor.releaseOptions.validateDocumentsRelease) {
+    releaseDateFilter = '?agenda besluitvorming:isAgendaVoor / ext:releasedDocuments ?documentsReleaseDate .';
+  }
+
   for (let path of releasedDocumentPaths) {
     const releasedDocumentsQuery = `
         PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -46,8 +53,7 @@ async function collectReleasedDocuments(distributor) {
                 ext:tracesLineageTo ?agenda .
           }
           GRAPH <${distributor.sourceGraph}> {
-            ?agenda besluitvorming:isAgendaVoor ?meeting .
-            ?meeting ext:releasedDocuments ?date .
+            ${releaseDateFilter}
             ?s ${path.predicate} ?document .
             ?document a dossier:Stuk .
           }

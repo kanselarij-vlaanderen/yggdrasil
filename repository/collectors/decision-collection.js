@@ -10,14 +10,19 @@ import { updateTriplestore } from '../triplestore';
  * Collect related agendaitem-treatments for the relevant agendaitems
  * from the distributor's source graph in the temp graph.
  *
- * Agendaitem-treatments are only copied if decisions of the meeting have already been released
- * I.e. triple ?meeting ext:releasedDecisions ?decisionReleaseDate exists
+ * If 'validateDecisionsRelease' is enabled on the distributor's release options
+ * agendaitem-treatments are only copied if decisions of the meeting have already been released.
  */
 async function collectReleasedAgendaitemTreatments(distributor) {
   const properties = [
     [ '^besluitvorming:heeftOnderwerp' ] // agendaitem-treatment
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
+
+  let releaseDateFilter = '';
+  if (distributor.releaseOptions.validateDecisionsRelease) {
+    releaseDateFilter = '?agenda besluitvorming:isAgendaVoor / ext:releasedDecisions ?decisionReleaseDate .';
+  }
 
   const relatedQuery = `
       PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -34,8 +39,7 @@ async function collectReleasedAgendaitemTreatments(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ?agenda besluitvorming:isAgendaVoor ?meeting .
-          ?meeting ext:releasedDecisions ?decisionReleaseDate .
+          ${releaseDateFilter}
           ?agendaitem ${path} ?s .
           ?s a ?type .
         }
@@ -47,14 +51,19 @@ async function collectReleasedAgendaitemTreatments(distributor) {
  * Collect related newsitems for the relevant agendaitem-treatments
  * from the distributor's source graph in the temp graph.
  *
- * Newsitems are only copied if they have already been published
- * I.e. triple ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate . exists
+ * If 'validateNewsitemsRelease' is enabled on the distributor's release options
+ * newsitems are only copied if they have already been published.
  */
 async function collectReleasedNewsitems(distributor) {
   const properties = [
     [ 'prov:generated' ], // newsitem
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
+
+  let releaseDateFilter = '';
+  if (distributor.releaseOptions.validateNewsitemsRelease) {
+    releaseDateFilter = '?agenda besluitvorming:isAgendaVoor / ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .';
+  }
 
   const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -72,8 +81,7 @@ async function collectReleasedNewsitems(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ?agenda besluitvorming:isAgendaVoor ?meeting .
-          ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
+          ${releaseDateFilter}
           ?treatment ${path} ?s .
           ?s a ?type .
         }

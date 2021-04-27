@@ -1,67 +1,48 @@
-import fillInterneOverheid from './fill-intern-overheid';
-import fillInterneRegering from './fill-intern-regering';
-import fillKanselarij from './fill-kanselarij';
-import fillPublic from './fill-public';
-import { configurableQuery } from './helpers';
 import { queryTriplestore, updateTriplestore } from './triplestore';
-import { ADMIN_GRAPH, RELOAD_GRAPHS_ON_INIT } from '../config';
+import { RELOAD_ON_INIT } from '../config';
+import  {
+  MinisterDistributor,
+  CabinetDistributor,
+  GovernmentDistributor,
+  PublicDistributor
+} from './distributors';
 
 class Yggdrasil {
-  builders = {
-    'public': {
-      env: {
-        adminGraph: ADMIN_GRAPH,
-        targetGraph: 'http://mu.semte.ch/graphs/public',
-        fullRebuild: false,
-        run: configurableQuery
-      },
-      builder: fillPublic
-    },
-    'intern-overheid': {
-      env: {
-        adminGraph: ADMIN_GRAPH,
-        targetGraph: 'http://mu.semte.ch/graphs/organizations/intern-overheid',
-        fullRebuild: false,
-        run: configurableQuery
-      },
-      builder: fillInterneOverheid
-    },
-    'intern-regering': {
-      env: {
-        adminGraph: ADMIN_GRAPH,
-        targetGraph: 'http://mu.semte.ch/graphs/organizations/intern-regering',
-        fullRebuild: false,
-        run: configurableQuery
-      },
-      builder: fillInterneRegering
-    },
-    'kanselarij': {
-      skipInitialLoad: true,
-      env: {
-        adminGraph: ADMIN_GRAPH,
-        targetGraph: 'http://mu.semte.ch/graphs/organizations/kanselarij-mirror',
-        fullRebuild: false,
-        run: configurableQuery
-      },
-      builder: fillKanselarij
-    },
-    // uses intern-regering builder with other graph and filter
-    'minister': {
-      env: {
-        adminGraph: ADMIN_GRAPH,
-        targetGraph: 'http://mu.semte.ch/graphs/organizations/minister',
-        fullRebuild: false,
-        extraFilter: ' ',
-        run: configurableQuery
-      },
-      builder: fillInterneRegering
-    }
+  distributors = {
+    'minister': new MinisterDistributor(),
+    'intern-regering': new CabinetDistributor(),
+    'intern-overheid': new GovernmentDistributor(),
+    'public': new PublicDistributor()
   };
+
+  get deltaDistributors() {
+    return [
+      this.distributors['minister'],
+      this.distributors['intern-regering'],
+      this.distributors['intern-overheid']
+    ];
+  }
 
   async initialize() {
     await this.cleanupTempGraphs();
     await this.initialLoad();
   }
+
+  async initialLoad() {
+    if (RELOAD_ON_INIT.length) {
+      console.log(`Distributors ${RELOAD_ON_INIT.join(',')} are configured to be reloaded on initialization. Make sure the target graphs are cleared manually.`);
+      for (let key of RELOAD_ON_INIT) {
+        const distributor = this.distributors[key];
+        if (distributor) {
+          await distributor.perform({ isInitialDistribution: true });
+        } else {
+          console.log(`No distributor found for key '${key}'. Skipping initial load of this key.`);
+        }
+      }
+    } else {
+      console.log(`No distributors configured to be reloaded on initialization.`);
+    }
+  };
 
   async cleanupTempGraphs() {
     const result = await queryTriplestore(`
@@ -79,29 +60,6 @@ class Yggdrasil {
       for (let binding of result.results.bindings) {
         console.log(`Dropping graph ${binding['g'].value}`);
         await updateTriplestore(`DROP SILENT GRAPH <${binding.g.value}>`);
-      }
-    }
-  };
-
-  async initialLoad() {
-    const toFillUp = RELOAD_GRAPHS_ON_INIT.slice(0); // make a copy
-
-    const buildersOnInit = {};
-    Object.keys(this.builders).forEach((key) => {
-      const env = Object.assign({}, this.builders[key].env);
-      env.fullRebuild = true;
-      env.run = queryTriplestore;
-      buildersOnInit[key] = {
-        env: env,
-        builder: this.builders[key].builder
-      };
-    });
-
-    while (toFillUp.length > 0) {
-      let target = toFillUp.pop();
-      let toFill = buildersOnInit[target];
-      if (toFill) {
-        await toFill.builder.fillUp(toFill.env);
       }
     }
   };

@@ -1,7 +1,7 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, GOVERNMENT_GRAPH, ACCESS_LEVEL_CABINET } from '../../constants';
+import { ADMIN_GRAPH, CABINET_GRAPH } from '../../constants';
 import {
   collectReleasedAgendas,
   collectReleasedAgendaitems,
@@ -23,20 +23,14 @@ import {
 } from '../collectors/document-collection';
 
 /**
- * Distributor for government (intern-overheid) profile
+ * Distributor for cabinet (intern-regering) profile
  */
-export default class GovernmentDistributor extends Distributor {
+export default class CabinetDistributor extends Distributor {
   constructor() {
     super({
       sourceGraph: ADMIN_GRAPH,
-      targetGraph: GOVERNMENT_GRAPH
+      targetGraph: CABINET_GRAPH
     });
-
-    this.releaseOptions = {
-      validateDecisionsRelease: true,
-      validateDocumentsRelease: true,
-      validateNewsitemsRelease: true
-    };
   }
 
   async collect(options) {
@@ -88,9 +82,8 @@ export default class GovernmentDistributor extends Distributor {
 
   /*
    * Collect all files related to any of the previously copied released documents
-   * that are accessible for the government-profile
-   * I.e. the document is not confidential and doesn't have access level 'Intern regering'
-   * nor is it linked to a confidential case/subcase
+   * that are accessible for the cabinet-profile
+   * I.e. the document is not confidential nor is it linked to a confidential case/subcase
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `
@@ -116,9 +109,6 @@ export default class GovernmentDistributor extends Distributor {
           FILTER NOT EXISTS {
             ?document ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
             ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-          }
-          FILTER NOT EXISTS {
-            ?document ext:toegangsniveauVoorDocumentVersie <${ACCESS_LEVEL_CABINET}> .
           }
         }
       }`;

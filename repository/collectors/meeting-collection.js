@@ -42,14 +42,19 @@ async function collectMeetings(distributor) {
  * Collect related newsletters for the relevant meetings
  * from the distributor's source graph in the temp graph.
  *
- * Newsletters are only copied if they have already been published
- * I.e. triple ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate . exists
+ * If 'validateNewsitemsRelease' is enabled on the distributor's release options
+ * newsletters are only copied if they have already been published.
  */
 async function collectReleasedNewsletter(distributor) {
   const properties = [
     [ 'ext:algemeneNieuwsbrief' ], // newsletter
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
+
+  let releaseDateFilter = '';
+  if (distributor.releaseOptions.validateNewsitemsRelease) {
+    releaseDateFilter = '?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .';
+  }
 
   const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -66,7 +71,7 @@ async function collectReleasedNewsletter(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
+          ${releaseDateFilter}
           ?meeting ${path} ?s .
           ?s a ?type .
         }
