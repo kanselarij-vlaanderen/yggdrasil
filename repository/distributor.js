@@ -165,7 +165,13 @@ class Distributor {
    * the current tempGraph. This means the resource should no longer be visible.
    * Otherwise it would have been included in the tempGraph.
    *
-   * Step 2: Find all resources that have been published before with lineage to an agenda
+   * Step 2: Find all properties of a resource that have been published before
+   * with lineage to an agenda that is in scope of this distribution process,
+   * but don't have that property in the temp graph anymore. This means
+   * the published property is stale and must be removed. Otherwise it would have
+   * been included in the tempGraph.
+   *
+   * Step 3: Find all resources that have been published before with lineage to an agenda
    * that is in scope of this distribution process, but don't have lineage to that same
    * agenda in the current tempGraph. This means the resource should still be visible,
    * since it's included in the tempGraph, but it's published lineage must be updated.
@@ -208,6 +214,64 @@ class Distributor {
     });
 
     // Step 2
+    const cleanupStalePropertiesQuery = `
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      SELECT DISTINCT ?published
+      WHERE {
+        GRAPH <${this.tempGraph}> {
+          ?agenda a besluitvorming:Agenda .
+        }
+        {
+          {
+            GRAPH <${this.targetGraph}> {
+              ?published ext:tracesLineageTo ?agenda ;
+                 ?p ?o .
+            }
+            FILTER NOT EXISTS {
+              GRAPH <${this.tempGraph}> {
+                ?published ?p ?o .
+              }
+            }
+          }
+          UNION
+          {
+            GRAPH <${this.targetGraph}> {
+              ?published ext:tracesLineageTo ?agenda .
+                 ?s ?p ?published .
+            }
+            FILTER NOT EXISTS {
+              GRAPH <${this.tempGraph}> {
+                ?s ?p ?published .
+              }
+            }
+          }
+        }
+      }
+    `;
+    result = await queryTriplestore(cleanupStalePropertiesQuery);
+    resources = result.results.bindings.map(b => b['published'].value);
+    // Removing all properties (not only the stale ones) that have been published already.
+    // The ones that are not stale and still may be published will be copied again
+    // from temp graph to target graph in a next phase.
+    await forLoopProgressBar(resources, async (resource) => {
+      await updateSudo(`
+        DELETE WHERE {
+          GRAPH <${this.targetGraph}> {
+            <${resource}> ?p ?o .
+          }
+        }
+      `);
+      await updateSudo(`
+        DELETE WHERE {
+          GRAPH <${this.targetGraph}> {
+            ?s ?p <${resource}> .
+          }
+        }
+      `);
+    });
+
+    // Step 3
     const cleanupLineageQuery = `
       PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
