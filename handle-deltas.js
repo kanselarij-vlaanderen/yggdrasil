@@ -2,11 +2,6 @@ import debounce from 'debounce';
 import { ok } from 'assert';
 import moment from 'moment';
 
-import { parseSparQlResults, directQuery } from './repository/helpers';
-
-const DEBUG = process.env.DEBUG === 'true';
-const DELTA_TIMEOUT = parseInt(process.env.DELTA_TIMEOUT) || (5 * 60 * 1000);
-
 let builders = {};
 
 const handleDeltaRelatedToAgenda = async function(subjects, queryEnv) {

@@ -1,21 +1,50 @@
-import mu, { app } from 'mu';
+import mu, { app, errorHandler } from 'mu';
 import bodyParser from 'body-parser';
-
-import {handleDelta} from './handle-deltas';
-import { directQuery } from './repository/helpers';
 import Yggdrasil from './repository/yggdrasil';
+import DeltaCache from './repository/delta-cache';
+import { LOG_INCOMING_DELTA, DELTA_INTERVAL_MS } from './config';
 
+/* Accept application/json format from delta-notifier */
 app.use(bodyParser.json({
   type: function(req) { return /^application\/json/.test(req.get('content-type')); },
   limit: '50mb'
 }));
 
+
+/* Initialize service */
+
 const yggdrasil = new Yggdrasil();
 yggdrasil.initialize();
 
-app.post('/delta', (req, res) => {
-  return handleDelta(req, res, yggdrasil.deltaBuilders, directQuery);
+const cache = new DeltaCache();
+let hasTimeout = null;
+
+/* Endpoints */
+
+app.post('/delta', async function( req, res ) {
+  const delta = req.body;
+
+  if (LOG_INCOMING_DELTA)
+    console.log(`Receiving delta ${JSON.stringify(delta)}`);
+
+  cache.push(...delta);
+
+  if( !hasTimeout ){
+    triggerTimeout();
+  }
+
+  res.status(202).send();
 });
+
+function triggerTimeout(){
+  setTimeout( () => {
+    hasTimeout = false;
+    yggdrasil.processDeltas(cache);
+  }, DELTA_INTERVAL_MS );
+  hasTimeout = true;
+}
+
+app.use(errorHandler);
 
 if(process.env.ALLOW_DOWNLOADS === "true"){
     const downloadRequests = {};
