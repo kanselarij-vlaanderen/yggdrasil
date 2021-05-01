@@ -21,6 +21,7 @@ const typeUris = [
   { key: 'documentContainer', uri: 'dossier:Serie }'
 }];
 
+// TODO make collectors make use of this model configuration to construct query paths
 const pathsFromAgenda = {
   meeting: [
     { predicate: 'besluitvorming:isAgendaVoor' },
