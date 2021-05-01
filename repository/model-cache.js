@@ -1,4 +1,5 @@
-import { prefixes, typeUris, pathsFromAgenda } from '../model.js';
+import { prefixes, typeUris, pathsFromAgenda } from '../model';
+import { LOG_INITIALIZATION } from '../config';
 
 export default class ModelCache {
   constructor() {
@@ -27,12 +28,14 @@ export default class ModelCache {
         return entry;
       }
     });
-    console.log(`Type cache: ${JSON.stringify(this.typeCache)}`);
+    if (LOG_INITIALIZATION)
+      console.log(`Type cache: ${JSON.stringify(this.typeCache)}`);
 
     // Building a cache of possible property paths from an agenda to each type
     for (let key in pathsFromAgenda) {
       this.pathCache[key] = this.constructFullPaths(key);
-      console.log(`Constructed paths for '${key}': ${JSON.stringify(this.pathCache[key])}`);
+      if (LOG_INITIALIZATION)
+        console.log(`Constructed paths for '${key}': ${JSON.stringify(this.pathCache[key])}`);
     }
   }
 
