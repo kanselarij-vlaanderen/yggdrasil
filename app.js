@@ -29,7 +29,7 @@ app.post('/delta', async function( req, res ) {
 
   cache.push(...delta);
 
-  if( !hasTimeout ){
+  if ( !hasTimeout ) {
     triggerTimeout();
   }
 
@@ -40,13 +40,14 @@ function triggerTimeout(){
   setTimeout( () => {
     hasTimeout = false;
     yggdrasil.processDeltas(cache);
+    triggerTimeout();
   }, DELTA_INTERVAL_MS );
   hasTimeout = true;
 }
 
 app.use(errorHandler);
 
-if(process.env.ALLOW_DOWNLOADS === "true"){
+if (process.env.ALLOW_DOWNLOADS === "true"){
     const downloadRequests = {};
     app.get('/downloadZittingResult', async (req, res) => {
         const downloadId = req.query.id;
