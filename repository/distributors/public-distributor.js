@@ -2,6 +2,7 @@ import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
 import { ADMIN_GRAPH, PUBLIC_GRAPH } from '../../constants';
+import { countResources } from '../query-helpers';
 
 /**
  * Distributor for public data
@@ -18,6 +19,13 @@ export default class PublicDistributor extends Distributor {
     await runStage('Collect public classes', async () => {
       await this.collectPublicResources();
     }, this.constructor.name);
+
+    const nbOfResources = await countResources({
+      graph: this.tempGraph,
+      type: 'http://mu.semte.ch/vocabularies/ext/PublicClass'
+    });
+
+    return nbOfResources > 0;
   }
 
   /*

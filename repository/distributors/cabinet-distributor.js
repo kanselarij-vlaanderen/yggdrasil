@@ -1,7 +1,8 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, CABINET_GRAPH } from '../../constants';
+import { ADMIN_GRAPH, CABINET_GRAPH, AGENDA_TYPE } from '../../constants';
+import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
   collectReleasedAgendaitems,
@@ -38,46 +39,52 @@ export default class CabinetDistributor extends Distributor {
       await collectReleasedAgendas(this, options);
     }, this.constructor.name);
 
-    await runStage('Collect meeting and agendaitems', async () => {
-      await collectMeetings(this);
-      await collectReleasedAgendaitems(this);
-    }, this.constructor.name);
+    const nbOfAgendas = await countResources({ graph: this.tempGraph, type: AGENDA_TYPE });
 
-    await runStage('Collect meeting newsletter', async () => {
-      await collectReleasedNewsletter(this);
-    }, this.constructor.name);
+    if (nbOfAgendas) {
+      await runStage('Collect meeting and agendaitems', async () => {
+        await collectMeetings(this);
+        await collectReleasedAgendaitems(this);
+      }, this.constructor.name);
 
-    await runStage('Collect activities of agendaitems', async () => {
-      await collectAgendaitemActivities(this);
-    }, this.constructor.name);
+      await runStage('Collect meeting newsletter', async () => {
+        await collectReleasedNewsletter(this);
+      }, this.constructor.name);
 
-    await runStage('Collect subcases and cases', async () => {
-      await collectSubcasesAndCases(this);
-    }, this.constructor.name);
+      await runStage('Collect activities of agendaitems', async () => {
+        await collectAgendaitemActivities(this);
+      }, this.constructor.name);
 
-    await runStage('Collect released and approved decisions/treatments', async () => {
-      await collectReleasedAgendaitemTreatments(this);
-    }, this.constructor.name);
+      await runStage('Collect subcases and cases', async () => {
+        await collectSubcasesAndCases(this);
+      }, this.constructor.name);
 
-    await runStage('Collect newsitems', async () => {
-      await collectReleasedNewsitems(this);
-    }, this.constructor.name);
+      await runStage('Collect released and approved decisions/treatments', async () => {
+        await collectReleasedAgendaitemTreatments(this);
+      }, this.constructor.name);
 
-    await runStage('Collect released documents', async () => {
-      await collectReleasedDocuments(this);
-    }, this.constructor.name);
+      await runStage('Collect newsitems', async () => {
+        await collectReleasedNewsitems(this);
+      }, this.constructor.name);
 
-    await runStage('Collect document containers', async () => {
-      await collectDocumentContainers(this);
-    }, this.constructor.name);
+      await runStage('Collect released documents', async () => {
+        await collectReleasedDocuments(this);
+      }, this.constructor.name);
 
-    await runStage('Collect visible files', async () => {
-      await this.collectVisibleFiles();
-    }, this.constructor.name);
+      await runStage('Collect document containers', async () => {
+        await collectDocumentContainers(this);
+      }, this.constructor.name);
 
-    await runStage('Collect physical files', async () => {
-      await collectPhysicalFiles(this);
-    }, this.constructor.name);
+      await runStage('Collect visible files', async () => {
+        await this.collectVisibleFiles();
+      }, this.constructor.name);
+
+      await runStage('Collect physical files', async () => {
+        await collectPhysicalFiles(this);
+      }, this.constructor.name);
+    }
+
+    return nbOfAgendas > 0;
   }
 
   /*

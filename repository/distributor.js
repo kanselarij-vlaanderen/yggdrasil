@@ -22,27 +22,32 @@ class Distributor {
     if (this.collect) {
       console.log(`${this.constructor.name} started at ${new Date().toISOString()}`);
 
-      await runStage('Registered temp graph', async () => {
+      await runStage('Register temp graph', async () => {
         await this.registerTempGraph();
       });
 
-      await this.collect(options); // resource collection logic implemented by subclass
+      // resource collection logic implemented by subclass
+      const hasCollectedResources = await this.collect(options);
 
-      await runStage('Collect resource details', async () => {
-        await this.collectResourceDetails();
-      }, this.constructor.name);
-
-      if (!options.isInitialDistribution) {
-        await runStage('Cleanup previously published data', async () => {
-          await this.cleanupPreviouslyPublishedData();
+      if (hasCollectedResources) {
+        await runStage('Collect resource details', async () => {
+          await this.collectResourceDetails();
         }, this.constructor.name);
+
+        if (!options.isInitialDistribution) {
+          await runStage('Cleanup previously published data', async () => {
+            await this.cleanupPreviouslyPublishedData();
+          }, this.constructor.name);
+        }
+
+        await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
+          await this.copyTempGraph();
+        });
+      } else {
+        console.log('No resources collected in temp graph');
       }
 
-      await runStage(`Copied temp graph to <${this.targetGraph}>`, async () => {
-        await this.copyTempGraph();
-      });
-
-      await runStage(`Deleted temp graph <${this.tempGraph}>`, async () => {
+      await runStage(`Delete temp graph <${this.tempGraph}>`, async () => {
         await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraph}>`);
       });
 
@@ -196,6 +201,7 @@ class Distributor {
     `;
     let result = await queryTriplestore(cleanupResourcesQuery);
     let resources = result.results.bindings.map(b => b['published'].value);
+    console.log(`Cleanup ${resources.length} published resources that should no longer be visible`);
     await forLoopProgressBar(resources, async (resource) => {
       await updateSudo(`
         DELETE WHERE {
@@ -254,6 +260,7 @@ class Distributor {
     // Removing all properties (not only the stale ones) that have been published already.
     // The ones that are not stale and still may be published will be copied again
     // from temp graph to target graph in a next phase.
+    console.log(`Cleanup ${resources.length} published resources with stale properties`);
     await forLoopProgressBar(resources, async (resource) => {
       await updateSudo(`
         DELETE WHERE {
@@ -296,6 +303,7 @@ class Distributor {
         agenda: b['agenda'].value
       };
     });
+    console.log(`Cleanup lineages of ${resources.length} published resources that must be updated`);
     await forLoopProgressBar(lineages, async (lineage) => {
       await updateSudo(`
         DELETE WHERE {
@@ -326,6 +334,7 @@ class Distributor {
       const count = await countTriples({ graph: source });
       const limit = MU_AUTH_PAGE_SIZE;
       const totalBatches = Math.ceil(count / limit);
+      console.log(`Copying ${count} triples in batches of ${MU_AUTH_PAGE_SIZE}`);
       let currentBatch = 0;
       while (currentBatch < totalBatches) {
         await runStage(`Copy triples (batch ${currentBatch + 1}/${totalBatches})`, async () => {
