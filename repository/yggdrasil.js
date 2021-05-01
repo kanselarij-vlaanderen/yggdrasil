@@ -58,15 +58,19 @@ export default class Yggdrasil {
   async processDeltas(cache) {
     if (!cache.isEmpty) {
       if (this.isProcessing) {
-        console.log("Yggdrasil process already running. Not triggering new delta handling now.");
+        console.log('Yggdrasil process already running. Not triggering new delta handling now.');
       } else {
         try {
           this.isProcessing = true;
           const delta = cache.clear();
           const subjects = reduceChangesets(delta);
           const agendas = await fetchRelatedAgendas(subjects);
-          for (let distributor of this.deltaDistributors) {
-            await distributor.perform({ agendaUris: agendas });
+          if (agendas.length) {
+            for (let distributor of this.deltaDistributors) {
+              await distributor.perform({ agendaUris: agendas });
+            }
+          } else {
+            console.log('Deltas not related to any agenda. Nothing to distribute');
           }
         } catch(e) {
           console.log("Someting went wrong while processing delta's");

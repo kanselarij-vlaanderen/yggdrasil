@@ -9,8 +9,8 @@ export default class ModelCache {
 
   build() {
     // Building a type cache containing non-prefixed entries
-    // like { key: 'agenda', type: 'http://data.vlaanderen.be/ns/besluitvorming#Agenda' }
-    const typeCache = typeUris.map(entry => {
+    // like { key: 'agenda', uri: 'http://data.vlaanderen.be/ns/besluitvorming#Agenda' }
+    this.typeCache = typeUris.map(entry => {
       const prefixedType = entry.uri;
       const parts = prefixedType.split(':');
       if (parts.length > 1) {
@@ -19,7 +19,7 @@ export default class ModelCache {
 
         if (prefix) {
           const resolvedType = prefixedType.replace(`${prefix}:`, prefixUri);
-          return { key: entry.key, type: resolvedType };
+          return { key: entry.key, uri: resolvedType };
         } else {
           throw new Error(`No prefix definition found for '${prefix}'. Please fix the model configuration.`);
         }
@@ -27,6 +27,7 @@ export default class ModelCache {
         return entry;
       }
     });
+    console.log(`Type cache: ${JSON.stringify(this.typeCache)}`);
 
     // Building a cache of possible property paths from an agenda to each type
     for (let key in pathsFromAgenda) {
@@ -54,9 +55,11 @@ export default class ModelCache {
   }
 
   getPathsFromAgenda(typeUri) {
-    const type = this.typeCache.find(e => e.type == typeUri);
+    const type = this.typeCache.find(e => e.uri == typeUri);
     if (!type) {
-      console.log(`Didn't find entry for type '${type}'`);
+      console.log(`Didn't find entry for type '${typeUri}'`);
+      return null;
+    } else if (type.key == 'agenda') {
       return [];
     } else {
       return this.pathCache[type.key];

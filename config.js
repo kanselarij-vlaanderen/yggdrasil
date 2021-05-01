@@ -7,6 +7,8 @@ const DELTA_INTERVAL_MS = parseInt(process.env.DELTA_INTERVAL_MS || '60000');
 const LOG_DIRECT_QUERIES = isTruthy(process.env.LOG_DIRECT_QUERIES);
 const LOG_SPARQL_ALL = isTruthy(process.env.LOG_SPARQL_ALL);
 const LOG_INCOMING_DELTA = isTruthy(process.env.LOG_INCOMING_DELTA);
+const LOG_DELTA_PROCESSING = isTruthy(process.env.LOG_DELTA_PROCESSING);
+const LOG_INITIALIZATION = isTruthy(process.env.LOG_INITIALIZATION);
 
 let RELOAD_ON_INIT = [];
 if (isTruthy(process.env.RELOAD_ON_INIT)) {
@@ -32,6 +34,8 @@ export {
   LOG_DIRECT_QUERIES,
   LOG_SPARQL_ALL,
   LOG_INCOMING_DELTA,
+  LOG_DELTA_PROCESSING,
+  LOG_INITIALIZATION,
   RELOAD_ON_INIT,
   MU_AUTH_PAGE_SIZE,
   VIRTUOSO_RESOURCE_PAGE_SIZE,
