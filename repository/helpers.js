@@ -369,10 +369,7 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
       { { ?s a dossier:Dossier .
           ?s dossier:doorloopt / ^besluitvorming:vindtPlaatsTijdens / besluitvorming:genereertAgendapunt ?agendaitem .
           ?agenda dct:hasPart ?agendaitem .
-          ?agendaitem ext:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636>.
         }
-        UNION
-        { ?s ext:formeelOK <http://kanselarij.vo.data.gift/id/concept/goedkeurings-statussen/CC12A7DB-A73A-4589-9D53-F3C2F4A40636> . }
         UNION
         { FILTER NOT EXISTS {
             VALUES (?restrictedType) {
