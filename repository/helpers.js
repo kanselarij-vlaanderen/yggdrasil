@@ -371,6 +371,8 @@ const addAllRelatedToAgenda = (queryEnv, extraFilters, relationProperties) => {
           ?agenda dct:hasPart ?agendaitem .
         }
         UNION
+        { ?s a besluit:Agendapunt .}
+        UNION
         { FILTER NOT EXISTS {
             VALUES (?restrictedType) {
               (dossier:Dossier) (besluit:Agendapunt)
