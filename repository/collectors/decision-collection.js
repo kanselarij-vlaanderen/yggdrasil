@@ -12,6 +12,8 @@ import { updateTriplestore } from '../triplestore';
  *
  * If 'validateDecisionsRelease' is enabled on the distributor's release options
  * agendaitem-treatments are only copied if decisions of the meeting have already been released.
+ *
+ * TODO: validate why we don't filter on approval state anymore? See DECISION_STATUS_APPROVED in ../constants.js
  */
 async function collectReleasedAgendaitemTreatments(distributor) {
   const properties = [

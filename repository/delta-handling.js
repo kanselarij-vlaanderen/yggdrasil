@@ -136,6 +136,8 @@ async function fetchRelatedAgendasForType(subjects, typeUri) {
               ?agenda a besluitvorming:Agenda .
             }
           }`;
+    // TODO add additional filter on agenda status to exclude agendas in design state
+    // See FILTER NOT EXISTS in ./collectors/agenda-collection
 
     const result = await querySudo(agendaQuery);
     result.results.bindings.forEach(b => agendas.add(b['agenda'].value));
