@@ -1,7 +1,8 @@
-import { ADMIN_GRAPH } from '../constants';
-import { LOG_DELTA_PROCESSING } from '../config';
+import { ADMIN_GRAPH, DESIGN_AGENDA_STATUS } from '../constants';
+import { LOG_DELTA_PROCESSING, VALUES_BLOCK_SIZE } from '../config';
 import { querySudo } from './auth-sudo';
 import ModelCache from './model-cache';
+import chunk from 'lodash.chunk';
 
 const modelCache = new ModelCache();
 
@@ -62,9 +63,17 @@ async function fetchRelatedAgendas(subjects) {
 */
 async function constructSubjectsTypeMap(subjects) {
   const typeMap = {};
-  const values = subjects.map(uri => `<${uri}>`).join('\n');    // TODO batch queries
 
-  const subjectTypesQuery = `
+  const collectSubjectQuery = function(subjectUris = []) {
+    let subjectValues = '';
+    if (subjectUris && subjectUris.length) {
+      const values = subjectUris.map(uri => `<${uri}>`).join('\n');
+      subjectValues = `VALUES ?s {
+        ${values}
+      }`;
+    }
+
+    return `
       PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -77,19 +86,24 @@ async function constructSubjectsTypeMap(subjects) {
 
       SELECT DISTINCT ?s ?type WHERE {
         GRAPH <${ADMIN_GRAPH}> {
-          VALUES ?s {
-            ${values}
-          }
+          ${subjectValues}
           ?s a ?type .
         }
       }`;
-  const result = await querySudo(subjectTypesQuery);
-  result.results.bindings.forEach(binding => {
-    const typeUri = binding['type'].value;
-    if (!typeMap[typeUri])
-      typeMap[typeUri] = [];
-    typeMap[typeUri].push(binding['s'].value);
-  });
+  };
+
+  const batches = chunk(subjects, VALUES_BLOCK_SIZE);
+  for (const batch of batches) {
+    const subjectTypesQuery = collectSubjectQuery(batch);
+    const result = await querySudo(subjectTypesQuery);
+    result.results.bindings.forEach(binding => {
+      const typeUri = binding['type'].value;
+      if (!typeMap[typeUri]) {
+        typeMap[typeUri] = [];
+      }
+      typeMap[typeUri].push(binding['s'].value);
+    });
+  }
 
   return typeMap;
 }
@@ -97,6 +111,9 @@ async function constructSubjectsTypeMap(subjects) {
 /**
  * Fetches a unique set of related agendas for a given list of subjects URIs.
  * The related agenda(s) are fetched based on the given type and the configured model.
+ *
+ * Agendas are also copied if they are in the design status. Otherwise an agenda going from 'APPROVED'
+ * back to <${DESIGN_AGENDA_STATUS}> is not taken into account, while the data should be removed
  *
  * @private
 */
@@ -114,33 +131,42 @@ async function fetchRelatedAgendasForType(subjects, typeUri) {
       pathToAgendaStatement = `?agenda ${queryPath} ?s .`;
     }
 
-    const values = subjects.map(uri => `<${uri}>`).join('\n'); // TODO batch queries
-    const agendaQuery = `
-          PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-          PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-          PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-          PREFIX dbpedia: <http://dbpedia.org/ontology/>
-          PREFIX dct: <http://purl.org/dc/terms/>
-          PREFIX prov: <http://www.w3.org/ns/prov#>
-          PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-          PREFIX schema: <http://schema.org>
-          PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
+    const collectAgendaQuery = function(typeUris = []) {
+      let typeValues = '';
+      if (typeUris && typeUris.length) {
+        const values = typeUris.map(uri => `<${uri}>`).join('\n');
+        typeValues = `VALUES ?s {
+          ${values}
+        }`;
+      }
 
-          SELECT DISTINCT ?agenda WHERE {
-            GRAPH <${ADMIN_GRAPH}> {
-              VALUES ?s {
-                ${values}
-              }
-              ?s a <${typeUri}> .
-              ${pathToAgendaStatement}
-              ?agenda a besluitvorming:Agenda .
-            }
-          }`;
-    // TODO add additional filter on agenda status to exclude agendas in design state
-    // See FILTER NOT EXISTS in ./collectors/agenda-collection
+      return `
+        PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+        PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+        PREFIX dbpedia: <http://dbpedia.org/ontology/>
+        PREFIX dct: <http://purl.org/dc/terms/>
+        PREFIX prov: <http://www.w3.org/ns/prov#>
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+        PREFIX schema: <http://schema.org>
+        PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
 
-    const result = await querySudo(agendaQuery);
-    result.results.bindings.forEach(b => agendas.add(b['agenda'].value));
+        SELECT DISTINCT ?agenda WHERE {
+          GRAPH <${ADMIN_GRAPH}> {
+            ${typeValues}
+            ?s a <${typeUri}> .
+            ${pathToAgendaStatement}
+            ?agenda a besluitvorming:Agenda .
+          }
+        }`;
+    };
+
+    const batches = chunk(subjects, VALUES_BLOCK_SIZE);
+    for (const batch of batches) {
+      const agendaQuery = collectAgendaQuery(batch);
+      const result = await querySudo(agendaQuery);
+      result.results.bindings.forEach(b => agendas.add(b['agenda'].value));
+    }
   }
   // else: this type is not configured in the model, hence not relevant to any agenda
 

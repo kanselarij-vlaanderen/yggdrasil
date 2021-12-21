@@ -9,14 +9,16 @@ import  {
 } from './distributors';
 
 export default class Yggdrasil {
-  isProcessing = false;
 
-  distributors = {
-    'minister': new MinisterDistributor(),
-    'intern-regering': new CabinetDistributor(),
-    'intern-overheid': new GovernmentDistributor(),
-    'public': new PublicDistributor()
-  };
+  constructor() {
+    this.isProcessing = false;
+    this.distributors = {
+      'minister': new MinisterDistributor(),
+      'intern-regering': new CabinetDistributor(),
+      'intern-overheid': new GovernmentDistributor(),
+      'public': new PublicDistributor()
+    };
+  }
 
   get deltaDistributors() {
     return [
