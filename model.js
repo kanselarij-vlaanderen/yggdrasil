@@ -18,8 +18,8 @@ const typeUris = [
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'newsitem', uri: 'besluitvorming:NieuwsbriefInfo' },
   { key: 'document', uri: 'dossier:Stuk' },
-  { key: 'documentContainer', uri: 'dossier:Serie }'
-}];
+  { key: 'documentContainer', uri: 'dossier:Serie' }
+];
 
 // TODO make collectors make use of this model configuration to construct query paths
 const pathsFromAgenda = {
