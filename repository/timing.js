@@ -17,12 +17,17 @@ const runStage = async function(message, callback, actor = null) {
 const forLoopProgressBar = async function(array, callback) {
   const bar = new cliProgress.SingleBar({ noTTYOutput: true, notTTYSchedule: 8000 }, cliProgress.Presets.rect);
   bar.start(array.length, 0);
-  for (let i = 0; i < array.length; i++) {
-    const item = array[i];
-    await callback(item);
-    bar.increment();
+  try {
+    for (let i = 0; i < array.length; i++) {
+      const item = array[i];
+      await callback(item);
+      bar.increment();
+    }
+  } catch (e) {
+    throw e;
+  } finally {
+    bar.stop();
   }
-  bar.stop();
 };
 
 export {
