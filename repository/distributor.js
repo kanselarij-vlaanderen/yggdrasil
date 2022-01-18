@@ -171,7 +171,7 @@ class Distributor {
    * Otherwise it would have been included in the tempGraph.
    *
    * Step 2: Find all resources that have been published before with lineage to an agenda
-   * that is in scope of this distribution process, but have at least 1 property
+   * that is in scope of this distribution process, but have at least 1 property, that is not a lineage,
    * that is not in the temp graph anymore. This means the published property is stale
    * and must be removed. Otherwise it would have been included in the tempGraph.
    *
@@ -232,6 +232,7 @@ class Distributor {
             GRAPH <${this.targetGraph}> {
               ?published ext:tracesLineageTo ?agenda ;
                  ?p ?o .
+              FILTER(?p != ext:tracesLineageTo)
             }
             FILTER NOT EXISTS {
               GRAPH <${this.tempGraph}> {
