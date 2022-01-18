@@ -99,7 +99,7 @@ class Distributor {
       const totalBatches = Math.ceil(count / limit);
       let currentBatch = 0;
       while (currentBatch < totalBatches) {
-        await runStage(`Copy details of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
+        await runStage(`Collect details of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
           const offset = limit * currentBatch;
 
           // Outgoing triples
@@ -170,11 +170,10 @@ class Distributor {
    * the current tempGraph. This means the resource should no longer be visible.
    * Otherwise it would have been included in the tempGraph.
    *
-   * Step 2: Find all properties of a resource that have been published before
-   * with lineage to an agenda that is in scope of this distribution process,
-   * but don't have that property in the temp graph anymore. This means
-   * the published property is stale and must be removed. Otherwise it would have
-   * been included in the tempGraph.
+   * Step 2: Find all resources that have been published before with lineage to an agenda
+   * that is in scope of this distribution process, but have at least 1 property
+   * that is not in the temp graph anymore. This means the published property is stale
+   * and must be removed. Otherwise it would have been included in the tempGraph.
    *
    * Step 3: Find all resources that have been published before with lineage to an agenda
    * that is in scope of this distribution process, but don't have lineage to that same
@@ -257,7 +256,8 @@ class Distributor {
     `;
     result = await queryTriplestore(cleanupStalePropertiesQuery);
     resources = result.results.bindings.map(b => b['published'].value);
-    // Removing all properties (not only the stale ones) that have been published already.
+    // From all resources that have at least 1 stale property, we're going to
+    // remove all properties (not only the stale ones) that have been published already.
     // The ones that are not stale and still may be published will be copied again
     // from temp graph to target graph in a next phase.
     console.log(`Cleanup ${resources.length} published resources with stale properties`);
