@@ -20,8 +20,10 @@ function reduceChangesets(delta) {
   }
 
   const uris =  [...uriSet];
-  if (LOG_DELTA_PROCESSING)
-    console.log(`Reduced delta cache to ${uris.length} subjects:\n${uris.join('\n')}`);
+  if (LOG_DELTA_PROCESSING) {
+    const uriString = uris.map(u => `- <${u}>`).join('\n');
+    console.log(`Reduced delta cache to ${uris.length} subjects:\n${uriString}`);
+  }
 
   return uris;
 }
@@ -45,7 +47,7 @@ async function fetchRelatedAgendas(subjects) {
   }
 
   if (LOG_DELTA_PROCESSING)
-    console.log(`Reduced ${subjects.length} subjects to ${agendas.length} agendas `);
+    console.log(`Summary: reduced ${subjects.length} subjects to ${agendas.size} agendas `);
 
   return [...agendas];
 }

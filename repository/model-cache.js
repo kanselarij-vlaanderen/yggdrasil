@@ -34,8 +34,10 @@ export default class ModelCache {
     // Building a cache of possible property paths from an agenda to each type
     for (let key in pathsFromAgenda) {
       this.pathCache[key] = this.constructFullPaths(key);
-      if (LOG_INITIALIZATION)
-        console.log(`Constructed paths for '${key}': ${JSON.stringify(this.pathCache[key])}`);
+      if (LOG_INITIALIZATION) {
+        const propertyPathsForKey = this.pathCache[key].map(path => path.join(' / '));
+        console.log(`Constructed paths from '${key}' to 'agenda': ${JSON.stringify(propertyPathsForKey, null, 4)}`);
+      }
     }
   }
 

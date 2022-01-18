@@ -22,7 +22,7 @@ class Distributor {
     if (this.collect) {
       console.log(`${this.constructor.name} started at ${new Date().toISOString()}`);
 
-      await runStage('Register temp graph', async () => {
+      await runStage(`Register temp graph <${this.tempGraph}>`, async () => {
         await this.registerTempGraph();
       });
 
