@@ -9,7 +9,7 @@ class Distributor {
   constructor({ sourceGraph, targetGraph }) {
     this.sourceGraph = sourceGraph;
     this.targetGraph = targetGraph;
-    this.tempGraph = `http://mu.semte.ch/temp/${uuid()}`;
+    this.tempGraph = `http://mu.semte.ch/graphs/temp/${uuid()}`;
 
     this.releaseOptions = {
       validateDecisionsRelease: false,
