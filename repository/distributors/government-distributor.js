@@ -97,7 +97,7 @@ export default class GovernmentDistributor extends Distributor {
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the government-profile
    * I.e. the document is not confidential and doesn't have access level 'Intern regering'
-   * nor is it linked to a confidential case/subcase
+   * nor is it linked to a case that contains a confidential subcase
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `

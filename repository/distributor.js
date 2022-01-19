@@ -245,6 +245,7 @@ class Distributor {
             GRAPH <${this.targetGraph}> {
               ?published ext:tracesLineageTo ?agenda .
                  ?s ?p ?published .
+              FILTER(?p != ext:tracesLineageTo)
             }
             FILTER NOT EXISTS {
               GRAPH <${this.tempGraph}> {
