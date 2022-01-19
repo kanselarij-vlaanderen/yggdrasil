@@ -1,7 +1,7 @@
 import chunk from 'lodash.chunk';
 import { updateTriplestore } from '../triplestore';
 import { VALUES_BLOCK_SIZE } from '../../config';
-import { AGENDAITEM_FORMALLY_OK_STATUS, DESIGN_AGENDA_STATUS } from '../../constants';
+import { DESIGN_AGENDA_STATUS } from '../../constants';
 
 /**
  * Helpers to collect data about:
@@ -65,9 +65,16 @@ async function collectReleasedAgendas(distributor, options) {
  * Collect related agendaitems for the relevant agenda's
  * from the distributor's source graph in the temp graph.
  *
- * Agendaitems are only copied if they are marked as 'formally OK'
- * or don't have any formally OK status (legacy data)
- * I.e. triple ?agendaitem ext:formeelOK <${AGENDAITEM_FORMALLY_OK_STATUS}> exists
+ * Note: the 'formally OK' status is not taken into account on purpose.
+ * The status is only an internal workflow tool for the secretary.
+ * On approved agendas all agendaitems are inherently considered to be
+ * in a publishable/approved state.
+ * The application ensures on approval of an agenda that:
+ * - new agendaitems that are not formally OK are moved to the next design agenda
+ *   and not part of the approved agenda anymore
+ * - modified agendaitems that are not formally OK anymore are moved to the next
+ *   design agenda and the version on the approved agenda is rollbacked to the
+ *   latest approved version of the agendaitem.
  */
 async function collectReleasedAgendaitems(distributor) {
   const relatedAgendaitemsQuery = `
@@ -87,17 +94,7 @@ async function collectReleasedAgendaitems(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ?agenda dct:hasPart ?s .
-          {
-            ?s a besluit:Agendapunt .
-            FILTER NOT EXISTS {
-              ?s ext:formeelOK ?anyStatus .
-            }
-          }
-          UNION
-          {
-            ?s a besluit:Agendapunt .
-            ?s ext:formeelOK <${AGENDAITEM_FORMALLY_OK_STATUS}> .
-          }
+          ?s a besluit:Agendapunt .
         }
       }`;
   await updateTriplestore(relatedAgendaitemsQuery);
