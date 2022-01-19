@@ -62,7 +62,7 @@ export default class ModelCache {
   getPathsFromAgenda(typeUri) {
     const type = this.typeCache.find(e => e.uri == typeUri);
     if (!type) {
-      console.log(`Didn't find entry for type '${typeUri}'`);
+      console.log(`Didn't find model cache entry for type '${typeUri}'. Paths to agenda for this type are irrelevant.`);
       return null;
     } else if (type.key == 'agenda') {
       return [];

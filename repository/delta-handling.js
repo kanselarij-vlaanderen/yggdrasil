@@ -114,8 +114,10 @@ async function constructSubjectsTypeMap(subjects) {
  * Fetches a unique set of related agendas for a given list of subjects URIs.
  * The related agenda(s) are fetched based on the given type and the configured model.
  *
- * Agendas are also copied if they are in the design status. Otherwise an agenda going from 'APPROVED'
- * back to <${DESIGN_AGENDA_STATUS}> is not taken into account, while the data should be removed
+ * Note: there is no filter on agenda status on purpose.
+ * Agendas also need to be taken into account if they are in the design status.
+ * Otherwise for an agenda going from 'APPROVED' back to 'DESIGN' status
+ * the already published data will not be correctly cleaned.
  *
  * @private
 */
