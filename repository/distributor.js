@@ -2,7 +2,7 @@ import { uuid } from 'mu';
 import { updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
-import { countResources, countTriples } from './query-helpers';
+import { countResources, countTriples, deleteResource } from './query-helpers';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE } from '../config';
 
 class Distributor {
@@ -202,20 +202,8 @@ class Distributor {
     let resources = result.results.bindings.map(b => b['published'].value);
     console.log(`Cleanup ${resources.length} published resources that should no longer be visible`);
     await forLoopProgressBar(resources, async (resource) => {
-      await updateSudo(`
-        DELETE WHERE {
-          GRAPH <${this.targetGraph}> {
-            <${resource}> ?p ?o .
-          }
-        }
-      `);
-      await updateSudo(`
-        DELETE WHERE {
-          GRAPH <${this.targetGraph}> {
-            ?s ?p <${resource}> .
-          }
-        }
-      `);
+      await deleteResource(resource, this.targetGraph);
+      await deleteResource(resource, this.targetGraph, { inverse: true });
     });
 
     // Step 2
@@ -264,20 +252,8 @@ class Distributor {
     // from temp graph to target graph in a next phase.
     console.log(`Cleanup ${resources.length} published resources with stale properties`);
     await forLoopProgressBar(resources, async (resource) => {
-      await updateSudo(`
-        DELETE WHERE {
-          GRAPH <${this.targetGraph}> {
-            <${resource}> ?p ?o .
-          }
-        }
-      `);
-      await updateSudo(`
-        DELETE WHERE {
-          GRAPH <${this.targetGraph}> {
-            ?s ?p <${resource}> .
-          }
-        }
-      `);
+      await deleteResource(resource, this.targetGraph);
+      await deleteResource(resource, this.targetGraph, { inverse: true });
     });
 
     // Step 3
