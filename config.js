@@ -4,6 +4,8 @@ const NB_OF_QUERY_RETRIES = 6;
 const RETRY_TIMEOUT_MS = parseInt(process.env.RETRY_TIMEOUT_MS || '1000');
 const DELTA_INTERVAL_MS = parseInt(process.env.DELTA_INTERVAL_MS || '60000');
 
+const KEEP_TEMP_GRAPH = isTruthy(process.env.KEEP_TEMP_GRAPH);
+
 const LOG_DIRECT_QUERIES = isTruthy(process.env.LOG_DIRECT_QUERIES);
 const LOG_SPARQL_ALL = isTruthy(process.env.LOG_SPARQL_ALL);
 const LOG_INCOMING_DELTA = isTruthy(process.env.LOG_INCOMING_DELTA);
@@ -31,6 +33,7 @@ export {
   NB_OF_QUERY_RETRIES,
   RETRY_TIMEOUT_MS,
   DELTA_INTERVAL_MS,
+  KEEP_TEMP_GRAPH,
   LOG_DIRECT_QUERIES,
   LOG_SPARQL_ALL,
   LOG_INCOMING_DELTA,

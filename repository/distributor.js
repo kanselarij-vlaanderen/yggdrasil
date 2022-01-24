@@ -3,7 +3,7 @@ import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
 import { countResources, countTriples, deleteResource } from './query-helpers';
-import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE } from '../config';
+import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
   constructor({ sourceGraph, targetGraph }) {
@@ -47,9 +47,13 @@ class Distributor {
         console.log('No resources collected in temp graph');
       }
 
-      await runStage(`Delete temp graph <${this.tempGraph}>`, async () => {
-        await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraph}>`);
-      });
+      if (KEEP_TEMP_GRAPH) {
+        console.log(`Service configured not to cleanup temp graph. Graph <${this.tempGraph}> will remain in triplestore.`);
+      } else {
+        await runStage(`Delete temp graph <${this.tempGraph}>`, async () => {
+          await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraph}>`);
+        });
+      }
 
       console.log(`${this.constructor.name} ended at ${new Date().toISOString()}`);
     } else {

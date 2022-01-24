@@ -1,5 +1,5 @@
 import { queryTriplestore, updateTriplestore } from './triplestore';
-import { RELOAD_ON_INIT } from '../config';
+import { RELOAD_ON_INIT, KEEP_TEMP_GRAPH } from '../config';
 import { reduceChangesets, fetchRelatedAgendas } from './delta-handling';
 import  {
   MinisterDistributor,
@@ -29,7 +29,11 @@ export default class Yggdrasil {
   }
 
   async initialize() {
-    await this.cleanupTempGraphs();
+    if (KEEP_TEMP_GRAPH) {
+      console.log(`Service configured not to cleanup temp graphs on startup.`);
+    } else {
+      await this.cleanupTempGraphs();
+    }
     await this.initialLoad();
   }
 
