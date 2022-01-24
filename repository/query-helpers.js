@@ -147,6 +147,9 @@ async function deleteResource(subject, graph, { inverse } = {}) {
     `;
   } else {
     count = await countTriples({ graph, subject });
+    // Note: no OFFSET needed in the subquery. Pagination is inherent since
+    // the WHERE clause doesn't match any longer for triples that are deleted
+    // in the previous batch.
     deleteStatement = `
       DELETE {
         GRAPH <${graph}> {

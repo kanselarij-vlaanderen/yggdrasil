@@ -336,7 +336,8 @@ class Distributor {
       let currentBatch = 0;
       while (currentBatch < totalBatches) {
         await runStage(`Copy triples (batch ${currentBatch + 1}/${totalBatches})`, async () => {
-          const offset = limit * currentBatch;
+          // Note: no OFFSET needed in the subquery. Pagination is inherent since
+          // the WHERE clause doesn't match any longer for triples that are copied in the previous batch.
           await updateSudo(`
           INSERT {
             GRAPH <${target}> {
@@ -348,7 +349,7 @@ class Distributor {
               FILTER NOT EXISTS {
                 GRAPH <${target}> { ?resource ?p ?o }
               }
-            } LIMIT ${limit} OFFSET ${offset}
+            } LIMIT ${limit}
           }`);
         });
         currentBatch++;
