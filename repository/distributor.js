@@ -1,5 +1,5 @@
 import { uuid } from 'mu';
-import { updateSudo } from './auth-sudo';
+import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
 import { countResources, countTriples, deleteResource } from './query-helpers';
@@ -299,6 +299,14 @@ class Distributor {
    * Depending on the configuration of USE_DIRECT_QUERIES the copy queries
    * are executed via mu-authorization (resulting in delta notifications being sent)
    * or directly on Virtuoso (without delta notifications)
+   *
+   * In case copy is executed via mu-authorization only new triples (triples in temp,
+   * that are not yet in target graph) are copied. This strategy has following advantages:
+   * - no need to be more strict (avoiding duplicates) while collecting triples in temp.
+   *   Experiments have shown that collecting data in temp is rather cheap,
+   *   while copying data in batches to the target graph is expensive and time-consuming.
+   * - delta's are only sent for actual changes, instead of for all triples. This greatly
+   *   minimizes impact on other services (mu-search, resources, ...) to update their state.
   */
   async copyTempGraph() {
     const source = this.tempGraph;
@@ -309,7 +317,15 @@ class Distributor {
         await updateTriplestore(`COPY SILENT GRAPH <${source}> TO <${target}>`);
       });
     } else {
-      const count = await countTriples({ graph: source });
+      const queryResult = await querySudo(`
+        SELECT (COUNT(*) as ?count) WHERE {
+          GRAPH <${source}> { ?s ?p ?o . }
+          FILTER NOT EXISTS {
+            GRAPH <${target}> { ?s ?p ?o . }
+          }
+        }`);
+      const count = parseInt(queryResult.results.bindings[0].count.value);
+      console.log(`${count} triples in graph <${source}> not found in target graph <${target}>. Going to copy these triples.`);
       const limit = MU_AUTH_PAGE_SIZE;
       const totalBatches = Math.ceil(count / limit);
       console.log(`Copying ${count} triples in batches of ${MU_AUTH_PAGE_SIZE}`);
@@ -324,12 +340,12 @@ class Distributor {
             }
           } WHERE {
             SELECT ?resource ?p ?o WHERE {
-              GRAPH <${source}> {
-                ?resource ?p ?o .
+              GRAPH <${source}> { ?resource ?p ?o . }
+              FILTER NOT EXISTS {
+                GRAPH <${target}> { ?resource ?p ?o }
               }
             } LIMIT ${limit} OFFSET ${offset}
-          }
-        `);
+          }`);
         });
         currentBatch++;
       }
