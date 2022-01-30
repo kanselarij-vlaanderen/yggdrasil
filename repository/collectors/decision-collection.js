@@ -63,7 +63,11 @@ async function collectReleasedNewsitems(distributor) {
 
   let releaseDateFilter = '';
   if (distributor.releaseOptions.validateNewsitemsRelease) {
-    releaseDateFilter = '?agenda besluitvorming:isAgendaVoor / ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .';
+    releaseDateFilter = `
+        ?agenda besluitvorming:isAgendaVoor ?meeting .
+        ?meeting ext:releasedDecisions ?decisionReleaseDate .
+        ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
+    `;
   }
 
   const relatedQuery = `
