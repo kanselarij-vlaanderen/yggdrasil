@@ -23,8 +23,6 @@ export default class DeltaCache {
    * @public
   */
   clear() {
-    const cachedArray = this.cache;
-    this.cache = [];
-    return cachedArray;
+    return this.cache.splice(0, this.cache.length);
   }
 }
