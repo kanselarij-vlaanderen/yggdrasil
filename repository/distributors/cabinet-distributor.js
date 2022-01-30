@@ -109,16 +109,16 @@ export default class CabinetDistributor extends Distributor {
         }
       } WHERE {
         GRAPH <${this.tempGraph}> {
-          ?document a dossier:Stuk ;
+          ?piece a dossier:Stuk ;
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?document ext:file ?file .
+          ?piece ext:file ?file .
           FILTER NOT EXISTS {
-            ?document ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
+            ?piece ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
           }
           FILTER NOT EXISTS {
-            ?document ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
+            ?piece ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
             ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
           }
         }

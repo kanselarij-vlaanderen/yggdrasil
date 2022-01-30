@@ -2,21 +2,21 @@ import { updateTriplestore } from '../triplestore';
 
 /**
  * Helpers to collect data about:
- * - documents (dossier:Stuk)
+ * - pieces (dossier:Stuk)
  * - document-containers (dossier:Serie)
  * - files (nfo:FileDataObject)
  */
 
 /*
- * Collect related documents for any of the relevant resources
+ * Collect related pieces for any of the relevant resources
  * from the distributor's source graph in the temp graph.
  *
  * If 'validateDocumentsRelease' is enabled on the distributor's release options
  * documents are only copied if the documents of the meeting have already been released.
  *
- * Some documents are always visible, regardless of the documents release
+ * Some pieces are always visible, regardless of the documents release
  *
- * Note, all documents (dossier:Stuk) are copied. Restrictions regarding visibility (access level, confidentiality)
+ * Note, all pieces (dossier:Stuk) are copied. Restrictions regarding visibility (access level, confidentiality)
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {
@@ -44,7 +44,7 @@ async function collectReleasedDocuments(distributor) {
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
         INSERT {
           GRAPH <${distributor.tempGraph}> {
-            ?document a dossier:Stuk ;
+            ?piece a dossier:Stuk ;
                ext:tracesLineageTo ?agenda .
           }
         } WHERE {
@@ -54,22 +54,22 @@ async function collectReleasedDocuments(distributor) {
           }
           GRAPH <${distributor.sourceGraph}> {
             ${releaseDateFilter}
-            ?s ${path.predicate} ?document .
-            ?document a dossier:Stuk .
+            ?s ${path.predicate} ?piece .
+            ?piece a dossier:Stuk .
           }
         }`;
     await updateTriplestore(releasedDocumentsQuery);
   }
 
-  // documents that are always visible, regardless of official documents release
-  const documentPaths = [
+  // pieces that are always visible, regardless of official documents release
+  const piecePaths = [
     { type: 'besluit:Agendapunt', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
     { type: 'dossier:Procedurestap', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
     { type: 'besluit:Vergaderactiviteit', predicate: 'ext:zittingDocumentversie' },
     { type: 'besluit:Vergaderactiviteit', predicate: 'dossier:genereert' }
   ];
-  for (let path of documentPaths) {
-    const documentsQuery = `
+  for (let path of piecePaths) {
+    const piecesQuery = `
         PREFIX prov: <http://www.w3.org/ns/prov#>
         PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
         PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -77,7 +77,7 @@ async function collectReleasedDocuments(distributor) {
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
         INSERT {
           GRAPH <${distributor.tempGraph}> {
-            ?document a dossier:Stuk ;
+            ?piece a dossier:Stuk ;
                ext:tracesLineageTo ?agenda .
           }
         } WHERE {
@@ -86,16 +86,16 @@ async function collectReleasedDocuments(distributor) {
                 ext:tracesLineageTo ?agenda .
           }
           GRAPH <${distributor.sourceGraph}> {
-            ?s ${path.predicate} ?document .
-            ?document a dossier:Stuk .
+            ?s ${path.predicate} ?piece .
+            ?piece a dossier:Stuk .
           }
         }`;
-    await updateTriplestore(documentsQuery);
+    await updateTriplestore(piecesQuery);
   }
 }
 
 /*
- * Collect related document-containers for the relevant documents
+ * Collect related document-containers for the relevant pieces
  * from the distributor's source graph in the temp graph.
  */
 async function collectDocumentContainers(distributor) {
@@ -116,11 +116,11 @@ async function collectDocumentContainers(distributor) {
         }
       } WHERE {
         GRAPH <${distributor.tempGraph}> {
-          ?document a dossier:Stuk ;
+          ?piece a dossier:Stuk ;
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ?document ${path} ?s .
+          ?piece ${path} ?s .
           ?s a ?type .
         }
       }`;

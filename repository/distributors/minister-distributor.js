@@ -110,11 +110,11 @@ export default class MinisterDistributor extends Distributor {
         }
       } WHERE {
         GRAPH <${this.tempGraph}> {
-          ?document a dossier:Stuk ;
+          ?piece a dossier:Stuk ;
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?document ext:file ?file .
+          ?piece ext:file ?file .
         }
       }`;
     await updateTriplestore(visibleFileQuery);

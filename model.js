@@ -17,7 +17,7 @@ const typeUris = [
   { key: 'case', uri: 'dossier:Dossier' },
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'newsitem', uri: 'besluitvorming:NieuwsbriefInfo' },
-  { key: 'document', uri: 'dossier:Stuk' },
+  { key: 'piece', uri: 'dossier:Stuk' },
   { key: 'documentContainer', uri: 'dossier:Serie' }
 ];
 
@@ -49,7 +49,7 @@ const pathsFromAgenda = {
     { source: 'agendaitemTreatment', predicate: 'prov:generated' },
     { source: 'meeting', predicate: 'ext:algemeneNieuwsbrief' }
   ],
-  document: [
+  piece: [
     { source: 'agendaitem', predicate: 'besluitvorming:geagendeerdStuk' },
     { source: 'agendaitem', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
     { source: 'agendaitemTreatment', predicate: 'ext:documentenVoorBeslissing' },
@@ -62,7 +62,7 @@ const pathsFromAgenda = {
     { source: 'meeting', predicate: 'dossier:genereert' }
   ],
   documentContainer: [
-    { source: 'document', predicate: '^dossier:collectie.bestaatUit' }
+    { source: 'piece', predicate: '^dossier:collectie.bestaatUit' }
   ]
 };
 
