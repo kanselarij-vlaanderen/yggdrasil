@@ -1,4 +1,4 @@
-import mu, { app, errorHandler } from 'mu';
+import { app, errorHandler } from 'mu';
 import bodyParser from 'body-parser';
 import Yggdrasil from './repository/yggdrasil';
 import DeltaCache from './repository/delta-cache';

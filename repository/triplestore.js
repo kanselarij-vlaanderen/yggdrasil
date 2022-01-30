@@ -1,7 +1,6 @@
 import httpContext from 'express-http-context';
 import { SparqlClient } from 'sparql-client-2';
 import {
-  ADMIN_GRAPH,
   DIRECT_SPARQL_ENDPOINT,
   LOG_DIRECT_QUERIES,
   NB_OF_QUERY_RETRIES,
