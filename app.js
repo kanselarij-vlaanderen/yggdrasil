@@ -30,19 +30,25 @@ app.post('/delta', async function( req, res ) {
   cache.push(...delta);
 
   if ( !hasTimeout ) {
-    triggerTimeout();
+    scheduleDeltaProcessing();
   }
 
   res.status(202).send();
 });
 
-function triggerTimeout(){
+function scheduleDeltaProcessing() {
   setTimeout( () => {
     hasTimeout = false;
-    yggdrasil.processDeltas(cache);
-    triggerTimeout();
+    triggerDeltaProcessing(cache);
   }, DELTA_INTERVAL_MS );
   hasTimeout = true;
+}
+
+async function triggerDeltaProcessing(cache) {
+  await yggdrasil.processDeltas(cache);
+  if (!cache.isEmpty) {
+    triggerDeltaProcessing(cache);
+  }
 }
 
 app.use(errorHandler);
