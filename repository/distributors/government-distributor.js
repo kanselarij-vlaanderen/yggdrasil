@@ -96,8 +96,13 @@ export default class GovernmentDistributor extends Distributor {
   /*
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the government-profile
-   * I.e. the document is not confidential and doesn't have access level 'Intern regering'
-   * nor is it linked to a case that contains a confidential subcase
+   * I.e. the document is not confidential, does have an access level
+   * different from 'Intern regering' (i.e. 'Intern overheid' or 'Publiek')
+   * and is not linked to a case that contains a confidential subcase.
+   *
+   * Note: some documents in legacy data don't have any access level and may not be
+   * distributed. Therefore it's important to ensure the existence
+   * of the triple `?piece ext:toegangsniveauVoorDocumentVersie ?any`.
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `
@@ -116,16 +121,15 @@ export default class GovernmentDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?piece ext:file ?file .
+          ?piece ext:file ?file ;
+                 ext:toegangsniveauVoorDocumentVersie ?accessLevel .
+          FILTER( ?accessLevel != <${ACCESS_LEVEL_CABINET}> )
           FILTER NOT EXISTS {
             ?piece ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
           }
           FILTER NOT EXISTS {
             ?piece ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
             ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-          }
-          FILTER NOT EXISTS {
-            ?piece ext:toegangsniveauVoorDocumentVersie <${ACCESS_LEVEL_CABINET}> .
           }
         }
       }`;
