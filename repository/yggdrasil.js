@@ -32,7 +32,12 @@ export default class Yggdrasil {
     if (KEEP_TEMP_GRAPH) {
       console.log(`Service configured not to cleanup temp graphs on startup.`);
     } else {
-      await this.cleanupTempGraphs();
+      try {
+        await this.cleanupTempGraphs();
+      } catch (e) {
+        console.log('Someting went wrong while cleaning up temp graphs. Service will continue without cleanup.');
+        console.log(e);
+      }
     }
     await this.initialLoad();
   }
