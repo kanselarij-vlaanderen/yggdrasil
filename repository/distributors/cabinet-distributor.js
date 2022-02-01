@@ -94,7 +94,7 @@ export default class CabinetDistributor extends Distributor {
   /*
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the cabinet-profile
-   * I.e. the document is not confidential nor is it linked to a confidential case/subcase
+   * I.e. the document is not confidential nor is it linked to any confidential subcase
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `
