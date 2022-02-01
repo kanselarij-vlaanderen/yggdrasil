@@ -62,68 +62,6 @@ async function countResources({ graph, type = null, lineage = null }) {
   return parseInt(queryResult.results.bindings[0].count.value);
 }
 
-async function getPagedResourceUris({ graph, type = null, lineage = null, offset = 0, limit = 10000 }) {
-  const statements = [];
-  if (type)
-    statements.push(`?s a <${type}> .`);
-  else
-    statements.push(`?s a ?type .`);
-
-  if (lineage)
-    statements.push(`?s ext:tracesLineageTo <${lineage}> .`);
-
-  // Using subquery to select all distinct subjects.
-  // More info: http://vos.openlinksw.com/owiki/wiki/VOS/VirtTipsAndTricksHowToHandleBandwidthLimitExceed
-  const queryResult = await query(`
-    SELECT ?s
-    WHERE {
-      SELECT DISTINCT ?s {
-        GRAPH <${graph}> {
-          ${statements.join('\n')}
-        }
-      }
-      ORDER BY ?s
-    }
-    LIMIT ${limit} OFFSET ${offset}
-  `);
-
-  return queryResult.results.bindings.map(b => b['s'].value);
-}
-
-async function getResourceUris({ graph, type = null, lineage = null }) {
-  const count = await countResources({ graph, type, lineage });
-
-  const resourceSet = new Set();
-  if (count > 0) {
-    const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
-    const totalBatches = Math.ceil(count / limit);
-    let currentBatch = 0;
-
-    while (currentBatch < totalBatches) {
-      const offset = limit * currentBatch;
-      const resourceUris = await getPagedResourceUris({ graph, type, lineage, limit, offset });
-      resourceUris.forEach(resource => resourceSet.add(resource));
-      currentBatch++;
-    }
-  }
-
-  return [...resourceSet];
-}
-
-async function copyResource(subject, source, target) {
-  await query(`
-    INSERT {
-      GRAPH <${target}> {
-        <${subject}> ?p ?o .
-      }
-    } WHERE {
-      GRAPH <${source}> {
-        <${subject}> ?p ?o .
-      }
-    }
-  `);
-}
-
 async function deleteResource(subject, graph, { inverse } = {}) {
   let count = 0;
   let offset = 0;
@@ -176,8 +114,5 @@ export {
   parseResult,
   countTriples,
   countResources,
-  getPagedResourceUris,
-  getResourceUris,
-  copyResource,
   deleteResource
 }
