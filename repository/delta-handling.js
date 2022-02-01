@@ -76,16 +76,6 @@ async function constructSubjectsTypeMap(subjects) {
     }
 
     return `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX dbpedia: <http://dbpedia.org/ontology/>
-      PREFIX dct: <http://purl.org/dc/terms/>
-      PREFIX prov: <http://www.w3.org/ns/prov#>
-      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-      PREFIX schema: <http://schema.org>
-      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-
       SELECT DISTINCT ?s ?type WHERE {
         GRAPH <${ADMIN_GRAPH}> {
           ${subjectValues}
