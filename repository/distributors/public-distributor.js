@@ -33,10 +33,7 @@ export default class PublicDistributor extends Distributor {
   */
   async collectPublicResources() {
     const publicResourceQuery = `
-      PREFIX prov: <http://www.w3.org/ns/prov#>
-      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
       INSERT {
         GRAPH <${this.tempGraph}> {
           ?s a ?type .
