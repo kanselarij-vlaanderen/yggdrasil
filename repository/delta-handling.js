@@ -1,4 +1,4 @@
-import { ADMIN_GRAPH, DESIGN_AGENDA_STATUS } from '../constants';
+import { ADMIN_GRAPH } from '../constants';
 import { LOG_DELTA_PROCESSING, VALUES_BLOCK_SIZE } from '../config';
 import { querySudo } from './auth-sudo';
 import ModelCache from './model-cache';
@@ -113,11 +113,6 @@ async function constructSubjectsTypeMap(subjects) {
 /**
  * Fetches a unique set of related agendas for a given list of subjects URIs.
  * The related agenda(s) are fetched based on the given type and the configured model.
- *
- * Note: there is no filter on agenda status on purpose.
- * Agendas also need to be taken into account if they are in the design status.
- * Otherwise for an agenda going from 'APPROVED' back to 'DESIGN' status
- * the already published data will not be correctly cleaned.
  *
  * @private
 */

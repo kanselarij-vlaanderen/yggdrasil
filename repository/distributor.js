@@ -2,7 +2,7 @@ import { uuid } from 'mu';
 import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
-import { countResources, countTriples, deleteResource } from './query-helpers';
+import { countResources, deleteResource } from './query-helpers';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
