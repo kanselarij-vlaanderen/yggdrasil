@@ -20,9 +20,10 @@ import { DESIGN_AGENDA_STATUS } from '../../constants';
  * Agendas are only copied if they are not in the design status anymore.
  * I.e. triple ?agenda besluitvorming:agendaStatus <${DESIGN_AGENDA_STATUS}> doesn't exist.
  *
- * Note: we can filter agenda on 'DESIGN' status since an 'APPROVED' agenda
- * can currently not go back to the 'DESIGN' status. When re-opening an agenda
- * a new agenda version will be created.
+ * TODO: the filter on 'DESIGN' status may need to be removed to support
+ * scenarios where an agenda changes back from 'APPROVED' to 'DESIGN' state.
+ * To be clarified with business how often this scenario occurs and
+ * what that means in terms of already published data.
  */
 async function collectReleasedAgendas(distributor, options) {
   const collectAgendaQuery = function(agendaUris = []) {
