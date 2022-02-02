@@ -55,6 +55,7 @@ async function collectReleasedNewsletter(distributor) {
   const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       INSERT {
         GRAPH <${distributor.tempGraph}> {

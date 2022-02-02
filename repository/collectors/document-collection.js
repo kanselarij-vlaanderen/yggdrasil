@@ -1,5 +1,5 @@
 import { updateTriplestore } from '../triplestore';
-import { documentsReleaseFilter } from './release-validations';
+import { decisionsReleaseFilter, documentsReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
@@ -12,24 +12,36 @@ import { documentsReleaseFilter } from './release-validations';
  * Collect related pieces for any of the relevant resources
  * from the distributor's source graph in the temp graph.
  *
- * If 'validateDocumentsRelease' is enabled on the distributor's release options
- * documents are only copied if the documents of the meeting have already been released.
+ * If 'validateDocumentsRelease' and/or 'validateDecisionsRelease' is enabled
+ * on the distributor's release options documents are only copied if the
+ * documents/decisions of the meeting have already been released.
  *
- * Some pieces are always visible, regardless of the documents release
+ * Some pieces are always visible, regardless of the documents/decision release
  *
  * Note, all pieces (dossier:Stuk) are copied. Restrictions regarding visibility (access level, confidentiality)
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {
-  // pieces that are only visible if documents are released
+  const documentsFilter = documentsReleaseFilter(distributor.releaseOptions.validateDocumentsRelease);
+  const decisionsFilter = decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease);
+
   const releasedPiecePaths = [
-    { type: 'besluit:Agendapunt', predicate: 'besluitvorming:geagendeerdStuk' },
+    // pieces only visible if documents have been released
+    { type: 'besluit:Agendapunt', predicate: 'besluitvorming:geagendeerdStuk', filter: documentsFilter },
     // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
-    { type: 'besluit:BehandelingVanAgendapunt', predicate: 'ext:documentenVoorBeslissing' },
-    { type: 'besluit:BehandelingVanAgendapunt', predicate: 'besluitvorming:genereertVerslag' },
-    { type: 'besluitvorming:NieuwsbriefInfo', predicate: 'ext:documentenVoorPublicatie' },
-    { type: 'ext:Indieningsactiviteit', predicate: 'prov:generated' },
-    { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit' }
+    { type: 'besluit:BehandelingVanAgendapunt', predicate: 'ext:documentenVoorBeslissing', filter: documentsFilter },
+    { type: 'besluitvorming:NieuwsbriefInfo', predicate: 'ext:documentenVoorPublicatie', filter: documentsFilter },
+    { type: 'ext:Indieningsactiviteit', predicate: 'prov:generated', filter: documentsFilter },
+    { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit', filter: documentsFilter },
+
+    // pieces only visible if decisions have been released
+    { type: 'besluit:BehandelingVanAgendapunt', predicate: 'besluitvorming:genereertVerslag', filter: decisionsFilter },
+
+    // pieces that are always visible, regardless of official documents release
+    { type: 'besluit:Agendapunt', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
+    { type: 'dossier:Procedurestap', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
+    { type: 'besluit:Vergaderactiviteit', predicate: 'ext:zittingDocumentversie' },
+    { type: 'besluit:Vergaderactiviteit', predicate: 'dossier:genereert' }
   ];
 
   for (let path of releasedPiecePaths) {
@@ -50,44 +62,12 @@ async function collectReleasedDocuments(distributor) {
                 ext:tracesLineageTo ?agenda .
           }
           GRAPH <${distributor.sourceGraph}> {
-            ${documentsReleaseFilter(distributor.releaseOptions.validateDocumentsRelease)}
+            ${path.filter ? path.filter : ''}
             ?s ${path.predicate} ?piece .
             ?piece a dossier:Stuk .
           }
         }`;
     await updateTriplestore(releasedDocumentsQuery);
-  }
-
-  // pieces that are always visible, regardless of official documents release
-  const piecePaths = [
-    { type: 'besluit:Agendapunt', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
-    { type: 'dossier:Procedurestap', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
-    { type: 'besluit:Vergaderactiviteit', predicate: 'ext:zittingDocumentversie' },
-    { type: 'besluit:Vergaderactiviteit', predicate: 'dossier:genereert' }
-  ];
-  for (let path of piecePaths) {
-    const piecesQuery = `
-        PREFIX prov: <http://www.w3.org/ns/prov#>
-        PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-        PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-        PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-        INSERT {
-          GRAPH <${distributor.tempGraph}> {
-            ?piece a dossier:Stuk ;
-               ext:tracesLineageTo ?agenda .
-          }
-        } WHERE {
-          GRAPH <${distributor.tempGraph}> {
-            ?s a ${path.type} ;
-                ext:tracesLineageTo ?agenda .
-          }
-          GRAPH <${distributor.sourceGraph}> {
-            ?s ${path.predicate} ?piece .
-            ?piece a dossier:Stuk .
-          }
-        }`;
-    await updateTriplestore(piecesQuery);
   }
 }
 
