@@ -1,4 +1,5 @@
 import { updateTriplestore } from '../triplestore';
+import { newsitemReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
@@ -51,11 +52,6 @@ async function collectReleasedNewsletter(distributor) {
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
-  let releaseDateFilter = '';
-  if (distributor.releaseOptions.validateNewsitemsRelease) {
-    releaseDateFilter = '?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .';
-  }
-
   const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -71,7 +67,7 @@ async function collectReleasedNewsletter(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ${releaseDateFilter}
+          ${newsitemReleaseFilter(distributor.releaseOptions.validateNewsitemsRelease)}
           ?meeting ${path} ?s .
           ?s a ?type .
         }

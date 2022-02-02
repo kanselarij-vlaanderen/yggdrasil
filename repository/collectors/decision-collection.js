@@ -1,4 +1,5 @@
 import { updateTriplestore } from '../triplestore';
+import { decisionsReleaseFilter, newsitemReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
@@ -20,11 +21,6 @@ async function collectReleasedAgendaitemTreatments(distributor) {
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
-  let releaseDateFilter = '';
-  if (distributor.releaseOptions.validateDecisionsRelease) {
-    releaseDateFilter = '?agenda besluitvorming:isAgendaVoor / ext:releasedDecisions ?decisionReleaseDate .';
-  }
-
   const relatedQuery = `
       PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -40,7 +36,7 @@ async function collectReleasedAgendaitemTreatments(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ${releaseDateFilter}
+          ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
           ?agendaitem ${path} ?s .
           ?s a ?type .
         }
@@ -61,15 +57,6 @@ async function collectReleasedNewsitems(distributor) {
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
-  let releaseDateFilter = '';
-  if (distributor.releaseOptions.validateNewsitemsRelease) {
-    releaseDateFilter = `
-        ?agenda besluitvorming:isAgendaVoor ?meeting .
-        ?meeting ext:releasedDecisions ?decisionReleaseDate .
-        ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
-    `;
-  }
-
   const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
@@ -86,7 +73,7 @@ async function collectReleasedNewsitems(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ${releaseDateFilter}
+          ${newsitemReleaseFilter(distributor.releaseOptions.validateNewsitemsRelease)}
           ?treatment ${path} ?s .
           ?s a ?type .
         }

@@ -1,4 +1,5 @@
 import { updateTriplestore } from '../triplestore';
+import { documentsReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
@@ -20,7 +21,8 @@ import { updateTriplestore } from '../triplestore';
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {
-  const releasedDocumentPaths = [
+  // pieces that are only visible if documents are released
+  const releasedPiecePaths = [
     { type: 'besluit:Agendapunt', predicate: 'besluitvorming:geagendeerdStuk' },
     // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
     { type: 'besluit:BehandelingVanAgendapunt', predicate: 'ext:documentenVoorBeslissing' },
@@ -30,12 +32,7 @@ async function collectReleasedDocuments(distributor) {
     { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit' }
   ];
 
-  let releaseDateFilter = '';
-  if (distributor.releaseOptions.validateDocumentsRelease) {
-    releaseDateFilter = '?agenda besluitvorming:isAgendaVoor / ext:releasedDocuments ?documentsReleaseDate .';
-  }
-
-  for (let path of releasedDocumentPaths) {
+  for (let path of releasedPiecePaths) {
     const releasedDocumentsQuery = `
         PREFIX prov: <http://www.w3.org/ns/prov#>
         PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
@@ -53,7 +50,7 @@ async function collectReleasedDocuments(distributor) {
                 ext:tracesLineageTo ?agenda .
           }
           GRAPH <${distributor.sourceGraph}> {
-            ${releaseDateFilter}
+            ${documentsReleaseFilter(distributor.releaseOptions.validateDocumentsRelease)}
             ?s ${path.predicate} ?piece .
             ?piece a dossier:Stuk .
           }
