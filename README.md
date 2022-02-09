@@ -1,4 +1,5 @@
-# Yggdrasil
+# Yggdrasill 
+_[[ˈyɡːˌdrɑselː]] An immense and central sacred tree. Around it exists all else, including the Nine worlds._
 
 Microservice propagating agenda data to graphs according to the authorization rules of the user groups.
 
@@ -113,12 +114,12 @@ This is the regular workflow.
 **High-level delta handling flow**
 
   1. reduce the incoming deltas to a list of unique subject/objects
-  2. determine the linked agenda for every subject/object
+  2. determine the linked agenda for every subject/object based on the model configured in [`model.js`](./model.js)
   3. for every user group and for every determined agenda, execute the `Distributor` according to following steps:
-    * collecting the URIs of all resources related to one of the agendas in the temp graph, based on the model configured in [`model.js`](./model.js). Depending on the user group the status of release documents and the level of confidentiality is taken into account.
+    * collecting the URIs of all resources related to one of the agendas in the temp graph. Depending on the user group, the status of release documents and the level of confidentiality is taken into account.
 For every resource the link to the related agenda is persisted by a triple `?resource ext:tracesLineageTo ?agenda` (can be more than 1 agenda).
-    * for every URI in the temp graph the details are also copied into the temp graph (hence all incoming and outgoing triples). In this step, confidentiality and visibility are not taken into account anymore. When a resources shouldn't be available for a specific group, it is already filtered out in the previous step.
-    * cleanup of the published data which should no longer be visible in the target graph
+    * for every URI in the temp graph the details are copied into the temp graph (meaning all incoming and outgoing triples). In this step, confidentiality and visibility are not taken into account anymore. If a resource shouldn't be available for a specific group, it is already filtered out in the previous step.
+    * cleanup of previously published data which should no longer be visible in the target graph
     * copy the data from the temp graph to the target graph. Only the diff between the graphs will be copied. Triples that already exist in the target graph will not be copied.
     * remove the temp graph
 
