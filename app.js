@@ -46,7 +46,7 @@ function scheduleDeltaProcessing() {
 
 async function triggerDeltaProcessing(cache) {
   await yggdrasil.processDeltas(cache);
-  if (!cache.isEmpty) {
+  if (!yggdrasil.isBusy && !cache.isEmpty) {
     triggerDeltaProcessing(cache);
   }
 }

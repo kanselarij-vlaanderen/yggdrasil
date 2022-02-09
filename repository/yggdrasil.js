@@ -28,6 +28,10 @@ export default class Yggdrasil {
     ];
   }
 
+  get isBusy() {
+    return this.isProcessing;
+  }
+
   async initialize() {
     if (KEEP_TEMP_GRAPH) {
       console.log(`Service configured not to cleanup temp graphs on startup.`);
