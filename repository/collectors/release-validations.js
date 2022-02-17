@@ -16,11 +16,7 @@ export function decisionsReleaseFilter(isEnabled) {
 
 export function newsitemReleaseFilter(isEnabled) {
   if (isEnabled) {
-    return `
-        ?agenda besluitvorming:isAgendaVoor ?meeting .
-        ?meeting ext:releasedDecisions ?decisionReleaseDate .
-        ?meeting ext:heeftMailCampagnes / ext:isVerstuurdOp ?sentMailDate .
-    `;
+    return '?agenda besluitvorming:isAgendaVoor / ext:releasedDecisions ?decisionReleaseDate .';
   } else {
     return '';
   }
