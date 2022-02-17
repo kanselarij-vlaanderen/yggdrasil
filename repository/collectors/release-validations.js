@@ -14,14 +14,6 @@ export function decisionsReleaseFilter(isEnabled) {
   }
 }
 
-export function newsitemReleaseFilter(isEnabled) {
-  if (isEnabled) {
-    return '?agenda besluitvorming:isAgendaVoor / ext:releasedDecisions ?decisionReleaseDate .';
-  } else {
-    return '';
-  }
-}
-
 export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
     return '?agenda besluitvorming:isAgendaVoor / ext:releasedDocuments ?documentsReleaseDate .';
