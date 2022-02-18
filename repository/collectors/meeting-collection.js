@@ -1,5 +1,5 @@
 import { updateTriplestore } from '../triplestore';
-import { newsitemReleaseFilter } from './release-validations';
+import { decisionsReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
@@ -43,8 +43,8 @@ async function collectMeetings(distributor) {
  * Collect related newsletters for the relevant meetings
  * from the distributor's source graph in the temp graph.
  *
- * If 'validateNewsitemsRelease' is enabled on the distributor's release options
- * newsletters are only copied if they have already been published.
+ * If 'validateDecisionsRelease' is enabled on the distributor's release options
+ * newsitems are only copied if the decisions of the meeting have already been released.
  */
 async function collectReleasedNewsletter(distributor) {
   const properties = [
@@ -68,7 +68,7 @@ async function collectReleasedNewsletter(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ${newsitemReleaseFilter(distributor.releaseOptions.validateNewsitemsRelease)}
+          ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
           ?meeting ${path} ?s .
           ?s a ?type .
         }

@@ -13,8 +13,7 @@ class Distributor {
 
     this.releaseOptions = {
       validateDecisionsRelease: false,
-      validateDocumentsRelease: false,
-      validateNewsitemsRelease: false
+      validateDocumentsRelease: false
     };
   }
 
