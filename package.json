@@ -1,6 +1,6 @@
 {
   "name": "yggdrasil",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Microservice propagating data to graphs according to the authorization rules",
   "main": "app.js",
   "repository": {
