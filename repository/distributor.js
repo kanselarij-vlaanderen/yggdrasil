@@ -284,9 +284,10 @@ class Distributor {
         agenda: b['agenda'].value
       };
     });
-    console.log(`Cleanup lineages of ${resources.length} published resources that must be updated`);
+    console.log(`Cleanup lineages of ${lineages.length} published resources that must be updated`);
     await forLoopProgressBar(lineages, async (lineage) => {
       await updateSudo(`
+        PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
         DELETE WHERE {
           GRAPH <${this.targetGraph}> {
             <${lineage.resource}> ext:tracesLineageTo <${lineage.agenda}> .
