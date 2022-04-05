@@ -184,7 +184,7 @@ class Distributor {
           predicate: {
             type: 'uri',
             value: 'http://mu.semte.ch/vocabularies/ext/privateComment'
-          }
+          },
         },
       ]
     };
@@ -192,77 +192,19 @@ class Distributor {
     for (const type of Object.keys(filtersForType)) {
       const filters = filtersForType[type];
 
-      for (const filter of filters) {  
-        const {subject, predicate, object} = filter;
+      for (const filter of filters) {
+        const {
+          subject: { value: subject } = {},
+          predicate: { value: predicate } = {},
+          object: {
+            value: object,
+            type: objectType,
+          } = {},
+        } = filter;
 
-        let subString = '';
-        let predString = '';
-        let objString = '';
-        if (subject) {
-          if (subject.type === 'uri') {
-            subString = `BIND(<${subject.value}> AS ?s) .`;
-          } else {
-            subString = `BIND("""${subject.value}""" AS ?s) .`;
-          }
-        }
-        if (predicate) {
-          if (predicate.type === 'uri') {
-            predString = `BIND(<${predicate.value}> AS ?p) .`;
-          } else {
-            predString = `BIND("""${predicate.value}""" AS ?p) .`;
-          }
-        }
-        if (object) {
-          if (object.type === 'uri') {
-            objString = `BIND(<${object.value}> AS ?o) .`;
-          } else {
-            objString = `BIND("""${object.value}""" AS ?o) .`;
-          }
-        }
-
-        const summary = await queryTriplestore(`
-        SELECT (COUNT(?s) AS ?count) WHERE {
-          GRAPH <${this.tempGraph}> {
-            ${subString}
-            ${predString}
-            ${objString}
-
-            ?s a <${type}> .
-            ?s ?p ?o .
-          }
-        }`);
-        const count = summary.results.bindings.map(b => b['count'].value);
-        const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
-        const totalBatches = Math.ceil(count / limit);
-        let currentBatch = 0;
-        while (currentBatch < totalBatches) {
-          await runStage(`Delete filtered triples of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
-            const offset = limit * currentBatch;
-
-            await updateTriplestore(`
-            DELETE {
-              GRAPH <${this.tempGraph}> {
-                ?s ?p ?o .
-              }
-            } WHERE {
-              {
-                SELECT ?s ?p ?o WHERE {
-                  GRAPH <${this.tempGraph}> {
-                    ${subString}
-                    ${predString}
-                    ${objString}
-                    ?s a <${type}> .
-
-                    ?s ?p ?o .
-                  }
-                }
-                LIMIT ${limit} OFFSET ${offset}
-              }
-            }
-            `);
-          });
-          currentBatch++;
-        }
+        await runStage(`Delete filtered triples of <${type}> with filter: [${subject ?? '?s'} ${predicate ?? '?p'} ${object ?? '?o'}]`, async () => {
+          await deleteResource({ graph: this.tempGraph, type, subject, predicate, object, objectType });
+        });
       }
     }
   }
@@ -305,8 +247,8 @@ class Distributor {
     let resources = result.results.bindings.map(b => b['published'].value);
     console.log(`Cleanup ${resources.length} published resources that should no longer be visible`);
     await forLoopProgressBar(resources, async (resource) => {
-      await deleteResource(resource, this.targetGraph);
-      await deleteResource(resource, this.targetGraph, { inverse: true });
+      await deleteResource({ graph: this.targetGraph, subject: resource });
+      await deleteResource({ graph: this.targetGraph, object: resource });
     });
 
     // Step 2
@@ -355,8 +297,8 @@ class Distributor {
     // from temp graph to target graph in a next phase.
     console.log(`Cleanup ${resources.length} published resources with stale properties`);
     await forLoopProgressBar(resources, async (resource) => {
-      await deleteResource(resource, this.targetGraph);
-      await deleteResource(resource, this.targetGraph, { inverse: true });
+      await deleteResource({ graph: this.targetGraph, subject: resource });
+      await deleteResource({ graph: this.targetGraph, object: resource });
     });
 
     // Step 3
