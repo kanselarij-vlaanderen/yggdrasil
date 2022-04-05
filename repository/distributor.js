@@ -33,6 +33,10 @@ class Distributor {
           await this.collectResourceDetails();
         }, this.constructor.name);
 
+        await runStage('Filter out unwanted triples', async () => {
+          await this.filterCollectedDetails();
+        }, this.constructor.name);
+
         if (!options.isInitialDistribution) {
           await runStage('Cleanup previously published data', async () => {
             await this.cleanupPreviouslyPublishedData();
@@ -163,6 +167,102 @@ class Distributor {
         });
 
         currentBatch++;
+      }
+    }
+  }
+
+  /**
+   * Filter out unwanted triples from the temp graph.
+   * This is used to remove triples that we don't want to propagate to other graphs,
+   * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
+   */
+  async filterCollectedDetails() {
+    // Follows the format used by delta notifier
+    const filtersForType = {
+      'http://data.vlaanderen.be/ns/besluit#Agendapunt': [
+        {
+          predicate: {
+            type: 'uri',
+            value: 'http://mu.semte.ch/vocabularies/ext/privateComment'
+          }
+        },
+      ]
+    };
+
+    for (const type of Object.keys(filtersForType)) {
+      const filters = filtersForType[type];
+
+      for (const filter of filters) {  
+        const {subject, predicate, object} = filter;
+
+        let subString = '';
+        let predString = '';
+        let objString = '';
+        if (subject) {
+          if (subject.type === 'uri') {
+            subString = `BIND(<${subject.value}> AS ?s) .`;
+          } else {
+            subString = `BIND("""${subject.value}""" AS ?s) .`;
+          }
+        }
+        if (predicate) {
+          if (predicate.type === 'uri') {
+            predString = `BIND(<${predicate.value}> AS ?p) .`;
+          } else {
+            predString = `BIND("""${predicate.value}""" AS ?p) .`;
+          }
+        }
+        if (object) {
+          if (object.type === 'uri') {
+            objString = `BIND(<${object.value}> AS ?o) .`;
+          } else {
+            objString = `BIND("""${object.value}""" AS ?o) .`;
+          }
+        }
+
+        const summary = await queryTriplestore(`
+        SELECT (COUNT(?s) AS ?count) WHERE {
+          GRAPH <${this.tempGraph}> {
+            ${subString}
+            ${predString}
+            ${objString}
+
+            ?s a <${type}> .
+            ?s ?p ?o .
+          }
+        }`);
+        const count = summary.results.bindings.map(b => b['count'].value);
+        const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
+        const totalBatches = Math.ceil(count / limit);
+        let currentBatch = 0;
+        while (currentBatch < totalBatches) {
+          await runStage(`Delete filtered triples of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
+            const offset = limit * currentBatch;
+
+            await updateTriplestore(`
+            DELETE {
+              GRAPH <${this.tempGraph}> {
+                ?s ?p ?o .
+              }
+            } WHERE {
+              {
+                SELECT ?s ?p ?o WHERE {
+                  GRAPH <${this.tempGraph}> {
+                    ${subString}
+                    ${predString}
+                    ${objString}
+                    ?s a <${type}> .
+
+                    ?s ?p ?o .
+                  }
+                }
+                LIMIT ${limit} OFFSET ${offset}
+              }
+            }
+            `);
+          });
+          currentBatch++;
+        }
       }
     }
   }
