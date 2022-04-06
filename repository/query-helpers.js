@@ -63,10 +63,10 @@ async function countResources({ graph, type = null, lineage = null }) {
 }
 
 async function deleteResource({ graph, type = null,  subject = null, predicate = null, object = null, objectType = null }) {
-  const subjectVar = subject ? `${sparqlEscapeUri(subject)}` : '?s';
-  const predicateVar = predicate ? `${sparqlEscapeUri(predicate)}` : '?p';
-  const objectVar = object ? `${sparqlEscape(object, objectType ?? 'uri')}` : '?o';
-  const typeStatement = type ? `${subjectVar} a <${type}> .` : '';
+  const subjectStatement = subject ? `BIND(${sparqlEscapeUri(subject)} AS ?s) .` : '';
+  const predicateStatement = predicate ? `BIND(${sparqlEscapeUri(predicate)} AS ?p) .` : '';
+  const objectStatement = object ? `BIND(${sparqlEscape(object, objectType ?? 'uri')} AS ?o) .` : '';
+  const typeStatement = type ? `?s a <${type}> .` : '';
 
   const count = await countTriples({ graph, subject, predicate, object, objectType });
   let offset = 0;
@@ -77,7 +77,7 @@ async function deleteResource({ graph, type = null,  subject = null, predicate =
   const deleteStatement = `
     DELETE {
       GRAPH <${graph}> {
-        ${subjectVar} ${predicateVar} ${objectVar} .
+        ?s ?p ?o .
       }
     }
     WHERE {
@@ -85,7 +85,10 @@ async function deleteResource({ graph, type = null,  subject = null, predicate =
         SELECT ?s ?p ?o
           WHERE {
             ${typeStatement}
-            ${subjectVar} ${predicateVar} ${objectVar} .
+            ${subjectStatement}
+            ${predicateStatement}
+            ${objectStatement}
+            ?s ?p ?o .
           }
           LIMIT ${MU_AUTH_PAGE_SIZE}
       }
