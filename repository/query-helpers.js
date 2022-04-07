@@ -62,47 +62,68 @@ async function countResources({ graph, type = null, lineage = null }) {
   return parseInt(queryResult.results.bindings[0].count.value);
 }
 
-async function deleteResource({ graph, type = null,  subject = null, predicate = null, object = null, objectType = null }) {
-  const subjectStatement = subject ? `BIND(${sparqlEscapeUri(subject)} AS ?s) .` : '';
-  const predicateStatement = predicate ? `BIND(${sparqlEscapeUri(predicate)} AS ?p) .` : '';
-  const objectStatement = object ? `BIND(${sparqlEscape(object, objectType ?? 'uri')} AS ?o) .` : '';
-  const typeStatement = type ? `?s a <${type}> .` : '';
-
-  const count = await countTriples({ graph, subject, predicate, object, objectType });
+async function deleteResource(subject, graph, { inverse } = {}) {
+  let count = 0;
   let offset = 0;
+  let deleteStatement = null;
+  if (inverse) {
+    const object = subject;
+    count = await countTriples({ graph, object });
+    deleteStatement = `
+      DELETE {
+        GRAPH <${graph}> {
+          ?s ?p ${sparqlEscapeUri(object)} .
+        }
+      }
+      WHERE {
+        GRAPH <${graph}> {
+          SELECT ?s ?p
+            WHERE { ?s ?p ${sparqlEscapeUri(object)} . }
+            LIMIT ${MU_AUTH_PAGE_SIZE}
+        }
+      }
+    `;
+  } else {
+    count = await countTriples({ graph, subject });
+    // Note: no OFFSET needed in the subquery. Pagination is inherent since
+    // the WHERE clause doesn't match any longer for triples that are deleted
+    // in the previous batch.
+    deleteStatement = `
+      DELETE {
+        GRAPH <${graph}> {
+          ${sparqlEscapeUri(subject)} ?p ?o .
+        }
+      }
+      WHERE {
+        GRAPH <${graph}> {
+          SELECT ?p ?o
+            WHERE { ${sparqlEscapeUri(subject)} ?p ?o . }
+            LIMIT ${MU_AUTH_PAGE_SIZE}
+        }
+      }
+    `;
+  }
 
-  // Note: no OFFSET needed in the subquery. Pagination is inherent since
-  // the WHERE clause doesn't match any longer for triples that are deleted
-  // in the previous batch.
-  const deleteStatement = `
-    DELETE {
-      GRAPH <${graph}> {
-        ?s ?p ?o .
-      }
-    }
-    WHERE {
-      GRAPH <${graph}> {
-        SELECT ?s ?p ?o
-          WHERE {
-            ${typeStatement}
-            ${subjectStatement}
-            ${predicateStatement}
-            ${objectStatement}
-            ?s ?p ?o .
-          }
-          LIMIT ${MU_AUTH_PAGE_SIZE}
-      }
-    }
-  `;
   while (offset < count) {
     await update(deleteStatement);
     offset = offset + MU_AUTH_PAGE_SIZE;
   }
 }
 
+async function deleteSubjectWithPredicate(graph, subject, predicate) {
+  const deleteStatement = `
+  DELETE WHERE {
+    GRAPH <${graph}> {
+      ${sparqlEscapeUri(subject)} ${sparqlEscapeUri(predicate)} ?o .
+    }
+  }`;
+  await update(deleteStatement);
+}
+
 export {
   parseResult,
   countTriples,
   countResources,
-  deleteResource
+  deleteResource,
+  deleteSubjectWithPredicate,
 }

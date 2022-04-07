@@ -2,7 +2,7 @@ import { uuid } from 'mu';
 import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
-import { countResources, deleteResource } from './query-helpers';
+import { countResources, deleteResource, deleteSubjectWithPredicate } from './query-helpers';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
@@ -177,36 +177,25 @@ class Distributor {
    * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
    */
   async filterCollectedDetails() {
-    // Follows the format used by delta notifier
-    const filtersForType = {
-      'http://data.vlaanderen.be/ns/besluit#Agendapunt': [
-        {
-          predicate: {
-            type: 'uri',
-            value: 'http://mu.semte.ch/vocabularies/ext/privateComment'
-          },
-        },
-      ]
-    };
+    const type = 'http://data.vlaanderen.be/ns/besluit#Agendapunt';
+    const predicate =  'http://mu.semte.ch/vocabularies/ext/privateComment';
 
-    for (const type of Object.keys(filtersForType)) {
-      const filters = filtersForType[type];
-
-      for (const filter of filters) {
-        const {
-          subject: { value: subject } = {},
-          predicate: { value: predicate } = {},
-          object: {
-            value: object,
-            type: objectType,
-          } = {},
-        } = filter;
-
-        await runStage(`Delete filtered triples of <${type}> with filter: [${subject ?? '?s'} ${predicate ?? '?p'} ${object ?? '?o'}]`, async () => {
-          await deleteResource({ graph: this.tempGraph, type, subject, predicate, object, objectType });
-        });
+    const agendaitemsWithPrivateCommentsQuery = `
+    SELECT DISTINCT ?agendaitem
+    WHERE {
+      GRAPH <${this.tempGraph}> {
+        ?agendaitem a <${type}> .
+        ?agendaitem <${predicate}> ?o .
       }
-    }
+    }`;
+    const result = await queryTriplestore(agendaitemsWithPrivateCommentsQuery);
+    const resources = result.results.bindings.map(b => b['agendaitem'].value);
+
+
+    console.log(`Delete ${resources.length} filtered triples of <${type}> with filter: [?s <${predicate}> ?o]`);
+    await forLoopProgressBar(resources, async (resource) => {
+      await deleteSubjectWithPredicate(this.tempGraph, resource, predicate);
+    });
   }
 
   /*
@@ -247,8 +236,8 @@ class Distributor {
     let resources = result.results.bindings.map(b => b['published'].value);
     console.log(`Cleanup ${resources.length} published resources that should no longer be visible`);
     await forLoopProgressBar(resources, async (resource) => {
-      await deleteResource({ graph: this.targetGraph, subject: resource });
-      await deleteResource({ graph: this.targetGraph, object: resource });
+      await deleteResource(resource, this.targetGraph);
+      await deleteResource(resource, this.targetGraph, { inverse: true });
     });
 
     // Step 2
@@ -297,8 +286,8 @@ class Distributor {
     // from temp graph to target graph in a next phase.
     console.log(`Cleanup ${resources.length} published resources with stale properties`);
     await forLoopProgressBar(resources, async (resource) => {
-      await deleteResource({ graph: this.targetGraph, subject: resource });
-      await deleteResource({ graph: this.targetGraph, object: resource });
+      await deleteResource(resource, this.targetGraph);
+      await deleteResource(resource, this.targetGraph, { inverse: true });
     });
 
     // Step 3
