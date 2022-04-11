@@ -2,7 +2,7 @@ import { uuid } from 'mu';
 import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
-import { countResources, deleteResource, deleteSubjectWithPredicate } from './query-helpers';
+import { countResources, deleteResource } from './query-helpers';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
@@ -177,25 +177,31 @@ class Distributor {
    * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
    */
   async filterCollectedDetails() {
-    const type = 'http://data.vlaanderen.be/ns/besluit#Agendapunt';
-    const predicate =  'http://mu.semte.ch/vocabularies/ext/privateComment';
+    let offset = 0;
+    const count = await countResources({ graph: this.tempGraph, type: 'http://data.vlaanderen.be/ns/besluit#Agendapunt' });
 
-    const agendaitemsWithPrivateCommentsQuery = `
-    SELECT DISTINCT ?agendaitem
+    const deleteStatement =`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+    DELETE {
+      GRAPH <${this.tempGraph}> {
+        ?s ext:privateComment ?o .
+      }
+    }
     WHERE {
       GRAPH <${this.tempGraph}> {
-        ?agendaitem a <${type}> .
-        ?agendaitem <${predicate}> ?o .
+        SELECT ?s ?o {
+          ?s a besluit:Agendapunt .
+          ?s ext:privateComment ?o .
+        }
+        LIMIT ${MU_AUTH_PAGE_SIZE}
       }
     }`;
-    const result = await queryTriplestore(agendaitemsWithPrivateCommentsQuery);
-    const resources = result.results.bindings.map(b => b['agendaitem'].value);
 
-
-    console.log(`Delete ${resources.length} filtered triples of <${type}> with filter: [?s <${predicate}> ?o]`);
-    await forLoopProgressBar(resources, async (resource) => {
-      await deleteSubjectWithPredicate(this.tempGraph, resource, predicate);
-    });
+    while (offset < count) {
+      await updateTriplestore(deleteStatement);
+      offset = offset + MU_AUTH_PAGE_SIZE;
+    }
   }
 
   /*

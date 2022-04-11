@@ -110,20 +110,9 @@ async function deleteResource(subject, graph, { inverse } = {}) {
   }
 }
 
-async function deleteSubjectWithPredicate(graph, subject, predicate) {
-  const deleteStatement = `
-  DELETE WHERE {
-    GRAPH <${graph}> {
-      ${sparqlEscapeUri(subject)} ${sparqlEscapeUri(predicate)} ?o .
-    }
-  }`;
-  await update(deleteStatement);
-}
-
 export {
   parseResult,
   countTriples,
   countResources,
   deleteResource,
-  deleteSubjectWithPredicate,
 }
