@@ -1,4 +1,4 @@
-import { sparqlEscapeUri } from 'mu';
+import { sparqlEscape, sparqlEscapeUri } from 'mu';
 import { querySudo as query, updateSudo as update } from './auth-sudo';
 import { MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE } from '../config';
 
@@ -22,10 +22,10 @@ function parseResult(result) {
   });
 };
 
-async function countTriples({ graph, subject = null, predicate = null, object = null }) {
+async function countTriples({ graph, subject = null, predicate = null, object = null, objectType = null }) {
   const subjectVar = subject ? `${sparqlEscapeUri(subject)}` : '?s';
   const predicateVar = predicate ? `${sparqlEscapeUri(predicate)}` : '?p';
-  const objectVar = object ? `${sparqlEscapeUri(object)}` : '?o';
+  const objectVar = object ? `${sparqlEscape(object, objectType ?? 'uri')}` : '?o';
   const queryResult = await query(`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     SELECT (COUNT(*) as ?count)
