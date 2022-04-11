@@ -178,7 +178,16 @@ class Distributor {
    */
   async filterCollectedDetails() {
     let offset = 0;
-    const count = await countResources({ graph: this.tempGraph, type: 'http://data.vlaanderen.be/ns/besluit#Agendapunt' });
+    const summary = await queryTriplestore(`
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+    SELECT (COUNT(?s) AS ?count) WHERE {
+      GRAPH <${this.tempGraph}> {
+        ?s a besluit:Agendapunt .
+        ?s ext:privateComment ?o .
+      }
+    }`);
+    const count = summary.results.bindings.map(b => b['count'].value);
 
     const deleteStatement =`
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>

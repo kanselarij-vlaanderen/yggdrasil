@@ -114,5 +114,5 @@ export {
   parseResult,
   countTriples,
   countResources,
-  deleteResource,
+  deleteResource
 }
