@@ -1,7 +1,14 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, GOVERNMENT_GRAPH, ACCESS_LEVEL_CABINET, AGENDA_TYPE } from '../../constants';
+import {
+  ADMIN_GRAPH,
+  GOVERNMENT_GRAPH,
+  ACCESS_LEVEL_CABINET,
+  ACCESS_LEVEL_GOVERNMENT,
+  ACCESS_LEVEL_PUBLIC,
+  AGENDA_TYPE,
+} from '../../constants';
 import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
@@ -122,10 +129,7 @@ export default class GovernmentDistributor extends Distributor {
         GRAPH <${this.sourceGraph}> {
           ?piece ext:file ?file ;
                  ext:toegangsniveauVoorDocumentVersie ?accessLevel .
-          FILTER( ?accessLevel != <${ACCESS_LEVEL_CABINET}> )
-          FILTER NOT EXISTS {
-            ?piece ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-          }
+          FILTER( ?accessLevel IN (<${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
           FILTER NOT EXISTS {
             ?piece ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
             ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .

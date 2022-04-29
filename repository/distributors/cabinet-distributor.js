@@ -1,7 +1,14 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, CABINET_GRAPH, AGENDA_TYPE } from '../../constants';
+import {
+  ADMIN_GRAPH,
+  CABINET_GRAPH,
+  ACCESS_LEVEL_CABINET,
+  ACCESS_LEVEL_GOVERNMENT,
+  ACCESS_LEVEL_PUBLIC,
+  AGENDA_TYPE,
+} from '../../constants';
 import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
@@ -113,10 +120,9 @@ export default class CabinetDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?piece ext:file ?file .
-          FILTER NOT EXISTS {
-            ?piece ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-          }
+          ?piece ext:file ?file ;
+                 ext:toegangsniveauVoorDocumentVersie ?accessLevel .
+          FILTER( ?accessLevel IN (<${ACCESS_LEVEL_CABINET}>, <${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
           FILTER NOT EXISTS {
             ?piece ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
             ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
