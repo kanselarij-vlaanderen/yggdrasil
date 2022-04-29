@@ -102,9 +102,8 @@ export default class GovernmentDistributor extends Distributor {
   /*
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the government-profile
-   * I.e. the document is not confidential, does have an access level
-   * different from 'Intern regering' (i.e. 'Intern overheid' or 'Publiek')
-   * and is not linked to a case that contains a confidential subcase.
+   * I.e. the document has an access level 'Intern overheid' or 'Publiek' and is
+   * not linked to a case that contains a confidential subcase.
    *
    * Note: some documents in legacy data don't have any access level and may not be
    * distributed. Therefore it's important to ensure the existence
