@@ -1,7 +1,14 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, GOVERNMENT_GRAPH, ACCESS_LEVEL_CABINET, AGENDA_TYPE } from '../../constants';
+import {
+  ADMIN_GRAPH,
+  GOVERNMENT_GRAPH,
+  ACCESS_LEVEL_CABINET,
+  ACCESS_LEVEL_GOVERNMENT,
+  ACCESS_LEVEL_PUBLIC,
+  AGENDA_TYPE,
+} from '../../constants';
 import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
@@ -95,9 +102,8 @@ export default class GovernmentDistributor extends Distributor {
   /*
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the government-profile
-   * I.e. the document is not confidential, does have an access level
-   * different from 'Intern regering' (i.e. 'Intern overheid' or 'Publiek')
-   * and is not linked to a case that contains a confidential subcase.
+   * I.e. the document has an access level 'Intern overheid' or 'Publiek' and is
+   * not linked to a case that contains a confidential subcase.
    *
    * Note: some documents in legacy data don't have any access level and may not be
    * distributed. Therefore it's important to ensure the existence
@@ -122,10 +128,7 @@ export default class GovernmentDistributor extends Distributor {
         GRAPH <${this.sourceGraph}> {
           ?piece ext:file ?file ;
                  ext:toegangsniveauVoorDocumentVersie ?accessLevel .
-          FILTER( ?accessLevel != <${ACCESS_LEVEL_CABINET}> )
-          FILTER NOT EXISTS {
-            ?piece ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-          }
+          FILTER( ?accessLevel IN (<${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
           FILTER NOT EXISTS {
             ?piece ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
             ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .

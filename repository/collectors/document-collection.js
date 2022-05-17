@@ -18,7 +18,7 @@ import { decisionsReleaseFilter, documentsReleaseFilter } from './release-valida
  *
  * Some pieces are always visible, regardless of the documents/decision release
  *
- * Note, all pieces (dossier:Stuk) are copied. Restrictions regarding visibility (access level, confidentiality)
+ * Note, all pieces (dossier:Stuk) are copied. Restrictions regarding visibility (access level)
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {

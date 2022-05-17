@@ -1,7 +1,7 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, MINISTER_GRAPH, AGENDA_TYPE } from '../../constants';
+import { ADMIN_GRAPH, MINISTER_GRAPH, AGENDA_TYPE, ACCESS_LEVEL_SECRETARY } from '../../constants';
 import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
@@ -95,7 +95,7 @@ export default class MinisterDistributor extends Distributor {
   /*
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the minister-profile
-   * I.e. no additional constraints apply. All documents are visible for the minister.
+   * I.e. the document does not have an access level 'Intern secretarie'.
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `
@@ -114,7 +114,9 @@ export default class MinisterDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?piece ext:file ?file .
+          ?piece ext:file ?file ;
+                 ext:toegangsniveauVoorDocumentVersie ?accessLevel .
+          FILTER ( ?accessLevel != <${ACCESS_LEVEL_SECRETARY}> )
         }
       }`;
     await updateTriplestore(visibleFileQuery);
