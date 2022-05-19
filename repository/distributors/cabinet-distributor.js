@@ -123,10 +123,6 @@ export default class CabinetDistributor extends Distributor {
           ?piece ext:file ?file ;
                  ext:toegangsniveauVoorDocumentVersie ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_CABINET}>, <${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
-          FILTER NOT EXISTS {
-            ?piece ^prov:generated / ext:indieningVindtPlaatsTijdens / dossier:doorloopt? ?subcase .
-            ?subcase ext:vertrouwelijk "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> .
-          }
         }
       }`;
     await updateTriplestore(visibleFileQuery);
