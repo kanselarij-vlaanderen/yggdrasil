@@ -10,9 +10,9 @@ import { updateTriplestore } from '../triplestore';
  * Collect related cases and subcases for the relevant agendaitems
  * from the distributor's source graph in the temp graph.
  *
- * Note, all subcases and cases are copied. Restrictions regarding visibility
- * because of confidentiality are only taken into account
- * at the level of a file (nfo:FileDataObject)
+ * Note, all subcases and cases are copied. Confidentiality on a subcase
+ * is only informative. Restrictions regarding visibility are only taken into account
+ * at the level of a file (nfo:FileDataObject) based on the file's access-level.
  */
 async function collectSubcasesAndCases(distributor) {
   const properties = [

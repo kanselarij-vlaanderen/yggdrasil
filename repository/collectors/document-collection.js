@@ -108,7 +108,7 @@ async function collectDocumentContainers(distributor) {
  * Collect all physical files related to the 'virtual' files
  * from the distributor's source graph in the temp graph.
  *
- * Note, file visibility (confidentiality, access level) is checked
+ * Note, file visibility (access level) is checked
  * at the level of the 'virtual' file.
  */
 async function collectPhysicalFiles(distributor) {
