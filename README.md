@@ -1,4 +1,4 @@
-# Yggdrasill 
+# Yggdrasill
 _[[ˈyɡːˌdrɑselː]] An immense and central sacred tree. Around it exists all else, including the Nine worlds._
 
 Microservice propagating agenda data to graphs according to the authorization rules of the user groups.
@@ -116,13 +116,12 @@ This is the regular workflow.
 1. reduce the incoming deltas to a list of unique subject/objects
 2. determine the linked agenda for every subject/object based on the model configured in [`model.js`](./model.js)
 3. for every user group and for every determined agenda, execute the `Distributor` according to following steps:
-    * collecting the URIs of all resources related to one of the agendas in the temp graph. Depending on the user group, the status of release documents and the level of confidentiality is taken into account.
+    * collecting the URIs of all resources related to one of the agendas in the temp graph. Depending on the user group, the status of the documents release and the document's access levels are taken into account.
 For every resource the link to the related agenda is persisted by a triple `?resource ext:tracesLineageTo ?agenda` (can be more than 1 agenda).
-    * for every URI in the temp graph the details are copied into the temp graph (meaning all incoming and outgoing triples). In this step, confidentiality and visibility are not taken into account anymore. If a resource shouldn't be available for a specific group, it is already filtered out in the previous step.
+    * for every URI in the temp graph the details are copied into the temp graph (meaning all incoming and outgoing triples). In this step, access restrictions are not taken into account anymore. If a resource shouldn't be available for a specific group, it is already filtered out in the previous step.
     * cleanup of previously published data which should no longer be visible in the target graph
     * copy the data from the temp graph to the target graph. Only the diff between the graphs will be copied. Triples that already exist in the target graph will not be copied.
     * remove the temp graph
-
 
 ### **2. Initial load**
 The flow of the initial load is similar to the flow of delta handling.
