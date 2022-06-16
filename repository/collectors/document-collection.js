@@ -35,7 +35,7 @@ async function collectReleasedDocuments(distributor) {
     { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit', filter: documentsFilter },
 
     // pieces only visible if decisions have been released
-    { type: 'besluit:BehandelingVanAgendapunt', predicate: 'besluitvorming:genereertVerslag', filter: decisionsFilter },
+    { type: 'besluit:Beslissingsactiviteit', predicate: '^besluitvorming:beschrijft', filter: decisionsFilter },
 
     // pieces that are always visible, regardless of official documents release
     { type: 'besluit:Agendapunt', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
