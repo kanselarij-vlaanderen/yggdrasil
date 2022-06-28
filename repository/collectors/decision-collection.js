@@ -25,6 +25,7 @@ async function collectReleasedAgendaitemTreatments(distributor) {
       PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX prov: <http://www.w3.org/ns/prov#>
       INSERT {
         GRAPH <${distributor.tempGraph}> {
           ?s a ?type ;
