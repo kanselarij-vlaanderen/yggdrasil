@@ -121,5 +121,6 @@ async function collectReleasedNewsitems(distributor) {
 
 export {
   collectReleasedAgendaitemTreatments,
+  collectReleasedAgendaitemDecisionActivities,
   collectReleasedNewsitems
 }
