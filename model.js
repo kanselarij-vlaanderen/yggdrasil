@@ -56,7 +56,7 @@ const pathsFromAgenda = {
   piece: [
     { source: 'agendaitem', predicate: 'besluitvorming:geagendeerdStuk' },
     { source: 'agendaitem', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
-    { source: 'decisionActivity', predicate: 'ext:documentenVoorBeslissing' },
+    // { source: 'decisionActivity', predicate: 'prov:used' }, // see resource files for comments
     { source: 'decisionActivity', predicate: '^besluitvorming:beschrijft' },
     { source: 'agendaitemTreatment', predicate: 'besluitvorming:genereertVerslag' },
     { source: 'newsitem', predicate: 'ext:documentenVoorPublicatie' },

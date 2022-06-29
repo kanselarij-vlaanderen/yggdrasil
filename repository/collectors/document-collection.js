@@ -28,8 +28,8 @@ async function collectReleasedDocuments(distributor) {
   const releasedPiecePaths = [
     // pieces only visible if documents have been released
     { type: 'besluit:Agendapunt', predicate: 'besluitvorming:geagendeerdStuk', filter: documentsFilter },
-    // TODO: KAS-1420: ext:documentenVoorBeslissing zou eventueel na bevestiging weg mogen. te bekijken.
-    { type: 'besluit:BehandelingVanAgendapunt', predicate: 'ext:documentenVoorBeslissing', filter: documentsFilter },
+    // check resource files for comments on this predicate
+    // { type: 'besluit:BehandelingVanAgendapunt', predicate: 'prov:used', filter: documentsFilter },
     { type: 'besluitvorming:NieuwsbriefInfo', predicate: 'ext:documentenVoorPublicatie', filter: documentsFilter },
     { type: 'ext:Indieningsactiviteit', predicate: 'prov:generated', filter: documentsFilter },
     { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit', filter: documentsFilter },
