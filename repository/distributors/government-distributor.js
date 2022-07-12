@@ -22,6 +22,7 @@ import {
 import { collectSubcasesAndCases } from '../collectors/case-collection';
 import {
   collectReleasedAgendaitemTreatments,
+  collectReleasedAgendaitemDecisionActivities,
   collectReleasedNewsitems
 } from '../collectors/decision-collection';
 import {
@@ -71,8 +72,12 @@ export default class GovernmentDistributor extends Distributor {
         await collectSubcasesAndCases(this);
       }, this.constructor.name);
 
-      await runStage('Collect released and approved decisions/treatments', async () => {
+      await runStage('Collect released and approved agenda-item treatments', async () => {
         await collectReleasedAgendaitemTreatments(this);
+      }, this.constructor.name);
+
+      await runStage('Collect released and approved decision-activities', async () => {
+        await collectReleasedAgendaitemDecisionActivities(this);
       }, this.constructor.name);
 
       await runStage('Collect newsitems', async () => {
