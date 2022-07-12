@@ -1,5 +1,3 @@
-import { sparqlEscapeDateTime } from 'mu';
-
 /**
  Filters to apply in a SPARQL query to validate on releases of specific items.
  `?agenda` is always used as hook to apply the filter on.
@@ -10,7 +8,6 @@ import { sparqlEscapeDateTime } from 'mu';
 
 export function decisionsReleaseFilter(isEnabled) {
   if (isEnabled) {
-    console.log('decision release filter')
     return `
       ?agenda 
         besluitvorming:isAgendaVoor
@@ -24,16 +21,12 @@ export function decisionsReleaseFilter(isEnabled) {
 
 export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
-    console.log('document release filter')
-    const _now = sparqlEscapeDateTime(new Date());
-
     return `
       ?agenda 
         besluitvorming:isAgendaVoor / 
           ^ext:internalDocumentPublicationActivityUsed
           / prov:startedAtTime
         ?documentsReleaseDate .
-      FILTER (?documentsReleaseDate < ${_now})
       `;
   } else {
     return '';
