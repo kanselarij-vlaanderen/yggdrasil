@@ -10,6 +10,8 @@ const prefixes = {
 const typeUris = [
   { key: 'agenda', uri: 'besluitvorming:Agenda' },
   { key: 'meeting', uri: 'besluit:Vergaderactiviteit' },
+  { key: 'internalDecisionPublicationActivity', uri: 'ext:InternalDecisionPublicationActivity' },
+  { key: 'internalDocumentPublicationActivity', uri: 'ext:InternalDocumentPublicationActivity' },
   { key: 'agendaitem', uri: 'besluit:Agendapunt' },
   { key: 'agendaActivity', uri: 'besluitvorming:Agendering' },
   { key: 'submissionActivity', uri: 'ext:Indieningsactiviteit' },
@@ -27,6 +29,12 @@ const pathsFromAgenda = {
   meeting: [
     { predicate: 'besluitvorming:isAgendaVoor' },
     { predicate: '^besluitvorming:behandelt' }
+  ],
+  internalDecisionPublicationActivity: [
+    { source: 'meeting', predicate: '^ext:internalDecisionPublicationActivityUsed' }
+  ],
+  internalDocumentPublicationActivity: [
+    { source: 'meeting', predicate: '^ext:internalDocumentPublicationActivityUsed' }
   ],
   agendaitem: [
     { predicate: 'dct:hasPart' }
