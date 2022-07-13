@@ -17,7 +17,8 @@ import {
 } from '../collectors/agenda-collection';
 import {
   collectMeetings,
-  collectReleasedNewsletter
+  collectReleasedNewsletter,
+  collectInternalDocumentsPublication
 } from '../collectors/meeting-collection';
 import { collectSubcasesAndCases } from '../collectors/case-collection';
 import {
@@ -61,6 +62,10 @@ export default class CabinetDistributor extends Distributor {
 
       await runStage('Collect meeting newsletter', async () => {
         await collectReleasedNewsletter(this);
+      }, this.constructor.name);
+
+      await runStage('Collect internal document publication', async () => {
+        await collectInternalDocumentsPublication(this);
       }, this.constructor.name);
 
       await runStage('Collect activities of agendaitems', async () => {

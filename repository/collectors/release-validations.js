@@ -23,8 +23,8 @@ export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
     return `
       ?agenda 
-        besluitvorming:isAgendaVoor / 
-          ^ext:internalDocumentPublicationActivityUsed
+        besluitvorming:isAgendaVoor
+          / ^ext:internalDocumentPublicationActivityUsed
           / prov:startedAtTime
         ?documentsReleaseDate .
       `;
