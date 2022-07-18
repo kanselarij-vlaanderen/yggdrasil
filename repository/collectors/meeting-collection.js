@@ -1,5 +1,5 @@
 import { updateTriplestore } from '../triplestore';
-import { decisionsReleaseFilter, documentsReleaseFilter } from './release-validations';
+import { decisionsReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
