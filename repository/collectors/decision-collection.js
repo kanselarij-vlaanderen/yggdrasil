@@ -27,6 +27,7 @@ async function collectReleasedAgendaitemTreatments(distributor) {
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX prov: <http://www.w3.org/ns/prov#>
+
       INSERT {
         GRAPH <${distributor.tempGraph}> {
           ?s a ?type ;
@@ -65,6 +66,7 @@ async function collectReleasedAgendaitemDecisionActivities(distributor) {
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX prov: <http://www.w3.org/ns/prov#>
+
       INSERT {
         GRAPH <${distributor.tempGraph}> {
           ?s a ?type ;
@@ -102,6 +104,7 @@ async function collectReleasedNewsitems(distributor) {
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX prov: <http://www.w3.org/ns/prov#>
+
       INSERT {
         GRAPH <${distributor.tempGraph}> {
           ?s a ?type ;

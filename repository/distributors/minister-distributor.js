@@ -11,7 +11,7 @@ import {
 import {
   collectMeetings,
   collectReleasedNewsletter,
-  collectInternalDocumentsPublication
+  collectPublicationActivities
 } from '../collectors/meeting-collection';
 import { collectSubcasesAndCases } from '../collectors/case-collection';
 import {
@@ -58,8 +58,8 @@ export default class MinisterDistributor extends Distributor {
         await collectReleasedNewsletter(this);
       }, this.constructor.name);
 
-      await runStage('Collect internal document publication', async () => {
-        await collectInternalDocumentsPublication(this);
+      await runStage('Collect publication activities of meeting', async () => {
+        await collectPublicationActivities(this);
       }, this.constructor.name);
 
       await runStage('Collect activities of agendaitems', async () => {

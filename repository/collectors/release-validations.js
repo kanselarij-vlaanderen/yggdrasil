@@ -9,7 +9,7 @@
 export function decisionsReleaseFilter(isEnabled) {
   if (isEnabled) {
     return `
-      ?agenda 
+      ?agenda
         besluitvorming:isAgendaVoor
           / ^ext:internalDecisionPublicationActivityUsed
           / prov:startedAtTime
@@ -22,7 +22,7 @@ export function decisionsReleaseFilter(isEnabled) {
 export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
     return `
-      ?agenda 
+      ?agenda
         besluitvorming:isAgendaVoor
           / ^ext:internalDocumentPublicationActivityUsed
           / prov:startedAtTime
