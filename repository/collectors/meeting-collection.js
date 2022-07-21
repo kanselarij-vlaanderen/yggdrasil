@@ -82,6 +82,7 @@ async function collectPublicationActivities(distributor) {
   const properties = [
     [ '^ext:internalDecisionPublicationActivityUsed' ],
     [ '^ext:internalDocumentPublicationActivityUsed' ],
+    [ '^prov:used' ], // themis-publication-activity
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
