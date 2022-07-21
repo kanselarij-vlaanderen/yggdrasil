@@ -8,7 +8,12 @@
 
 export function decisionsReleaseFilter(isEnabled) {
   if (isEnabled) {
-    return '?agenda besluitvorming:isAgendaVoor / ext:releasedDecisions ?decisionReleaseDate .';
+    return `
+      ?agenda
+        besluitvorming:isAgendaVoor
+          / ^ext:internalDecisionPublicationActivityUsed
+          / prov:startedAtTime
+        ?decisionReleaseDate .`;
   } else {
     return '';
   }
@@ -16,7 +21,13 @@ export function decisionsReleaseFilter(isEnabled) {
 
 export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
-    return '?agenda besluitvorming:isAgendaVoor / ext:releasedDocuments ?documentsReleaseDate .';
+    return `
+      ?agenda
+        besluitvorming:isAgendaVoor
+          / ^ext:internalDocumentPublicationActivityUsed
+          / prov:startedAtTime
+        ?documentsReleaseDate .
+      `;
   } else {
     return '';
   }

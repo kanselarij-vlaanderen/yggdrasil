@@ -10,7 +10,8 @@ import {
 } from '../collectors/agenda-collection';
 import {
   collectMeetings,
-  collectReleasedNewsletter
+  collectReleasedNewsletter,
+  collectPublicationActivities
 } from '../collectors/meeting-collection';
 import { collectSubcasesAndCases } from '../collectors/case-collection';
 import {
@@ -55,6 +56,10 @@ export default class MinisterDistributor extends Distributor {
 
       await runStage('Collect meeting newsletter', async () => {
         await collectReleasedNewsletter(this);
+      }, this.constructor.name);
+
+      await runStage('Collect publication activities of meeting', async () => {
+        await collectPublicationActivities(this);
       }, this.constructor.name);
 
       await runStage('Collect activities of agendaitems', async () => {
