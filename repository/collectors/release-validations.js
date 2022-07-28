@@ -21,15 +21,17 @@ export function decisionsReleaseFilter(isEnabled) {
 
 export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
-    // NOTE: we need the ?internalDocumentPublicationActivity adms:status <http://themis.vlaanderen.be/id/concept/vrijgave-status/5da73f0d-6605-493c-9c1c-0d3a71bf286a> ("Planning bevestigd"@nl)
-    // to ensure we only filter on the confirmed publication activities, not the ones that were already executed, which would have status <http://themis.vlaanderen.be/id/concept/vrijgave-status/27bd25d1-72b4-49b2-a0ba-236ca28373e5> ("Vrijgegeven"@nl)
-    // If this filter were absent, it could cause documents associated with subcases in existing cases with other subcases that were previously published to be released as well.
+    // NOTE: we need the ?agenda dct:hasPart / besluitvorming:geagendeerdStuk ?piece to ensure we only propagate the documents for agendas that are relevant to these documents.
+    // If this filter were absent, it could cause documents associated with subcases in existing cases with other subcases that were previously published to be propagated as well.
+    // E.g., imagine creating a new subcase in an existing case, for which the earlier subcases were already released with an existing agenda at an earlier time.
+    // Any pieces added to the new subcase are linked to the existing parent case as well, causing the document release query to return results with a ?documentsReleaseDate in the past.
     return `
+      ?agenda dct:hasPart / besluitvorming:geagendeerdStuk ?piece .
       ?agenda
         besluitvorming:isAgendaVoor
-          / ^ext:internalDocumentPublicationActivityUsed ?internalDocumentPublicationActivity .
-      ?internalDocumentPublicationActivity prov:startedAtTime ?documentsReleaseDate ;
-          adms:status <http://themis.vlaanderen.be/id/concept/vrijgave-status/5da73f0d-6605-493c-9c1c-0d3a71bf286a> .
+          / ^ext:internalDocumentPublicationActivityUsed
+          / prov:startedAtTime
+        ?documentsReleaseDate .
       `;
   } else {
     return '';
