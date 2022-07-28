@@ -51,6 +51,7 @@ async function collectReleasedDocuments(distributor) {
         PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
         PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+        PREFIX dct: <http://purl.org/dc/terms/>
         INSERT {
           GRAPH <${distributor.tempGraph}> {
             ?piece a dossier:Stuk ;
