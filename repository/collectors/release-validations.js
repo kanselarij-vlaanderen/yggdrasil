@@ -28,7 +28,7 @@ export function documentsReleaseFilter(isEnabled) {
       ?agenda
         besluitvorming:isAgendaVoor
           / ^ext:internalDocumentPublicationActivityUsed ?internalDocumentPublicationActivity .
-        ?internalDocumentPublicationActivity prov:startedAtTime ?documentsReleaseDate ;
+      ?internalDocumentPublicationActivity prov:startedAtTime ?documentsReleaseDate ;
           adms:status <http://themis.vlaanderen.be/id/concept/vrijgave-status/5da73f0d-6605-493c-9c1c-0d3a71bf286a> .
       `;
   } else {
