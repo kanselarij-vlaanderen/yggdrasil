@@ -21,12 +21,15 @@ export function decisionsReleaseFilter(isEnabled) {
 
 export function documentsReleaseFilter(isEnabled) {
   if (isEnabled) {
+    // NOTE: we need the ?internalDocumentPublicationActivityUsed adms:status <http://themis.vlaanderen.be/id/concept/vrijgave-status/5da73f0d-6605-493c-9c1c-0d3a71bf286a> ("Planning bevestigd"@nl)
+    // to ensure we only filter on the confirmed publication activities, not the ones that were already executed, which would have status <http://themis.vlaanderen.be/id/concept/vrijgave-status/27bd25d1-72b4-49b2-a0ba-236ca28373e5> ("Vrijgegeven"@nl)
+    // If this filter were absent, it could cause documents associated with subcases in existing cases with other subcases that were previously published to be released as well.
     return `
       ?agenda
         besluitvorming:isAgendaVoor
-          / ^ext:internalDocumentPublicationActivityUsed
-          / prov:startedAtTime
-        ?documentsReleaseDate .
+          / ^ext:internalDocumentPublicationActivityUsed ?internalDocumentPublicationActivityUsed .
+        ?internalDocumentPublicationActivityUsed prov:startedAtTime ?documentsReleaseDate ;
+          adms:status <http://themis.vlaanderen.be/id/concept/vrijgave-status/5da73f0d-6605-493c-9c1c-0d3a71bf286a> .
       `;
   } else {
     return '';
