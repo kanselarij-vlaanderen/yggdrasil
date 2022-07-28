@@ -10,7 +10,7 @@ Microservice propagating agenda data to graphs according to the authorization ru
 Add the following snippet to your `docker-compose.yml`:
 ```yml
   yggdrasil:
-    image: kanselarij/yggdrasil:5.6.0
+    image: kanselarij/yggdrasil:5.6.1
 ```
 
 Next, make the service listen for new delta messages. Assuming a delta-notifier is already available in the stack, add the following rules to the delta-notifier's configuration in `./config/delta/rules`.
@@ -130,5 +130,3 @@ In the initial load, the `Collectors` will get the data related to ALL agendas a
 
 
 The initial load can be configured by the environment variable `RELOAD_ON_INIT` flag. The initial load can be time consuming (+/- 40 min). You can find more details about the initial load here: [How to run the initial load](#how-to-run-the-initial-load)
-
-
