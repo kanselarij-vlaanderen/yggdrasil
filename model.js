@@ -58,8 +58,7 @@ const pathsFromAgenda = {
     { source: 'agendaitemTreatment', predicate: 'besluitvorming:heeftBeslissing' }
   ],
   newsitem: [
-    { source: 'agendaitemTreatment', predicate: 'prov:generated' },
-    { source: 'meeting', predicate: 'ext:algemeneNieuwsbrief' }
+    { source: 'agendaitemTreatment', predicate: 'prov:generated' }
   ],
   piece: [
     { source: 'agendaitem', predicate: 'besluitvorming:geagendeerdStuk' },
