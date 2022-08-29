@@ -4,20 +4,23 @@ import { updateTriplestore } from '../triplestore';
  * Helpers to collect data about:
  * - cases
  * - subcases
+ * - decisionmaking-flows
  */
 
 /*
- * Collect related cases and subcases for the relevant agendaitems
- * from the distributor's source graph in the temp graph.
+ * Collect related cases, subcases, and decisionmaking-flows for the relevant
+ * agendaitems from the distributor's source graph in the temp graph.
  *
- * Note, all subcases and cases are copied. Confidentiality on a subcase
- * is only informative. Restrictions regarding visibility are only taken into account
- * at the level of a file (nfo:FileDataObject) based on the file's access-level.
+ * Note, all cases, subcases, and decisionmaking-lfows are copied.
+ * Confidentiality on a subcase is only informative. Restrictions regarding
+ * visibility are only taken into at the level of a file (nfo:FileDataObject)
+ * based on the file's access-level.
  */
-async function collectSubcasesAndCases(distributor) {
+async function collectCasesSubcasesDecisionmakingFlows(distributor) {
   const properties = [
     [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens' ], // subcase
-    [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt' ] // case
+    [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt' ], // decisionmaking-flow
+    [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt', '^dossier:Dossier.isNeerslagVag' ], // case
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
@@ -45,5 +48,5 @@ async function collectSubcasesAndCases(distributor) {
 }
 
 export {
-  collectSubcasesAndCases
+  collectCasesSubcasesDecisionmakingFlows
 }
