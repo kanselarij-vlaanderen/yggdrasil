@@ -17,6 +17,7 @@ const typeUris = [
   { key: 'submissionActivity', uri: 'ext:Indieningsactiviteit' },
   { key: 'subcase', uri: 'dossier:Procedurestap' },
   { key: 'case', uri: 'dossier:Dossier' },
+  { key: 'decisionmakingFlow', uri: 'besluitvorming:Besluitvormingsaangelegenheid' },
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'decisionActivity', uri: 'besluitvorming:Beslissingsactiviteit' },
   { key: 'newsitem', uri: 'besluitvorming:NieuwsbriefInfo' },
@@ -48,8 +49,11 @@ const pathsFromAgenda = {
   subcase: [
     { source: 'agendaActivity', predicate: 'besluitvorming:vindtPlaatsTijdens' }
   ],
-  case: [
+  decisionmakingFlow: [
     { source: 'subcase', predicate: '^dossier:doorloopt' }
+  ],
+  case: [
+    { source: 'decisionmakingFlow', predicate: '^dossier:Dossier.isNeerslagVan' }
   ],
   agendaitemTreatment: [
     { source: 'agendaitem', predicate: '^besluitvorming:heeftOnderwerp' }
