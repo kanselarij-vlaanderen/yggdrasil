@@ -13,14 +13,14 @@ import { updateTriplestore } from '../triplestore';
  *
  * Note, all cases, subcases, and decisionmaking-lfows are copied.
  * Confidentiality on a subcase is only informative. Restrictions regarding
- * visibility are only taken into at the level of a file (nfo:FileDataObject)
- * based on the file's access-level.
+ * visibility are only taken into account at the level of a file
+ * (nfo:FileDataObject) based on the file's access-level.
  */
 async function collectCasesSubcasesDecisionmakingFlows(distributor) {
   const properties = [
     [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens' ], // subcase
     [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt' ], // decisionmaking-flow
-    [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt', '^dossier:Dossier.isNeerslagVag' ], // case
+    [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt', '^dossier:Dossier.isNeerslagVan' ], // case
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
