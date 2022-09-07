@@ -28,7 +28,8 @@ import {
 import {
   collectReleasedDocuments,
   collectDocumentContainers,
-  collectPhysicalFiles
+  collectPhysicalFiles,
+  collectPrimarySourceFiles,
 } from '../collectors/document-collection';
 
 /**
@@ -98,6 +99,10 @@ export default class GovernmentDistributor extends Distributor {
 
       await runStage('Collect physical files', async () => {
         await collectPhysicalFiles(this);
+      }, this.constructor.name);
+
+      await runStage('Collect primary source files', async() => {
+        await collectPrimarySourceFiles(this);
       }, this.constructor.name);
     }
 
