@@ -11,12 +11,12 @@ import { updateTriplestore } from '../triplestore';
  * Collect related cases, subcases, and decisionmaking-flows for the relevant
  * agendaitems from the distributor's source graph in the temp graph.
  *
- * Note, all cases, subcases, and decisionmaking-lfows are copied.
+ * Note, all cases, subcases, and decisionmaking-flows are copied.
  * Confidentiality on a subcase is only informative. Restrictions regarding
  * visibility are only taken into account at the level of a file
  * (nfo:FileDataObject) based on the file's access-level.
  */
-async function collectCasesSubcasesDecisionmakingFlows(distributor) {
+async function collectCasesSubcasesAndDecisionmakingFlows(distributor) {
   const properties = [
     [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens' ], // subcase
     [ '^besluitvorming:genereertAgendapunt', 'besluitvorming:vindtPlaatsTijdens', '^dossier:doorloopt' ], // decisionmaking-flow
@@ -48,5 +48,5 @@ async function collectCasesSubcasesDecisionmakingFlows(distributor) {
 }
 
 export {
-  collectCasesSubcasesDecisionmakingFlows
+  collectCasesSubcasesAndDecisionmakingFlows
 }
