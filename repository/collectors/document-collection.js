@@ -115,6 +115,8 @@ async function collectDocumentContainers(distributor) {
 async function collectPhysicalFiles(distributor) {
   const properties = [
     [ '^nie:dataSource' ], // physical-file
+    [ 'prov:hadPrimarySource' ], // source-file (e.g. Word file that PDF is generated from)
+    [ 'prov:hadPrimarySource', '^nie:dataSource' ], // physical-file of source-file
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
