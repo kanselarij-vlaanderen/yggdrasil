@@ -10,7 +10,7 @@ Microservice propagating agenda data to graphs according to the authorization ru
 Add the following snippet to your `docker-compose.yml`:
 ```yml
   yggdrasil:
-    image: kanselarij/yggdrasil:5.8.0
+    image: kanselarij/yggdrasil:5.9.0
 ```
 
 Next, make the service listen for new delta messages. Assuming a delta-notifier is already available in the stack, add the following rules to the delta-notifier's configuration in `./config/delta/rules`.
