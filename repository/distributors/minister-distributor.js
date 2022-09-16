@@ -12,7 +12,7 @@ import {
   collectMeetings,
   collectPublicationActivities
 } from '../collectors/meeting-collection';
-import { collectSubcasesAndCases } from '../collectors/case-collection';
+import { collectCasesSubcasesAndDecisionmakingFlows } from '../collectors/case-collection';
 import {
   collectReleasedAgendaitemTreatments,
   collectReleasedAgendaitemDecisionActivities,
@@ -62,7 +62,7 @@ export default class MinisterDistributor extends Distributor {
       }, this.constructor.name);
 
       await runStage('Collect subcases and cases', async () => {
-        await collectSubcasesAndCases(this);
+        await collectCasesSubcasesAndDecisionmakingFlows(this);
       }, this.constructor.name);
 
       await runStage('Collect released and approved agenda-item treatments', async () => {
