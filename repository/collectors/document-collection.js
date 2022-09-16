@@ -142,8 +142,40 @@ async function collectPhysicalFiles(distributor) {
   await updateTriplestore(relatedQuery);
 }
 
+async function collectPrimarySourceFiles(distributor) {
+  const properties = [
+    [ 'prov:hadPrimarySource' ], // source-file (e.g. Word file that PDF is generated from)
+    [ 'prov:hadPrimarySource', '^nie:dataSource' ], // physical-file of source-file
+  ];
+  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
+
+  const relatedQuery = `
+      PREFIX prov: <http://www.w3.org/ns/prov#>
+      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+      INSERT {
+        GRAPH <${distributor.tempGraph}> {
+          ?s a ?type ;
+             ext:tracesLineageTo ?agenda .
+        }
+      } WHERE {
+        GRAPH <${distributor.tempGraph}> {
+          ?virtualFile a nfo:FileDataObject ;
+              ext:tracesLineageTo ?agenda .
+        }
+        GRAPH <${distributor.sourceGraph}> {
+          ?virtualFile ${path} ?s .
+          ?s a ?type .
+        }
+      }`;
+  await updateTriplestore(relatedQuery);
+}
+
 export {
   collectReleasedDocuments,
   collectDocumentContainers,
-  collectPhysicalFiles
+  collectPhysicalFiles,
+  collectPrimarySourceFiles,
 }
