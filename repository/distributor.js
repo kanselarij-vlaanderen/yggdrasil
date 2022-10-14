@@ -37,6 +37,10 @@ class Distributor {
           await this.filterCollectedDetails();
         }, this.constructor.name);
 
+        await runStage('Workaround for cache issue', async () => {
+          await this.filterEmptyTreatments();
+        }, this.constructor.name);
+
         if (!options.isInitialDistribution) {
           await runStage('Cleanup previously published data', async () => {
             await this.cleanupPreviouslyPublishedData();
@@ -202,6 +206,50 @@ class Distributor {
         SELECT ?s ?o {
           ?s a besluit:Agendapunt .
           ?s ext:privateComment ?o .
+        }
+        LIMIT ${MU_AUTH_PAGE_SIZE}
+      }
+    }`;
+
+    while (offset < count) {
+      await updateTriplestore(deleteStatement);
+      offset = offset + MU_AUTH_PAGE_SIZE;
+    }
+  }
+
+  /**
+   * Filter out a triple pointing to an empty treatment from the temp graph.
+   * This is used to counter the cache issue when adding treatments to a graph on a later run than the agendaitems,
+   * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
+   */
+    async filterEmptyTreatments() {
+    let offset = 0;
+    const summary = await queryTriplestore(`
+    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+    SELECT (COUNT(?s) AS ?count) WHERE {
+      GRAPH <${this.tempGraph}> {
+        ?s a besluit:Agendapunt .
+        ?o besluitvorming:heeftOnderwerp ?s .
+        FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
+      }
+    }`);
+    const count = summary.results.bindings.map(b => b['count'].value);
+
+    const deleteStatement =`
+    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+    DELETE {
+      GRAPH <${this.tempGraph}> {
+        ?o besluitvorming:heeftOnderwerp ?s .
+      }
+    }
+    WHERE {
+      GRAPH <${this.tempGraph}> {
+        SELECT ?s ?o {
+          ?s a besluit:Agendapunt .
+          ?o besluitvorming:heeftOnderwerp ?s .
+          FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
         }
         LIMIT ${MU_AUTH_PAGE_SIZE}
       }
