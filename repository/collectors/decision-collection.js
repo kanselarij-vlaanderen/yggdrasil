@@ -48,53 +48,15 @@ async function collectReleasedAgendaitemTreatments(distributor) {
 }
 
 /*
- * Collect related decision-activities for the relevant agendaitems
+ * Collect related decision-activities and newsitems for the relevant agendaitem-treatments
  * from the distributor's source graph in the temp graph.
  *
- * If 'validateDecisionsRelease' is enabled on the distributor's release options
- * decision-activities are only copied if decisions of the meeting have already been released.
- *
+ * Whether the resources may be released already is validated during
+ * the collection of agendaitem-treatments.
  */
-async function collectReleasedAgendaitemDecisionActivities(distributor) {
+async function collectAgendaitemDecisionActivitiesAndNewsitems(distributor) {
   const properties = [
-    [ '^besluitvorming:heeftOnderwerp', 'besluitvorming:heeftBeslissing' ] // decision-activity
-  ];
-  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
-
-  const relatedQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
-      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX prov: <http://www.w3.org/ns/prov#>
-
-      INSERT {
-        GRAPH <${distributor.tempGraph}> {
-          ?s a ?type ;
-             ext:tracesLineageTo ?agenda .
-        }
-      } WHERE {
-        GRAPH <${distributor.tempGraph}> {
-          ?agendaitem a besluit:Agendapunt ;
-              ext:tracesLineageTo ?agenda .
-        }
-        GRAPH <${distributor.sourceGraph}> {
-          ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
-          ?agendaitem ${path} ?s .
-          ?s a ?type .
-        }
-      }`;
-  await updateTriplestore(relatedQuery);
-}
-
-/*
- * Collect related newsitems for the relevant agendaitem-treatments
- * from the distributor's source graph in the temp graph.
- *
- * If 'validateDecisionsRelease' is enabled on the distributor's release options
- * newsitems are only copied if the decisions of the meeting have already been released.
- */
-async function collectReleasedNewsitems(distributor) {
-  const properties = [
+    [ 'besluitvorming:heeftBeslissing' ] // decision-activity
     [ 'prov:generated' ], // newsitem
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
@@ -116,7 +78,6 @@ async function collectReleasedNewsitems(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
           ?treatment ${path} ?s .
           ?s a ?type .
         }
@@ -126,6 +87,5 @@ async function collectReleasedNewsitems(distributor) {
 
 export {
   collectReleasedAgendaitemTreatments,
-  collectReleasedAgendaitemDecisionActivities,
-  collectReleasedNewsitems
+  collectAgendaitemDecisionActivitiesAndNewsitems
 }
