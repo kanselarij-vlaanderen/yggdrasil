@@ -37,6 +37,11 @@ export default class MinisterDistributor extends Distributor {
     // Ministers are allowed to see 'work in progress' on decisions and news-items
     // related to approved agendas. Hence, we don't validate on decision release date
     // and news-item release date
+
+    this.releaseOptions = {
+      validateDecisionsRelease: true,
+      validateDocumentsRelease: false
+    };
   }
 
   async collect(options) {
