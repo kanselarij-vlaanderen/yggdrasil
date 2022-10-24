@@ -14,7 +14,7 @@ const LOG_INITIALIZATION = isTruthy(process.env.LOG_INITIALIZATION);
 
 let RELOAD_ON_INIT = [];
 if (isTruthy(process.env.RELOAD_ON_INIT)) {
-  RELOAD_ON_INIT = ['public', 'intern-overheid', 'intern-regering', 'minister'];
+  RELOAD_ON_INIT = ['intern-overheid', 'intern-regering', 'minister'];
 } else {
   RELOAD_ON_INIT = (process.env.RELOAD_ON_INIT || '').split(',').filter(g => g).map(g => g.trim());
 }

@@ -2,7 +2,6 @@ const ADMIN_GRAPH = 'http://mu.semte.ch/graphs/organizations/kanselarij';
 const MINISTER_GRAPH = 'http://mu.semte.ch/graphs/organizations/minister';
 const CABINET_GRAPH = 'http://mu.semte.ch/graphs/organizations/intern-regering';
 const GOVERNMENT_GRAPH = 'http://mu.semte.ch/graphs/organizations/intern-overheid';
-const PUBLIC_GRAPH = 'http://mu.semte.ch/graphs/public';
 
 const AGENDA_TYPE = 'http://data.vlaanderen.be/ns/besluitvorming#Agenda';
 const DESIGN_AGENDA_STATUS = 'http://kanselarij.vo.data.gift/id/agendastatus/2735d084-63d1-499f-86f4-9b69eb33727f';
@@ -19,7 +18,6 @@ export {
   MINISTER_GRAPH,
   CABINET_GRAPH,
   GOVERNMENT_GRAPH,
-  PUBLIC_GRAPH,
   AGENDA_TYPE,
   DESIGN_AGENDA_STATUS,
   ACCESS_LEVEL_SECRETARY,

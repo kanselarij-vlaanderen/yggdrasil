@@ -5,7 +5,6 @@ import  {
   MinisterDistributor,
   CabinetDistributor,
   GovernmentDistributor,
-  PublicDistributor
 } from './distributors';
 
 export default class Yggdrasil {
@@ -16,7 +15,6 @@ export default class Yggdrasil {
       'minister': new MinisterDistributor(),
       'intern-regering': new CabinetDistributor(),
       'intern-overheid': new GovernmentDistributor(),
-      'public': new PublicDistributor()
     };
   }
 
