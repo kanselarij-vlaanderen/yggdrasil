@@ -12,7 +12,7 @@ const ACCESS_LEVEL_CABINET = 'http://themis.vlaanderen.be/id/concept/toegangsniv
 const ACCESS_LEVEL_GOVERNMENT = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/634f438e-0d62-4ae4-923a-b63460f6bc46'; // intern overheid
 const ACCESS_LEVEL_PUBLIC = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/c3de9c70-391e-4031-a85e-4b03433d6266';
 
-const DECISION_STATUS_APPROVED = 'http://kanselarij.vo.data.gift/id/concept/beslissings-resultaat-codes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd';
+const DECISION_STATUS_APPROVED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd';
 
 export {
   ADMIN_GRAPH,
