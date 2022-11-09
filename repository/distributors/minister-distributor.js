@@ -124,7 +124,7 @@ export default class MinisterDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?piece ext:file ?file ;
+          ?piece prov:value ?file ;
                  ext:toegangsniveauVoorDocumentVersie ?accessLevel .
           FILTER ( ?accessLevel != <${ACCESS_LEVEL_SECRETARY}> )
         }

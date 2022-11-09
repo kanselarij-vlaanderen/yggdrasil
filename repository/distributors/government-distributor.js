@@ -131,7 +131,7 @@ export default class GovernmentDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?piece ext:file ?file ;
+          ?piece prov:value ?file ;
                  ext:toegangsniveauVoorDocumentVersie ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
         }
