@@ -28,7 +28,7 @@ import {
   collectReleasedDocuments,
   collectDocumentContainers,
   collectPhysicalFiles,
-  collectPrimarySourceFiles,
+  collectDerivedFiles,
 } from '../collectors/document-collection';
 
 /**
@@ -100,8 +100,8 @@ export default class CabinetDistributor extends Distributor {
         await collectPhysicalFiles(this);
       }, this.constructor.name);
 
-      await runStage('Collect primary source files', async() => {
-        await collectPrimarySourceFiles(this);
+      await runStage('Collect derived files', async() => {
+        await collectDerivedFiles(this);
       }, this.constructor.name);
     }
 
