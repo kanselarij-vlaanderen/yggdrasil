@@ -78,7 +78,7 @@ const pathsFromAgenda = {
     { source: 'meeting', predicate: 'dossier:genereert' }
   ],
   documentContainer: [
-    { source: 'piece', predicate: '^dossier:collectie.bestaatUit' }
+    { source: 'piece', predicate: '^dossier:Collectie.bestaatUit' }
   ]
 };
 
