@@ -18,15 +18,15 @@ import { decisionsReleaseFilter } from './release-validations';
  */
 async function collectReleasedAgendaitemTreatments(distributor) {
   const properties = [
-    [ '^besluitvorming:heeftOnderwerp' ] // agendaitem-treatment
+    [ '^dct:subject' ] // agendaitem-treatment
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
   const relatedQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX prov: <http://www.w3.org/ns/prov#>
+      PREFIX dct: <http://purl.org/dc/terms/>
 
       INSERT {
         GRAPH <${distributor.tempGraph}> {

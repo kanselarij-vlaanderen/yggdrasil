@@ -56,7 +56,7 @@ const pathsFromAgenda = {
     { source: 'decisionmakingFlow', predicate: '^dossier:Dossier.isNeerslagVan' }
   ],
   agendaitemTreatment: [
-    { source: 'agendaitem', predicate: '^besluitvorming:heeftOnderwerp' }
+    { source: 'agendaitem', predicate: '^dct:subject' }
   ],
   decisionActivity: [
     { source: 'agendaitemTreatment', predicate: 'besluitvorming:heeftBeslissing' }
