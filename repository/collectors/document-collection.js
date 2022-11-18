@@ -142,6 +142,13 @@ async function collectPhysicalFiles(distributor) {
   await updateTriplestore(relatedQuery);
 }
 
+/*
+ * Collect all derived files related to the 'virtual' files
+ * from the distributor's source graph in the temp graph.
+ *
+ * Note, file visibility (access level) is checked
+ * at the level of the 'virtual' file.
+ */
 async function collectDerivedFiles(distributor) {
   const properties = [
     [ '^prov:hadPrimarySource' ], // derived-file (e.g. PDF file generated from a Word file)
