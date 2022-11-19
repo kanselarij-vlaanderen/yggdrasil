@@ -112,7 +112,7 @@ export default class GovernmentDistributor extends Distributor {
    *
    * Note: some documents in legacy data don't have any access level and may not be
    * distributed. Therefore it's important to ensure the existence
-   * of the triple `?piece ext:toegangsniveauVoorDocumentVersie ?any`.
+   * of the triple `?piece besluitvorming:vertrouwelijkheidsniveau ?any`.
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `
@@ -120,6 +120,7 @@ export default class GovernmentDistributor extends Distributor {
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       INSERT {
         GRAPH <${this.tempGraph}> {
           ?file a nfo:FileDataObject ;
@@ -132,7 +133,7 @@ export default class GovernmentDistributor extends Distributor {
         }
         GRAPH <${this.sourceGraph}> {
           ?piece ext:file ?file ;
-                 ext:toegangsniveauVoorDocumentVersie ?accessLevel .
+                 besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
         }
       }`;

@@ -119,6 +119,7 @@ export default class CabinetDistributor extends Distributor {
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       INSERT {
         GRAPH <${this.tempGraph}> {
           ?file a nfo:FileDataObject ;
@@ -131,7 +132,7 @@ export default class CabinetDistributor extends Distributor {
         }
         GRAPH <${this.sourceGraph}> {
           ?piece ext:file ?file ;
-                 ext:toegangsniveauVoorDocumentVersie ?accessLevel .
+                 besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_CABINET}>, <${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
         }
       }`;

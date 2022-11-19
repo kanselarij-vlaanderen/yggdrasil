@@ -226,11 +226,11 @@ class Distributor {
     let offset = 0;
     const summary = await queryTriplestore(`
     PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+    PREFIX dct: <http://purl.org/dc/terms/>
     SELECT (COUNT(?s) AS ?count) WHERE {
       GRAPH <${this.tempGraph}> {
         ?s a besluit:Agendapunt .
-        ?o besluitvorming:heeftOnderwerp ?s .
+        ?o dct:subject ?s .
         FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
       }
     }`);
@@ -238,17 +238,17 @@ class Distributor {
 
     const deleteStatement =`
     PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+    PREFIX dct: <http://purl.org/dc/terms/>
     DELETE {
       GRAPH <${this.tempGraph}> {
-        ?o besluitvorming:heeftOnderwerp ?s .
+        ?o dct:subject ?s .
       }
     }
     WHERE {
       GRAPH <${this.tempGraph}> {
         SELECT ?s ?o {
           ?s a besluit:Agendapunt .
-          ?o besluitvorming:heeftOnderwerp ?s .
+          ?o dct:subject ?s .
           FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
         }
         LIMIT ${MU_AUTH_PAGE_SIZE}
