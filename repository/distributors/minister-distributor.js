@@ -113,6 +113,7 @@ export default class MinisterDistributor extends Distributor {
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
       INSERT {
         GRAPH <${this.tempGraph}> {
           ?file a nfo:FileDataObject ;
@@ -125,7 +126,7 @@ export default class MinisterDistributor extends Distributor {
         }
         GRAPH <${this.sourceGraph}> {
           ?piece prov:value ?file ;
-                 ext:toegangsniveauVoorDocumentVersie ?accessLevel .
+                 besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER ( ?accessLevel != <${ACCESS_LEVEL_SECRETARY}> )
         }
       }`;

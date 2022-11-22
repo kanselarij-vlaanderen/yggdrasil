@@ -78,7 +78,7 @@ async function collectReleasedDocuments(distributor) {
  */
 async function collectDocumentContainers(distributor) {
   const properties = [
-    [ '^dossier:collectie.bestaatUit' ], // document-container
+    [ '^dossier:Collectie.bestaatUit' ], // document-container
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
