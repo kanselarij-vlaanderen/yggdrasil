@@ -28,7 +28,7 @@ import {
   collectReleasedDocuments,
   collectDocumentContainers,
   collectPhysicalFiles,
-  collectPrimarySourceFiles,
+  collectDerivedFiles,
 } from '../collectors/document-collection';
 
 /**
@@ -100,8 +100,8 @@ export default class CabinetDistributor extends Distributor {
         await collectPhysicalFiles(this);
       }, this.constructor.name);
 
-      await runStage('Collect primary source files', async() => {
-        await collectPrimarySourceFiles(this);
+      await runStage('Collect derived files', async() => {
+        await collectDerivedFiles(this);
       }, this.constructor.name);
     }
 
@@ -131,7 +131,7 @@ export default class CabinetDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
-          ?piece ext:file ?file ;
+          ?piece prov:value ?file ;
                  besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_CABINET}>, <${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
         }
