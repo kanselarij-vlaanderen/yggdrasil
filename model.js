@@ -20,7 +20,7 @@ const typeUris = [
   { key: 'decisionmakingFlow', uri: 'besluitvorming:Besluitvormingsaangelegenheid' },
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'decisionActivity', uri: 'besluitvorming:Beslissingsactiviteit' },
-  { key: 'newsitem', uri: 'besluitvorming:NieuwsbriefInfo' },
+  { key: 'newsitem', uri: 'ext:Nieuwsbericht' },
   { key: 'piece', uri: 'dossier:Stuk' },
   { key: 'documentContainer', uri: 'dossier:Serie' }
 ];
