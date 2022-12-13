@@ -62,7 +62,7 @@ const pathsFromAgenda = {
     { source: 'agendaitemTreatment', predicate: 'besluitvorming:heeftBeslissing' }
   ],
   newsitem: [
-    { source: 'agendaitemTreatment', predicate: 'prov:generated' }
+    { source: 'agendaitemTreatment', predicate: '^prov:wasDerivedFrom' }
   ],
   piece: [
     { source: 'agendaitem', predicate: 'besluitvorming:geagendeerdStuk' },
@@ -70,7 +70,7 @@ const pathsFromAgenda = {
     // { source: 'decisionActivity', predicate: 'prov:used' }, // see resource files for comments
     { source: 'decisionActivity', predicate: '^besluitvorming:beschrijft' },
     { source: 'agendaitemTreatment', predicate: 'besluitvorming:genereertVerslag' },
-    { source: 'newsitem', predicate: 'ext:documentenVoorPublicatie' },
+    { source: 'newsitem', predicate: 'besluitvorming:heeftBijlage' },
     { source: 'submissionActivity', predicate: 'prov:generated' },
     { source: 'case', predicate: 'dossier:Dossier.bestaatUit' },
     { source: 'subcase', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
