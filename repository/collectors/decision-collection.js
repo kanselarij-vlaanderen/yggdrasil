@@ -58,7 +58,7 @@ async function collectReleasedAgendaitemTreatments(distributor) {
 async function collectAgendaitemDecisionActivitiesAndNewsitems(distributor) {
   const properties = [
     [ 'besluitvorming:heeftBeslissing' ], // decision-activity
-    [ 'prov:generated' ], // newsitem
+    [ '^prov:wasDerivedFrom' ], // newsitem
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 

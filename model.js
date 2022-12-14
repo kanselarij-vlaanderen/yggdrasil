@@ -20,7 +20,7 @@ const typeUris = [
   { key: 'decisionmakingFlow', uri: 'besluitvorming:Besluitvormingsaangelegenheid' },
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'decisionActivity', uri: 'besluitvorming:Beslissingsactiviteit' },
-  { key: 'newsitem', uri: 'besluitvorming:NieuwsbriefInfo' },
+  { key: 'newsitem', uri: 'ext:Nieuwsbericht' },
   { key: 'piece', uri: 'dossier:Stuk' },
   { key: 'documentContainer', uri: 'dossier:Serie' }
 ];
@@ -62,14 +62,14 @@ const pathsFromAgenda = {
     { source: 'agendaitemTreatment', predicate: 'besluitvorming:heeftBeslissing' }
   ],
   newsitem: [
-    { source: 'agendaitemTreatment', predicate: 'prov:generated' }
+    { source: 'agendaitemTreatment', predicate: '^prov:wasDerivedFrom' }
   ],
   piece: [
     { source: 'agendaitem', predicate: 'besluitvorming:geagendeerdStuk' },
     { source: 'agendaitem', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
     // { source: 'decisionActivity', predicate: 'prov:used' }, // see resource files for comments
     { source: 'decisionActivity', predicate: '^besluitvorming:beschrijft' },
-    { source: 'newsitem', predicate: 'ext:documentenVoorPublicatie' },
+    { source: 'newsitem', predicate: 'besluitvorming:heeftBijlage' },
     { source: 'submissionActivity', predicate: 'prov:generated' },
     { source: 'case', predicate: 'dossier:Dossier.bestaatUit' },
     { source: 'subcase', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
