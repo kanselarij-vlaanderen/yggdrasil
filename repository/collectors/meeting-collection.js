@@ -18,7 +18,7 @@ async function collectMeetings(distributor) {
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
   const relatedQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
       INSERT {
@@ -48,7 +48,7 @@ async function collectPublicationActivities(distributor) {
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
   const relatedQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX prov: <http://www.w3.org/ns/prov#>

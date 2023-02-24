@@ -25,7 +25,7 @@ async function collectCasesSubcasesAndDecisionmakingFlows(distributor) {
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
   const relatedQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>

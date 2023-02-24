@@ -1,6 +1,6 @@
 const prefixes = {
   'besluit': 'http://data.vlaanderen.be/ns/besluit#',
-  'besluitvorming': 'http://data.vlaanderen.be/ns/besluitvorming#',
+  'besluitvorming': 'https://data.vlaanderen.be/ns/besluitvorming#',
   'dct': 'http://purl.org/dc/terms/',
   'ext': 'http://mu.semte.ch/vocabularies/ext/',
   'dossier': 'https://data.vlaanderen.be/ns/dossier#',

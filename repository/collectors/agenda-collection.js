@@ -36,7 +36,7 @@ async function collectReleasedAgendas(distributor, options) {
     }
 
     return `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       INSERT {
         GRAPH <${distributor.tempGraph}> {
@@ -83,7 +83,7 @@ async function collectReleasedAgendas(distributor, options) {
  */
 async function collectReleasedAgendaitems(distributor) {
   const relatedAgendaitemsQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX dct: <http://purl.org/dc/terms/>
@@ -117,7 +117,7 @@ async function collectAgendaitemActivities(distributor) {
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
   const relatedQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX prov: <http://www.w3.org/ns/prov#>

@@ -10,7 +10,7 @@ export default class ModelCache {
 
   build() {
     // Building a type cache containing non-prefixed entries
-    // like { key: 'agenda', uri: 'http://data.vlaanderen.be/ns/besluitvorming#Agenda' }
+    // like { key: 'agenda', uri: 'https://data.vlaanderen.be/ns/besluitvorming#Agenda' }
     this.typeCache = typeUris.map(entry => {
       const prefixedType = entry.uri;
       const parts = prefixedType.split(':');
