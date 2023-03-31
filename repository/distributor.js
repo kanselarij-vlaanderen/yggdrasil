@@ -103,7 +103,19 @@ class Distributor {
 
     const types = summary.results.bindings.map(b => b['type'].value);
 
+    // We are not interested in redistributing certain types because
+    // they hold the same resource triples attached to another type.
+    // E.g. the triples of a resource gathered from prov:Activity or from
+    // besluitvorming:Agendering are identical. Distributing both is a
+    // waste of work for Yggdrasil.
+    const skippedTypes = ['http://www.w3.org/ns/prov#Activity'];
+
     for (let type of types) {
+      if (skippedTypes.includes(type)) {
+        console.log(`Skipping detail collection of type <${type}>`);
+        continue;
+      }
+
       const count = await countResources({ graph: this.tempGraph, type: type });
 
       const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
