@@ -4,7 +4,6 @@ import { updateTriplestore } from '../triplestore';
 import {
   ADMIN_GRAPH,
   GOVERNMENT_GRAPH,
-  ACCESS_LEVEL_CABINET,
   ACCESS_LEVEL_GOVERNMENT,
   ACCESS_LEVEL_PUBLIC,
   AGENDA_TYPE,
@@ -13,7 +12,8 @@ import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
   collectReleasedAgendaitems,
-  collectAgendaitemActivities
+  collectAgendaitemActivities,
+  collectAgendaStatusActivities
 } from '../collectors/agenda-collection';
 import {
   collectMeetings,
@@ -66,6 +66,10 @@ export default class GovernmentDistributor extends Distributor {
 
       await runStage('Collect activities of agendaitems', async () => {
         await collectAgendaitemActivities(this);
+      }, this.constructor.name);
+
+      await runStage('Collect agenda status activities', async () => {
+        await collectAgendaStatusActivities(this);
       }, this.constructor.name);
 
       await runStage('Collect subcases and cases', async () => {

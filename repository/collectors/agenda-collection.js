@@ -139,8 +139,37 @@ async function collectAgendaitemActivities(distributor) {
   await updateTriplestore(relatedQuery);
 }
 
+/**
+ * Collect related agenda-status-activities for the relevant agendas
+ * from the distributor's source graph in the temp graph.
+ */
+async function collectAgendaStatusActivities(distributor) {
+  const relatedQuery = `
+      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX prov: <http://www.w3.org/ns/prov#>
+      INSERT {
+        GRAPH <${distributor.tempGraph}> {
+          ?s a ?type ;
+             ext:tracesLineageTo ?agenda .
+        }
+      } WHERE {
+        GRAPH <${distributor.tempGraph}> {
+          ?agenda a besluitvorming:Agenda ;
+              ext:tracesLineageTo ?agenda .
+        }
+        GRAPH <${distributor.sourceGraph}> {
+          ?s prov:used ?agenda .
+          ?s a ?type .
+        }
+      }`;
+  await updateTriplestore(relatedQuery);
+}
+
 export {
   collectReleasedAgendas,
   collectReleasedAgendaitems,
-  collectAgendaitemActivities
+  collectAgendaitemActivities,
+  collectAgendaStatusActivities,
 }
