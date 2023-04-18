@@ -292,7 +292,7 @@ class Distributor {
   async cleanupPreviouslyPublishedData() {
     // Step 1
     const cleanupResourcesQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       SELECT DISTINCT ?published
       WHERE {
@@ -317,7 +317,7 @@ class Distributor {
 
     // Step 2
     const cleanupStalePropertiesQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       SELECT DISTINCT ?published
       WHERE {
@@ -367,7 +367,7 @@ class Distributor {
 
     // Step 3
     const cleanupLineageQuery = `
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       SELECT DISTINCT ?published ?agenda
       WHERE {

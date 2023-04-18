@@ -3,7 +3,7 @@ const MINISTER_GRAPH = 'http://mu.semte.ch/graphs/organizations/minister';
 const CABINET_GRAPH = 'http://mu.semte.ch/graphs/organizations/intern-regering';
 const GOVERNMENT_GRAPH = 'http://mu.semte.ch/graphs/organizations/intern-overheid';
 
-const AGENDA_TYPE = 'http://data.vlaanderen.be/ns/besluitvorming#Agenda';
+const AGENDA_TYPE = 'https://data.vlaanderen.be/ns/besluitvorming#Agenda';
 const DESIGN_AGENDA_STATUS = 'http://themis.vlaanderen.be/id/concept/agenda-status/b3d8a99b-0a7e-419e-8474-4b508fa7ab91';
 
 const ACCESS_LEVEL_SECRETARY = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/66804c35-4652-4ff4-b927-16982a3b6de8'; // intern secretarie
