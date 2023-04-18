@@ -47,7 +47,7 @@ async function collectReleasedDocuments(distributor) {
   for (let path of releasedPiecePaths) {
     const releasedDocumentsQuery = `
         PREFIX prov: <http://www.w3.org/ns/prov#>
-        PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+        PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
         PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
         PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -84,7 +84,7 @@ async function collectDocumentContainers(distributor) {
 
   const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       INSERT {

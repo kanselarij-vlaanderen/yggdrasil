@@ -124,7 +124,7 @@ export default class GovernmentDistributor extends Distributor {
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-      PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       INSERT {
         GRAPH <${this.tempGraph}> {
           ?file a nfo:FileDataObject ;
