@@ -14,6 +14,7 @@ const typeUris = [
   { key: 'internalDocumentPublicationActivity', uri: 'ext:InternalDocumentPublicationActivity' },
   { key: 'agendaitem', uri: 'besluit:Agendapunt' },
   { key: 'agendaActivity', uri: 'besluitvorming:Agendering' },
+  { key: 'agendaStatusActivity', uri: 'ext:AgendaStatusActivity' },
   { key: 'submissionActivity', uri: 'ext:Indieningsactiviteit' },
   { key: 'subcase', uri: 'dossier:Procedurestap' },
   { key: 'case', uri: 'dossier:Dossier' },
@@ -45,6 +46,9 @@ const pathsFromAgenda = {
   ],
   submissionActivity: [
     { source: 'agendaActivity', predicate: 'prov:wasInformedBy' }
+  ],
+  agendaStatusActivity: [
+    { predicate: '^prov:used' }
   ],
   subcase: [
     { source: 'agendaActivity', predicate: 'besluitvorming:vindtPlaatsTijdens' }
