@@ -151,7 +151,7 @@ async function collectAgendaStatusActivities(distributor) {
       PREFIX prov: <http://www.w3.org/ns/prov#>
       INSERT {
         GRAPH <${distributor.tempGraph}> {
-          ?s a ?type ;
+          ?s a ext:AgendaStatusActivity ;
              ext:tracesLineageTo ?agenda .
         }
       } WHERE {
@@ -161,7 +161,7 @@ async function collectAgendaStatusActivities(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ?s prov:used ?agenda .
-          ?s a ?type .
+          ?s a ext:AgendaStatusActivity .
         }
       }`;
   await updateTriplestore(relatedQuery);
