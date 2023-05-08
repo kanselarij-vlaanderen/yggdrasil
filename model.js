@@ -4,7 +4,8 @@ const prefixes = {
   'dct': 'http://purl.org/dc/terms/',
   'ext': 'http://mu.semte.ch/vocabularies/ext/',
   'dossier': 'https://data.vlaanderen.be/ns/dossier#',
-  'prov': 'http://www.w3.org/ns/prov#'
+  'prov': 'http://www.w3.org/ns/prov#',
+  'sign': 'http://mu.semte.ch/vocabularies/ext/handtekenen/',
 };
 
 const typeUris = [
@@ -23,6 +24,7 @@ const typeUris = [
   { key: 'decisionActivity', uri: 'besluitvorming:Beslissingsactiviteit' },
   { key: 'newsitem', uri: 'ext:Nieuwsbericht' },
   { key: 'piece', uri: 'dossier:Stuk' },
+  { key: 'signedPiece', uri: 'dossier:Stuk' },
   { key: 'documentContainer', uri: 'dossier:Serie' }
 ];
 
@@ -79,6 +81,9 @@ const pathsFromAgenda = {
     { source: 'subcase', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
     { source: 'meeting', predicate: 'ext:zittingDocumentversie' },
     { source: 'meeting', predicate: 'dossier:genereert' }
+  ],
+  signedPiece: [
+    { source: 'piece', predicate: '^sign:ongetekendStuk' }
   ],
   documentContainer: [
     { source: 'piece', predicate: '^dossier:Collectie.bestaatUit' }
