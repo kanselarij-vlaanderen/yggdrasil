@@ -71,10 +71,6 @@ async function collectReleasedDocuments(distributor) {
             ?piece a dossier:Stuk .
           }
         }`;
-    if (path.predicate === '^sign:ongetekendStuk') {
-      console.log('***********');
-      console.log(releasedDocumentsQuery);
-    }
     await updateTriplestore(releasedDocumentsQuery);
   }
 }
