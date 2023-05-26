@@ -41,7 +41,10 @@ async function collectReleasedDocuments(distributor) {
     { type: 'besluit:Agendapunt', predicate: 'ext:bevatReedsBezorgdAgendapuntDocumentversie' },
     { type: 'dossier:Procedurestap', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
     { type: 'besluit:Vergaderactiviteit', predicate: 'ext:zittingDocumentversie' },
-    { type: 'besluit:Vergaderactiviteit', predicate: 'dossier:genereert' }
+    { type: 'besluit:Vergaderactiviteit', predicate: 'dossier:genereert' },
+
+    // pieces that have been signed, requires other pieces
+    { type: 'dossier:Stuk', predicate: '^sign:ongetekendStuk' },
   ];
 
   for (let path of releasedPiecePaths) {
@@ -52,6 +55,8 @@ async function collectReleasedDocuments(distributor) {
         PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
         PREFIX dct: <http://purl.org/dc/terms/>
+        PREFIX sign: <http://mu.semte.ch/vocabularies/ext/handtekenen/>
+
         INSERT {
           GRAPH <${distributor.tempGraph}> {
             ?piece a dossier:Stuk ;
