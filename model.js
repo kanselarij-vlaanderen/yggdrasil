@@ -80,7 +80,8 @@ const pathsFromAgenda = {
     { source: 'case', predicate: 'dossier:Dossier.bestaatUit' },
     { source: 'subcase', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
     { source: 'meeting', predicate: 'ext:zittingDocumentversie' },
-    { source: 'meeting', predicate: 'dossier:genereert' }
+    { source: 'meeting', predicate: 'dossier:genereert' },
+    { source: 'meeting', predicate: 'besluitvorming:heeftNotulen' },
   ],
   signedPiece: [
     { source: 'piece', predicate: '^sign:ongetekendStuk' }

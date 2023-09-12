@@ -42,6 +42,7 @@ async function collectReleasedDocuments(distributor) {
     { type: 'dossier:Procedurestap', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
     { type: 'besluit:Vergaderactiviteit', predicate: 'ext:zittingDocumentversie' },
     { type: 'besluit:Vergaderactiviteit', predicate: 'dossier:genereert' },
+    { type: 'besluit:Vergaderactiviteit', predicate: 'besluitvorming:heeftNotulen' },
 
     // pieces that have been signed, requires other pieces
     { type: 'dossier:Stuk', predicate: '^sign:ongetekendStuk' },
