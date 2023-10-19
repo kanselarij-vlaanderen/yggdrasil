@@ -37,6 +37,10 @@ class Distributor {
           await this.filterCollectedDetails();
         }, this.constructor.name);
 
+        await runStage('Filter out unwanted publication-flow triples', async () => {
+          await this.filterPublicationFlows();
+        }, this.constructor.name);
+
         await runStage('Workaround for cache issue', async () => {
           await this.filterEmptyTreatments();
         }, this.constructor.name);
@@ -218,6 +222,92 @@ class Distributor {
         SELECT ?s ?o {
           ?s a besluit:Agendapunt .
           ?s ext:privateComment ?o .
+        }
+        LIMIT ${MU_AUTH_PAGE_SIZE}
+      }
+    }`;
+
+    while (offset < count) {
+      await updateTriplestore(deleteStatement);
+      offset = offset + MU_AUTH_PAGE_SIZE;
+    }
+  }
+
+  /**
+   * Filter out unwanted triples related to publication-flows from the temp graph.
+   * We only want to propagate a subset of data about publcation-flows to other
+   * graphs, this function is used to remove the unwanted triples without
+   * impacting the performance of the query in collectResourceDetails by adding
+   * FILTER statements.
+   */
+  async filterPublicationFlows() {
+    let offset = 0;
+    const summary = await queryTriplestore(`
+    PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX fabio: <http://purl.org/spar/fabio/>
+    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT (COUNT(?o) AS ?count) WHERE {
+      GRAPH <${this.tempGraph}> {
+        ?s a pub:Publicatieaangelegenheid .
+        { ?s rdfs:comment ?o }
+        UNION { ?s dossier:openingsdatum ?o }
+        UNION { ?s dossier:slutingsdatum ?o }
+        UNION { ?s fabio:hasPageCount ?o }
+        UNION { ?s pub:aantalUittreksels ?o }
+        UNION { ?s pub:publicatieWijze ?o }
+        UNION { ?s pub:urgentieniveau ?o }
+        UNION { ?s pub:regelgevingType ?o }
+        UNION { ?s prov:hadActivity ?o }
+        UNION { ?s pub:threadId ?o }
+        UNION { ?s pub:identifier ?o }
+        UNION { ?s pub:doorlooptVertaling ?o }
+        UNION { ?s pub:doorlooptPublicatie ?o }
+        UNION { ?s prov:qualifiedDelegation ?o }
+        UNION { ?s dct:subject ?o }
+        UNION { ?s pub:beleidsveld ?o }
+      }
+    }`);
+    const count = summary.results.bindings.map(b => b['count'].value);
+
+    const deleteStatement =`
+    PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX fabio: <http://purl.org/spar/fabio/>
+    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    DELETE {
+      GRAPH <${this.tempGraph}> {
+        ?s ?p ?o .
+      }
+    }
+    WHERE {
+      GRAPH <${this.tempGraph}> {
+        SELECT ?s ?p ?o {
+          VALUES ?p {
+            rdfs:comment
+            dossier:openingsdatum
+            dossier:slutingsdatum
+            fabio:hasPageCount
+            pub:aantalUittreksels
+            pub:publicatieWijze
+            pub:urgentieniveau
+            pub:regelgevingType
+            prov:hadActivity
+            pub:threadId
+            pub:identifier
+            pub:doorlooptVertaling
+            pub:doorlooptPublicatie
+            prov:qualifiedDelegation
+            dct:subject
+            pub:beleidsveld
+          }
+          ?s a pub:Publicatieaangelegenheid .
+          OPTIONAL { ?s ?p ?o }
         }
         LIMIT ${MU_AUTH_PAGE_SIZE}
       }
