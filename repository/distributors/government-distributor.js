@@ -30,6 +30,7 @@ import {
   collectPhysicalFiles,
   collectDerivedFiles,
 } from '../collectors/document-collection';
+import { collectPublicationFlows } from '../collectors/publication-collection';
 
 /**
  * Distributor for government (intern-overheid) profile
@@ -74,6 +75,10 @@ export default class GovernmentDistributor extends Distributor {
 
       await runStage('Collect subcases and cases', async () => {
         await collectCasesSubcasesAndDecisionmakingFlows(this);
+      }, this.constructor.name);
+
+      await runStage('Collect publication-flows', async() => {
+        await collectPublicationFlows(this);
       }, this.constructor.name);
 
       await runStage('Collect released agenda-item treatments', async () => {
