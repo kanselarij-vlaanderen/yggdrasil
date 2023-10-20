@@ -78,10 +78,6 @@ export default class CabinetDistributor extends Distributor {
         await collectCasesSubcasesAndDecisionmakingFlows(this);
       }, this.constructor.name);
 
-      await runStage('Collect publication-flows', async() => {
-        await collectPublicationFlows(this);
-      }, this.constructor.name);
-
       await runStage('Collect released agenda-item treatments', async () => {
         await collectReleasedAgendaitemTreatments(this);
       }, this.constructor.name);
@@ -108,6 +104,10 @@ export default class CabinetDistributor extends Distributor {
 
       await runStage('Collect derived files', async() => {
         await collectDerivedFiles(this);
+      }, this.constructor.name);
+
+      await runStage('Collect publication-flows', async() => {
+        await collectPublicationFlows(this);
       }, this.constructor.name);
     }
 

@@ -65,12 +65,6 @@ const pathsFromAgenda = {
   case: [
     { source: 'decisionmakingFlow', predicate: '^dossier:Dossier.isNeerslagVan' }
   ],
-  publicationFlow: [
-    { source: 'case', predicate: '^dossier:behandelt' }
-  ],
-  identification: [
-    { source: 'publicationFlow', predicate: 'adms:identifier' }
-  ],
   agendaitemTreatment: [
     { source: 'agendaitem', predicate: '^dct:subject' }
   ],
@@ -98,7 +92,13 @@ const pathsFromAgenda = {
   ],
   documentContainer: [
     { source: 'piece', predicate: '^dossier:Collectie.bestaatUit' }
-  ]
+  ],
+  publicationFlow: [
+    { source: 'piece', predicate: '^pub:referentieDocument' }
+  ],
+  identification: [
+    { source: 'publicationFlow', predicate: 'adms:identifier' }
+  ],
 };
 
 export {
