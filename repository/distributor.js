@@ -244,6 +244,7 @@ class Distributor {
     let offset = 0;
     const summary = await queryTriplestore(`
     PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
+    PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX fabio: <http://purl.org/spar/fabio/>
     PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
@@ -267,12 +268,14 @@ class Distributor {
         UNION { ?s pub:doorlooptPublicatie ?o }
         UNION { ?s prov:qualifiedDelegation ?o }
         UNION { ?s pub:beleidsveld ?o }
+        UNION { ?s dct:created ?o }
       }
     }`);
     const count = summary.results.bindings.map(b => b['count'].value);
 
     const deleteStatement =`
     PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
+    PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX fabio: <http://purl.org/spar/fabio/>
     PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
@@ -301,6 +304,7 @@ class Distributor {
             pub:doorlooptPublicatie
             prov:qualifiedDelegation
             pub:beleidsveld
+            dct:created
           }
           ?s a pub:Publicatieaangelegenheid .
           OPTIONAL { ?s ?p ?o }
