@@ -60,14 +60,14 @@ export default class ModelCache {
   }
 
   getPathsFromAgenda(typeUri) {
-    const type = this.typeCache.find(e => e.uri == typeUri);
-    if (!type) {
+    const types = this.typeCache.filter(e => e.uri == typeUri);
+    if (!types || types.length === 0) {
       console.log(`Didn't find model cache entry for type '${typeUri}'. Paths to agenda for this type are irrelevant.`);
       return null;
-    } else if (type.key == 'agenda') {
+    } else if (types.find(e => e.key == 'agenda')) {
       return [];
     } else {
-      return this.pathCache[type.key];
+      return types.map(type => this.pathCache[type.key]).flat();
     }
   }
 

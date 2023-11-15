@@ -46,6 +46,7 @@ async function collectReleasedDocuments(distributor) {
 
     // pieces that have been signed, requires other pieces
     { type: 'dossier:Stuk', predicate: '^sign:ongetekendStuk' },
+    { type: 'dossier:Stuk', predicate: 'sign:getekendStukKopie' },
   ];
 
   for (let path of releasedPiecePaths) {

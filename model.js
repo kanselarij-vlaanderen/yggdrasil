@@ -25,6 +25,7 @@ const typeUris = [
   { key: 'newsitem', uri: 'ext:Nieuwsbericht' },
   { key: 'piece', uri: 'dossier:Stuk' },
   { key: 'signedPiece', uri: 'dossier:Stuk' },
+  { key: 'signedPieceCopy', uri: 'dossier:Stuk' },
   { key: 'documentContainer', uri: 'dossier:Serie' }
 ];
 
@@ -85,6 +86,9 @@ const pathsFromAgenda = {
   ],
   signedPiece: [
     { source: 'piece', predicate: '^sign:ongetekendStuk' }
+  ],
+  signedPieceCopy: [
+    { source: 'piece', predicate: 'sign:getekendStukKopie' }
   ],
   documentContainer: [
     { source: 'piece', predicate: '^dossier:Collectie.bestaatUit' }
