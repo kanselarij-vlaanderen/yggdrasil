@@ -24,6 +24,7 @@ import {
   collectPhysicalFiles,
   collectDerivedFiles,
 } from '../collectors/document-collection';
+import { collectPublicationFlows } from '../collectors/publication-collection';
 
 /**
  * Distributor for minister profile
@@ -97,6 +98,10 @@ export default class MinisterDistributor extends Distributor {
 
       await runStage('Collect derived files', async() => {
         await collectDerivedFiles(this);
+      }, this.constructor.name);
+
+      await runStage('Collect publication-flows', async() => {
+        await collectPublicationFlows(this);
       }, this.constructor.name);
     }
 

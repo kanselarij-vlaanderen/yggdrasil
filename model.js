@@ -6,6 +6,8 @@ const prefixes = {
   'dossier': 'https://data.vlaanderen.be/ns/dossier#',
   'prov': 'http://www.w3.org/ns/prov#',
   'sign': 'http://mu.semte.ch/vocabularies/ext/handtekenen/',
+  'pub': 'http://mu.semte.ch/vocabularies/ext/publicatie/',
+  'adms': 'http://www.w3.org/ns/adms#',
 };
 
 const typeUris = [
@@ -20,6 +22,8 @@ const typeUris = [
   { key: 'subcase', uri: 'dossier:Procedurestap' },
   { key: 'case', uri: 'dossier:Dossier' },
   { key: 'decisionmakingFlow', uri: 'besluitvorming:Besluitvormingsaangelegenheid' },
+  { key: 'publicationFlow', uri: 'pub:Publicatieaangelegenheid' },
+  { key: 'identification', uri: 'adms:Identifier' },
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'decisionActivity', uri: 'besluitvorming:Beslissingsactiviteit' },
   { key: 'newsitem', uri: 'ext:Nieuwsbericht' },
@@ -92,7 +96,13 @@ const pathsFromAgenda = {
   ],
   documentContainer: [
     { source: 'piece', predicate: '^dossier:Collectie.bestaatUit' }
-  ]
+  ],
+  publicationFlow: [
+    { source: 'piece', predicate: '^pub:referentieDocument' }
+  ],
+  identification: [
+    { source: 'publicationFlow', predicate: 'adms:identifier' }
+  ],
 };
 
 export {
