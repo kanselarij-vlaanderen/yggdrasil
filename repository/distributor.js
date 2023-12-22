@@ -267,7 +267,6 @@ class Distributor {
         UNION { ?s pub:doorlooptVertaling ?o }
         UNION { ?s pub:doorlooptPublicatie ?o }
         UNION { ?s prov:qualifiedDelegation ?o }
-        UNION { ?s pub:beleidsveld ?o }
         UNION { ?s dct:created ?o }
       }
     }`);
@@ -303,7 +302,6 @@ class Distributor {
             pub:doorlooptVertaling
             pub:doorlooptPublicatie
             prov:qualifiedDelegation
-            pub:beleidsveld
             dct:created
           }
           ?s a pub:Publicatieaangelegenheid .
