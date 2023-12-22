@@ -1,6 +1,6 @@
 const DIRECT_SPARQL_ENDPOINT = process.env.DIRECT_SPARQL_ENDPOINT || 'http://triplestore:8890/sparql';
 const USE_DIRECT_QUERIES = isTruthy(process.env.USE_DIRECT_QUERIES);
-const NB_OF_QUERY_RETRIES = 6;
+const NB_OF_QUERY_RETRIES = parseInt(process.env.NB_OF_QUERY_RETRIES || '6');
 const RETRY_TIMEOUT_MS = parseInt(process.env.RETRY_TIMEOUT_MS || '1000');
 const DELTA_INTERVAL_MS = parseInt(process.env.DELTA_INTERVAL_MS || '60000');
 

@@ -19,8 +19,6 @@ import { decisionsReleaseFilter } from './release-validations';
  * always applied.
  */
 async function collectPublicationFlows(distributor) {
-  const decisionsFilter = decisionsReleaseFilter(true);
-
   const properties = [
     [ '^pub:referentieDocument' ], // publication-flow
     [ '^pub:referentieDocument', 'adms:identifier' ] // identification
@@ -46,7 +44,7 @@ async function collectPublicationFlows(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
-          ${decisionsFilter}
+          ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
           ?piece ${path} ?s .
           ?s a ?type .
         }
