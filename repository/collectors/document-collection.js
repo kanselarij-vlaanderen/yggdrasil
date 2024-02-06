@@ -22,7 +22,10 @@ import { decisionsReleaseFilter, documentsReleaseFilter } from './release-valida
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {
-  const documentsFilter = documentsReleaseFilter(distributor.releaseOptions.validateDocumentsRelease);
+  const documentsFilter = documentsReleaseFilter(
+    distributor.releaseOptions.validateDocumentsRelease,
+    distributor.releaseOptions.noPostponedOrRetracted
+  );
   const decisionsFilter = decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease);
 
   const releasedPiecePaths = [
