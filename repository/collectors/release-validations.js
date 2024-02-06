@@ -19,7 +19,7 @@ export function decisionsReleaseFilter(isEnabled) {
   }
 }
 
-export function documentsReleaseFilter(isEnabled) {
+export function documentsReleaseFilter(isEnabled, noPostponedOrRetracted=false) {
   if (isEnabled) {
     // NOTE: we need the ?agenda dct:hasPart / besluitvorming:geagendeerdStuk ?piece to ensure we only propagate the documents for agendas that are relevant to these documents.
     // If this filter were absent, it could cause documents associated with subcases in existing cases with other subcases that were previously published to be propagated as well.
@@ -32,7 +32,13 @@ export function documentsReleaseFilter(isEnabled) {
           / ^ext:internalDocumentPublicationActivityUsed
           / prov:startedAtTime
         ?documentsReleaseDate .
-      `;
+      ${noPostponedOrRetracted ? `
+        ?decisionActivity ^besluitvorming:heeftBeslissing / dct:subject / besluitvorming:geagendeerdStuk ?piece .
+        { ?decisionActivity besluitvorming:resultaat <http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd> } # goedgekeurd
+        UNION
+        { ?decisionActivity besluitvorming:resultaat <http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/9f342a88-9485-4a83-87d9-245ed4b504bf> } # akte genomen
+      ` : ''}
+  `;
   } else {
     return '';
   }
