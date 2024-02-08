@@ -12,6 +12,7 @@ const ACCESS_LEVEL_GOVERNMENT = 'http://themis.vlaanderen.be/id/concept/toegangs
 const ACCESS_LEVEL_PUBLIC = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/c3de9c70-391e-4031-a85e-4b03433d6266';
 
 const DECISION_STATUS_APPROVED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd';
+const DECISION_STATUS_ACKNOWLEDGED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/9f342a88-9485-4a83-87d9-245ed4b504bf';
 
 export {
   ADMIN_GRAPH,
@@ -24,5 +25,6 @@ export {
   ACCESS_LEVEL_CABINET,
   ACCESS_LEVEL_GOVERNMENT,
   ACCESS_LEVEL_PUBLIC,
-  DECISION_STATUS_APPROVED
+  DECISION_STATUS_APPROVED,
+  DECISION_STATUS_ACKNOWLEDGED,
 }
