@@ -1,3 +1,5 @@
+import { sparqlEscapeUri } from "mu";
+import { DECISION_STATUS_ACKNOWLEDGED, DECISION_STATUS_APPROVED } from "../../constants";
 /**
  Filters to apply in a SPARQL query to validate on releases of specific items.
  `?agenda` is always used as hook to apply the filter on.
@@ -34,9 +36,9 @@ export function documentsReleaseFilter(isEnabled, noPostponedOrRetracted=false) 
         ?documentsReleaseDate .
       ${noPostponedOrRetracted ? `
         ?decisionActivity ^besluitvorming:heeftBeslissing / dct:subject / besluitvorming:geagendeerdStuk ?piece .
-        { ?decisionActivity besluitvorming:resultaat <http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd> } # goedgekeurd
+        { ?decisionActivity besluitvorming:resultaat ${sparqlEscapeUri(DECISION_STATUS_APPROVED)} }
         UNION
-        { ?decisionActivity besluitvorming:resultaat <http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/9f342a88-9485-4a83-87d9-245ed4b504bf> } # akte genomen
+        { ?decisionActivity besluitvorming:resultaat ${sparqlEscapeUri(DECISION_STATUS_ACKNOWLEDGED)} }
       ` : ''}
   `;
   } else {
