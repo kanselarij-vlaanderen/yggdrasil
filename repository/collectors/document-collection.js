@@ -24,7 +24,7 @@ import { decisionsReleaseFilter, documentsReleaseFilter } from './release-valida
 async function collectReleasedDocuments(distributor) {
   const documentsFilter = documentsReleaseFilter(
     distributor.releaseOptions.validateDocumentsRelease,
-    distributor.releaseOptions.noPostponedOrRetracted
+    distributor.releaseOptions.validateDecisionResults
   );
   const decisionsFilter = decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease);
 

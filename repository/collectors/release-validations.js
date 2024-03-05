@@ -21,7 +21,7 @@ export function decisionsReleaseFilter(isEnabled) {
   }
 }
 
-export function documentsReleaseFilter(isEnabled, noPostponedOrRetracted=false) {
+export function documentsReleaseFilter(isEnabled, validateDecisionResults) {
   if (isEnabled) {
     // NOTE: we need the ?agenda dct:hasPart / besluitvorming:geagendeerdStuk ?piece to ensure we only propagate the documents for agendas that are relevant to these documents.
     // If this filter were absent, it could cause documents associated with subcases in existing cases with other subcases that were previously published to be propagated as well.
@@ -34,7 +34,7 @@ export function documentsReleaseFilter(isEnabled, noPostponedOrRetracted=false) 
           / ^ext:internalDocumentPublicationActivityUsed
           / prov:startedAtTime
         ?documentsReleaseDate .
-      ${noPostponedOrRetracted ? `
+      ${validateDecisionResults ? `
         ?decisionActivity ^besluitvorming:heeftBeslissing / dct:subject / besluitvorming:geagendeerdStuk ?piece .
         { ?decisionActivity besluitvorming:resultaat ${sparqlEscapeUri(DECISION_STATUS_APPROVED)} }
         UNION

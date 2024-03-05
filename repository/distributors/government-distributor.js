@@ -45,7 +45,7 @@ export default class GovernmentDistributor extends Distributor {
     this.releaseOptions = {
       validateDecisionsRelease: true,
       validateDocumentsRelease: true,
-      noPostponedOrRetracted: true,
+      validateDecisionResults: true,
     };
   }
 

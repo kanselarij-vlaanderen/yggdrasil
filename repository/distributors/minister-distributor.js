@@ -38,7 +38,8 @@ export default class MinisterDistributor extends Distributor {
 
     this.releaseOptions = {
       validateDecisionsRelease: true,
-      validateDocumentsRelease: false
+      validateDocumentsRelease: false,
+      validateDecisionResults: false,
     };
   }
 
