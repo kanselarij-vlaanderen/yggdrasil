@@ -42,6 +42,7 @@ export function documentsReleaseFilter(isEnabled, validateDecisionResults) {
           / prov:startedAtTime
         ?documentsReleaseDate .
       ${validateDecisionResults ? `
+      ?agenda dct:hasPart / ^dct:subject / besluitvorming:heeftBeslissing ?decisionActivity .
       ?decisionActivity ^besluitvorming:heeftBeslissing / dct:subject / besluitvorming:geagendeerdStuk ?piece .
       ?decisionActivity dossier:Activiteit.startdatum ?startDate .
       OPTIONAL { ?decisionActivity besluitvorming:resultaat ?decisionResult }
