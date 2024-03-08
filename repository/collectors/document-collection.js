@@ -22,7 +22,10 @@ import { decisionsReleaseFilter, documentsReleaseFilter } from './release-valida
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {
-  const documentsFilter = documentsReleaseFilter(distributor.releaseOptions.validateDocumentsRelease);
+  const documentsFilter = documentsReleaseFilter(
+    distributor.releaseOptions.validateDocumentsRelease,
+    distributor.releaseOptions.validateDecisionResults
+  );
   const decisionsFilter = decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease);
 
   const releasedPiecePaths = [
@@ -58,6 +61,7 @@ async function collectReleasedDocuments(distributor) {
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
         PREFIX dct: <http://purl.org/dc/terms/>
         PREFIX sign: <http://mu.semte.ch/vocabularies/ext/handtekenen/>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
         INSERT {
           GRAPH <${distributor.tempGraph}> {

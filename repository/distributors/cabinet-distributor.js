@@ -45,7 +45,8 @@ export default class CabinetDistributor extends Distributor {
 
     this.releaseOptions = {
       validateDecisionsRelease: true,
-      validateDocumentsRelease: false
+      validateDocumentsRelease: false,
+      validateDecisionResults: false,
     };
   }
 
