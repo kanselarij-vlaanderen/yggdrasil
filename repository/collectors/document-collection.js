@@ -36,6 +36,7 @@ async function collectReleasedDocuments(distributor) {
     { type: 'ext:Nieuwsbericht', predicate: 'besluitvorming:heeftBijlage', filter: documentsFilter },
     { type: 'ext:Indieningsactiviteit', predicate: 'prov:generated', filter: documentsFilter },
     { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit', filter: documentsFilter },
+    { type: 'dossier:Procedurestap', predicate: 'ext:heeftBekrachtiging', filter: documentsFilter },
 
     // pieces only visible if decisions have been released
     { type: 'besluitvorming:Beslissingsactiviteit', predicate: '^besluitvorming:beschrijft', filter: decisionsFilter },

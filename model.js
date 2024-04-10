@@ -84,6 +84,7 @@ const pathsFromAgenda = {
     { source: 'submissionActivity', predicate: 'prov:generated' },
     { source: 'case', predicate: 'dossier:Dossier.bestaatUit' },
     { source: 'subcase', predicate: 'ext:bevatReedsBezorgdeDocumentversie' },
+    { source: 'subcase', predicate: 'ext:heeftBekrachtiging' },
     { source: 'meeting', predicate: 'ext:zittingDocumentversie' },
     { source: 'meeting', predicate: 'dossier:genereert' },
     { source: 'meeting', predicate: 'besluitvorming:heeftNotulen' },
