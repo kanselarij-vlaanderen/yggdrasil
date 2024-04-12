@@ -56,3 +56,23 @@ export function documentsReleaseFilter(isEnabled, validateDecisionResults) {
     return '';
   }
 }
+
+export function ratificationsReleaseFilter(isEnabled) {
+  if (isEnabled) {
+    // same as documentsReleaseFilter but for ratification documents which are connected to subcase
+    // assuming that a ratification is never postponed and the subcase should only be connected to 1 agenda
+    // also assuming that the decision result will always be approved or acknowledged so no need to verify
+    // relation does not exist in legacy
+    return `
+      ?decisionActivity ext:beslissingVindtPlaatsTijdens / ext:heeftBekrachtiging ?piece .
+      ?agenda dct:hasPart / ^dct:subject / besluitvorming:heeftBeslissing ?decisionActivity .
+      ?agenda
+        besluitvorming:isAgendaVoor
+          / ^ext:internalDocumentPublicationActivityUsed
+          / prov:startedAtTime
+        ?documentsReleaseDate .
+  `;
+  } else {
+    return '';
+  }
+}

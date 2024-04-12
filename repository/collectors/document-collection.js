@@ -1,5 +1,5 @@
 import { updateTriplestore } from '../triplestore';
-import { decisionsReleaseFilter, documentsReleaseFilter } from './release-validations';
+import { decisionsReleaseFilter, documentsReleaseFilter, ratificationsReleaseFilter } from './release-validations';
 
 /**
  * Helpers to collect data about:
@@ -22,10 +22,14 @@ import { decisionsReleaseFilter, documentsReleaseFilter } from './release-valida
  * are only taken into account at the level of a file (nfo:FileDataObject)
  */
 async function collectReleasedDocuments(distributor) {
+  // note: this release filter only allows distribution of documents that are connected to an agendaitem
   const documentsFilter = documentsReleaseFilter(
     distributor.releaseOptions.validateDocumentsRelease,
     distributor.releaseOptions.validateDecisionResults
   );
+  // note: this release filter only allows distribution of ratification documents of subcases that have a connecton to an agenda
+  const ratificationsFilter = ratificationsReleaseFilter(distributor.releaseOptions.validateDocumentsRelease)
+
   const decisionsFilter = decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease);
 
   const releasedPiecePaths = [
@@ -36,7 +40,7 @@ async function collectReleasedDocuments(distributor) {
     { type: 'ext:Nieuwsbericht', predicate: 'besluitvorming:heeftBijlage', filter: documentsFilter },
     { type: 'ext:Indieningsactiviteit', predicate: 'prov:generated', filter: documentsFilter },
     { type: 'dossier:Dossier', predicate: 'dossier:Dossier.bestaatUit', filter: documentsFilter },
-    { type: 'dossier:Procedurestap', predicate: 'ext:heeftBekrachtiging', filter: documentsFilter },
+    { type: 'dossier:Procedurestap', predicate: 'ext:heeftBekrachtiging', filter: ratificationsFilter },
 
     // pieces only visible if decisions have been released
     { type: 'besluitvorming:Beslissingsactiviteit', predicate: '^besluitvorming:beschrijft', filter: decisionsFilter },
