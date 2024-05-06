@@ -263,10 +263,8 @@ class Distributor {
         UNION { ?s pub:regelgevingType ?o }
         UNION { ?s prov:hadActivity ?o }
         UNION { ?s pub:threadId ?o }
-        UNION { ?s pub:identifier ?o }
         UNION { ?s pub:doorlooptVertaling ?o }
         UNION { ?s pub:doorlooptPublicatie ?o }
-        UNION { ?s prov:qualifiedDelegation ?o }
         UNION { ?s dct:created ?o }
       }
     }`);
@@ -298,10 +296,8 @@ class Distributor {
             pub:regelgevingType
             prov:hadActivity
             pub:threadId
-            pub:identifier
             pub:doorlooptVertaling
             pub:doorlooptPublicatie
-            prov:qualifiedDelegation
             dct:created
           }
           ?s a pub:Publicatieaangelegenheid .
