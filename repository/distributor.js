@@ -482,7 +482,7 @@ class Distributor {
     await forLoopProgressBar(lineages, async (lineage) => {
       await updateSudo(`
         PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-        DELETE WHERE {
+        DELETE DATA {
           GRAPH <${this.targetGraph}> {
             <${lineage.resource}> ext:tracesLineageTo <${lineage.agenda}> .
           }
