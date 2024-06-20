@@ -288,7 +288,7 @@ class Distributor {
           VALUES ?p {
             rdfs:comment
             dossier:openingsdatum
-            dossier:slutingsdatum
+            dossier:sluitingsdatum
             fabio:hasPageCount
             pub:aantalUittreksels
             pub:publicatieWijze
