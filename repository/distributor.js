@@ -298,8 +298,11 @@ class Distributor {
             prov:hadActivity
             pub:threadId
             dct:created
+            dossier:Procedurestap.startdatum
+            dossier:Procedurestap.einddatum
             tmo:targetEndTime
             tmo:dueDate
+            pub:drukproefVerbeteraar
             pub:vertalingsactiviteitVanAanvraag
             pub:doelTaal
             pub:vertalingGebruikt
@@ -312,6 +315,9 @@ class Distributor {
             pub:publicatieactiviteitVanAanvraag
           }
           VALUES ?type {
+            pub:Publicatieaangelegenheid
+            pub:VertalingProcedurestap
+            pub:PublicatieProcedurestap
             pub:VertaalActiviteit
             pub:DrukproefActiviteit
             pub:PublicatieActiviteit
