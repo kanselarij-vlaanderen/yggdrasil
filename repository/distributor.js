@@ -277,6 +277,7 @@ class Distributor {
     PREFIX fabio: <http://purl.org/spar/fabio/>
     PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
     DELETE {
       GRAPH <${this.tempGraph}> {
         ?s ?p ?o .
@@ -296,11 +297,26 @@ class Distributor {
             pub:regelgevingType
             prov:hadActivity
             pub:threadId
-            pub:doorlooptVertaling
-            pub:doorlooptPublicatie
             dct:created
+            tmo:targetEndTime
+            tmo:dueDate
+            pub:vertalingsactiviteitVanAanvraag
+            pub:doelTaal
+            pub:vertalingGebruikt
+            pub:vertalingGenereert
+            pub:drukproefGebruikt
+            pub:drukproefGenereert
+            pub:drukproefactiviteitVanAanvraag
+            pub:publicatieGebruikt
+            prov:generated
+            pub:publicatieactiviteitVanAanvraag
           }
-          ?s a pub:Publicatieaangelegenheid .
+          VALUES ?type {
+            pub:VertaalActiviteit
+            pub:DrukproefActiviteit
+            pub:PublicatieActiviteit
+          }
+          ?s a ?type .
           OPTIONAL { ?s ?p ?o }
         }
         LIMIT ${MU_AUTH_PAGE_SIZE}

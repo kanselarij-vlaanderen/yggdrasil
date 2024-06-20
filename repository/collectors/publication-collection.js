@@ -21,7 +21,10 @@ import { decisionsReleaseFilter } from './release-validations';
 async function collectPublicationFlows(distributor) {
   const properties = [
     [ '^pub:referentieDocument' ], // publication-flow
-    [ '^pub:referentieDocument', 'adms:identifier' ] // identification
+    [ '^pub:referentieDocument', 'adms:identifier' ], // identification
+    [ '^pub:referentieDocument', 'pub:doorlooptVertaling', '^pub:vertalingVindtPlaatsTijdens' ], // translation-activities
+    [ '^pub:referentieDocument', 'pub:doorlooptPublicatie', '^pub:drukproefVindtPlaatsTijdens' ], // proofing-activities
+    [ '^pub:referentieDocument', 'pub:doorlooptPublicatie', '^pub:publicatieVindtPlaatsTijdens' ] // publication-activities
   ];
   const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
