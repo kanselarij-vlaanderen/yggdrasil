@@ -24,6 +24,12 @@ const typeUris = [
   { key: 'decisionmakingFlow', uri: 'besluitvorming:Besluitvormingsaangelegenheid' },
   { key: 'publicationFlow', uri: 'pub:Publicatieaangelegenheid' },
   { key: 'identification', uri: 'adms:Identifier' },
+  { key: 'translationSubcase', uri: 'pub:VertalingProcedurestap' },
+  { key: 'publicationSubcase', uri: 'pub:PublicatieProcedurestap' },
+  { key: 'requestActivity', uri: 'pub:AanvraagActiviteit' },
+  { key: 'translationActivity', uri: 'pub:VertaalActiviteit' },
+  { key: 'proofingActivity', uri: 'pub:DrukproefActiviteit' },
+  { key: 'publicationActivity', uri: 'pub:PublicatieActiviteit' },
   { key: 'agendaitemTreatment', uri: 'besluit:BehandelingVanAgendapunt' },
   { key: 'decisionActivity', uri: 'besluitvorming:Beslissingsactiviteit' },
   { key: 'newsitem', uri: 'ext:Nieuwsbericht' },
@@ -103,6 +109,25 @@ const pathsFromAgenda = {
   ],
   identification: [
     { source: 'publicationFlow', predicate: 'adms:identifier' }
+  ],
+  translationSubcase: [
+    { source: 'publicationFlow', predicate: 'pub:doorlooptVertaling' }
+  ],
+  publicationSubcase: [
+    { source: 'publicationFlow', predicate: 'pub:doorlooptPublicatie' }
+  ],
+  requestActivity: [
+    { source: 'translationSubcase', predicate: '^pub:aanvraagVindtPlaatsTijdensVertaling' },
+    { source: 'publicationSubcase', predicate: '^pub:aanvraagVindtPlaatsTijdensPublicatie' }
+  ],
+  translationActivity: [
+    { source: 'translationSubcase', predicate: '^pub:vertalingVindtPlaatsTijdens' },
+  ],
+  proofingActivity: [
+    { source: 'publicationSubcase', predicate: '^pub:drukproefVindtPlaatsTijdens' }
+  ],
+  publicationActivity: [
+    { source: 'publicationSubcase', predicate: '^pub:publicatieVindtPlaatsTijdens' }
   ],
 };
 
