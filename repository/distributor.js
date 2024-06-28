@@ -249,25 +249,46 @@ class Distributor {
     PREFIX fabio: <http://purl.org/spar/fabio/>
     PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
 
     SELECT (COUNT(?o) AS ?count) WHERE {
       GRAPH <${this.tempGraph}> {
-        ?s a pub:Publicatieaangelegenheid .
+        ?s a ?type .
+        VALUES ?type {
+          pub:Publicatieaangelegenheid
+          pub:VertalingProcedurestap
+          pub:PublicatieProcedurestap
+          pub:VertaalActiviteit
+          pub:DrukproefActiviteit
+          pub:PublicatieActiviteit
+        }
         { ?s rdfs:comment ?o }
         UNION { ?s dossier:openingsdatum ?o }
-        UNION { ?s dossier:slutingsdatum ?o }
+        UNION { ?s dossier:sluitingsdatum ?o }
         UNION { ?s fabio:hasPageCount ?o }
         UNION { ?s pub:aantalUittreksels ?o }
         UNION { ?s pub:publicatieWijze ?o }
         UNION { ?s pub:urgentieniveau ?o }
-        UNION { ?s pub:regelgevingType ?o }
         UNION { ?s prov:hadActivity ?o }
         UNION { ?s pub:threadId ?o }
-        UNION { ?s pub:identifier ?o }
         UNION { ?s pub:doorlooptVertaling ?o }
         UNION { ?s pub:doorlooptPublicatie ?o }
-        UNION { ?s prov:qualifiedDelegation ?o }
         UNION { ?s dct:created ?o }
+        UNION { ?s dossier:Procedurestap.startdatum ?o }
+        UNION { ?s dossier:Procedurestap.einddatum ?o }
+        UNION { ?s tmo:targetEndTime ?o }
+        UNION { ?s tmo:dueDate ?o }
+        UNION { ?s pub:drukproefVerbeteraar ?o }
+        UNION { ?s pub:vertalingsactiviteitVanAanvraag ?o }
+        UNION { ?s pub:doelTaal ?o }
+        UNION { ?s pub:vertalingGebruikt ?o }
+        UNION { ?s pub:vertalingGenereert ?o }
+        UNION { ?s pub:drukproefGebruikt ?o }
+        UNION { ?s pub:drukproefGenereert ?o }
+        UNION { ?s pub:drukproefactiviteitVanAanvraag ?o }
+        UNION { ?s pub:publicatieGebruikt ?o }
+        UNION { ?s prov:generated ?o }
+        UNION { ?s pub:publicatieactiviteitVanAanvraag ?o }
       }
     }`);
     const count = summary.results.bindings.map(b => b['count'].value);
@@ -279,6 +300,7 @@ class Distributor {
     PREFIX fabio: <http://purl.org/spar/fabio/>
     PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
     DELETE {
       GRAPH <${this.tempGraph}> {
         ?s ?p ?o .
@@ -290,21 +312,39 @@ class Distributor {
           VALUES ?p {
             rdfs:comment
             dossier:openingsdatum
-            dossier:slutingsdatum
+            dossier:sluitingsdatum
             fabio:hasPageCount
             pub:aantalUittreksels
             pub:publicatieWijze
             pub:urgentieniveau
-            pub:regelgevingType
             prov:hadActivity
             pub:threadId
-            pub:identifier
-            pub:doorlooptVertaling
-            pub:doorlooptPublicatie
-            prov:qualifiedDelegation
             dct:created
+            dossier:Procedurestap.startdatum
+            dossier:Procedurestap.einddatum
+            tmo:targetEndTime
+            tmo:dueDate
+            pub:drukproefVerbeteraar
+            pub:vertalingsactiviteitVanAanvraag
+            pub:doelTaal
+            pub:vertalingGebruikt
+            pub:vertalingGenereert
+            pub:drukproefGebruikt
+            pub:drukproefGenereert
+            pub:drukproefactiviteitVanAanvraag
+            pub:publicatieGebruikt
+            prov:generated
+            pub:publicatieactiviteitVanAanvraag
           }
-          ?s a pub:Publicatieaangelegenheid .
+          VALUES ?type {
+            pub:Publicatieaangelegenheid
+            pub:VertalingProcedurestap
+            pub:PublicatieProcedurestap
+            pub:VertaalActiviteit
+            pub:DrukproefActiviteit
+            pub:PublicatieActiviteit
+          }
+          ?s a ?type .
           OPTIONAL { ?s ?p ?o }
         }
         LIMIT ${MU_AUTH_PAGE_SIZE}

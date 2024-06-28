@@ -24,7 +24,11 @@ import {
   collectPhysicalFiles,
   collectDerivedFiles,
 } from '../collectors/document-collection';
-import { collectPublicationFlows } from '../collectors/publication-collection';
+import {
+  collectPublicationFlows,
+  collectTranslationSubcasesAndActivities,
+  collectPublicationSubcasesAndActivities
+} from '../collectors/publication-collection';
 
 /**
  * Distributor for minister profile
@@ -103,6 +107,14 @@ export default class MinisterDistributor extends Distributor {
 
       await runStage('Collect publication-flows', async() => {
         await collectPublicationFlows(this);
+      }, this.constructor.name);
+
+      await runStage('Collect translation-subcases', async() => {
+        await collectTranslationSubcasesAndActivities(this);
+      }, this.constructor.name);
+
+      await runStage('Collect publication-subcases', async() => {
+        await collectPublicationSubcasesAndActivities(this);
       }, this.constructor.name);
     }
 
