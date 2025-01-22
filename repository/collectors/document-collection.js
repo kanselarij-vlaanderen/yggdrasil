@@ -80,6 +80,7 @@ async function collectReleasedDocuments(distributor) {
           }
           GRAPH <${distributor.sourceGraph}> {
             ${path.filter ? path.filter : ''}
+            ?s a ${path.type} .
             ?s ${path.predicate} ?piece .
             ?piece a dossier:Stuk .
           }
@@ -114,6 +115,7 @@ async function collectDocumentContainers(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?piece a dossier:Stuk .
           ?piece ${path} ?s .
           ?s a ?type .
         }
@@ -151,6 +153,7 @@ async function collectPhysicalFiles(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?virtualFile a nfo:FileDataObject .
           ?virtualFile ${path} ?s .
           ?s a ?type .
         }
@@ -189,6 +192,7 @@ async function collectDerivedFiles(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?virtualFile a nfo:FileDataObject .
           ?virtualFile ${path} ?s .
           ?s a ?type .
         }

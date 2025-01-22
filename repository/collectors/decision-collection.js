@@ -41,6 +41,7 @@ async function collectReleasedAgendaitemTreatments(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
+          ?agendaitem a besluit:Agendapunt .
           ?agendaitem ${path} ?s .
           ?s a ?type .
         }
@@ -79,6 +80,7 @@ async function collectAgendaitemDecisionActivitiesAndNewsitems(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?treatment a besluit:BehandelingVanAgendapunt .
           ?treatment ${path} ?s .
           ?s a ?type .
         }

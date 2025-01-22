@@ -98,6 +98,7 @@ async function collectReleasedAgendaitems(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?agenda a besluitvorming:Agenda .
           ?agenda dct:hasPart ?s .
           ?s a besluit:Agendapunt .
         }
@@ -132,6 +133,7 @@ async function collectAgendaitemActivities(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?agendaitem a besluit:Agendapunt .
           ?agendaitem ${path} ?s .
           ?s a ?type .
         }
@@ -160,6 +162,7 @@ async function collectAgendaStatusActivities(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?agenda a besluitvorming:Agenda .
           ?s prov:used ?agenda .
           ?s a ext:AgendaStatusActivity .
         }
