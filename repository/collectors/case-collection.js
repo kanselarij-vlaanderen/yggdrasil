@@ -40,6 +40,7 @@ async function collectCasesSubcasesAndDecisionmakingFlows(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?agendaitem a besluit:Agendapunt .
           ?agendaitem ${path} ?s .
           ?s a ?type .
         }

@@ -51,6 +51,7 @@ async function collectPublicationFlows(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ${decisionsReleaseFilter(distributor.releaseOptions.validateDecisionsRelease)}
+          ?piece a dossier:Stuk .
           ?piece ${path} ?s .
           ?s a ?type .
         }
@@ -84,6 +85,7 @@ async function collectTranslationSubcasesAndActivities(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?pubFlow a pub:Publicatieaangelegenheid .
           ?pubFlow ${path} ?s .
           ?s a ?type .
         }
@@ -118,6 +120,7 @@ async function collectPublicationSubcasesAndActivities(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?pubFlow a pub:Publicatieaangelegenheid .
           ?pubFlow ${path} ?s .
           ?s a ?type .
         }

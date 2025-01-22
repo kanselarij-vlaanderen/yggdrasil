@@ -32,6 +32,7 @@ async function collectMeetings(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?agenda a besluitvorming:Agenda .
           ?agenda ${path} ?s .
           ?s a ?type .
         }
@@ -64,6 +65,7 @@ async function collectPublicationActivities(distributor) {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${distributor.sourceGraph}> {
+          ?meeting a besluit:Vergaderactiviteit .
           ?meeting ${path} ?s .
           ?s a ?type .
         }
