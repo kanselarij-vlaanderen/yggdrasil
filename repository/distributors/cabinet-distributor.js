@@ -150,6 +150,7 @@ export default class CabinetDistributor extends Distributor {
               ext:tracesLineageTo ?agenda .
         }
         GRAPH <${this.sourceGraph}> {
+          ?piece a dossier:Stuk .
           ?piece prov:value ?file ;
                  besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_CABINET}>, <${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )
