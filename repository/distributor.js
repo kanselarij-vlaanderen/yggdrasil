@@ -33,10 +33,6 @@ class Distributor {
           await this.collectResourceDetails();
         }, this.constructor.name);
 
-        await runStage('Filter out unwanted triples', async () => {
-          await this.filterCollectedDetails();
-        }, this.constructor.name);
-
         await runStage('Filter out unwanted publication-flow triples', async () => {
           await this.filterPublicationFlows();
         }, this.constructor.name);
@@ -172,48 +168,6 @@ class Distributor {
 
         currentBatch++;
       }
-    }
-  }
-
-  /**
-   * Filter out unwanted triples from the temp graph.
-   * This is used to remove triples that we don't want to propagate to other graphs,
-   * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
-   */
-  async filterCollectedDetails() {
-    let offset = 0;
-    const summary = await queryTriplestore(`
-    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    SELECT (COUNT(?s) AS ?count) WHERE {
-      GRAPH <${this.tempGraph}> {
-        ?s a besluit:Agendapunt .
-        ?s ext:privateComment ?o .
-      }
-    }`);
-    const count = summary.results.bindings.map(b => b['count'].value);
-
-    const deleteStatement =`
-    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    DELETE {
-      GRAPH <${this.tempGraph}> {
-        ?s ext:privateComment ?o .
-      }
-    }
-    WHERE {
-      GRAPH <${this.tempGraph}> {
-        SELECT ?s ?o {
-          ?s a besluit:Agendapunt .
-          ?s ext:privateComment ?o .
-        }
-        LIMIT ${MU_AUTH_PAGE_SIZE}
-      }
-    }`;
-
-    while (offset < count) {
-      await updateTriplestore(deleteStatement);
-      offset = offset + MU_AUTH_PAGE_SIZE;
     }
   }
 
