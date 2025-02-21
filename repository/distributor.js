@@ -146,7 +146,6 @@ class Distributor {
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
                 ?resource ?p ?o .
-                FILTER (?o != <${type}>) # we already have these types.
               }
             }`);
 
