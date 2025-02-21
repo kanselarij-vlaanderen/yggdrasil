@@ -133,11 +133,15 @@ class Distributor {
               }
             } WHERE {
               {
-                SELECT DISTINCT ?resource {
-                  GRAPH <${this.tempGraph}> {
-                    ?resource a <${type}> .
+                SELECT ?resource {
+                  {
+                    SELECT DISTINCT ?resource {
+                      GRAPH <${this.tempGraph}> {
+                        ?resource a <${type}> .
+                      }
+                    } ORDER BY ?resource
                   }
-                } ORDER BY ?resource LIMIT ${limit} OFFSET ${offset}
+                } LIMIT ${limit} OFFSET ${offset}
               }
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
@@ -153,11 +157,15 @@ class Distributor {
               }
             } WHERE {
               {
-                SELECT DISTINCT ?resource {
-                  GRAPH <${this.tempGraph}> {
-                    ?resource a <${type}> .
+                SELECT ?resource {
+                  {
+                    SELECT DISTINCT ?resource {
+                      GRAPH <${this.tempGraph}> {
+                        ?resource a <${type}> .
+                      }
+                    } ORDER BY ?resource
                   }
-                } ORDER BY ?resource LIMIT ${limit} OFFSET ${offset}
+                } LIMIT ${limit} OFFSET ${offset}
               }
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
