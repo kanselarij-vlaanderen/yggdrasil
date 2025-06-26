@@ -2,6 +2,7 @@
   "name": "yggdrasil",
   "version": "5.25.1",
   "description": "Microservice propagating data to graphs according to the authorization rules",
+  "type": "module",
   "main": "app.js",
   "repository": {
     "type": "git",
