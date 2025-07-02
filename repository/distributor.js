@@ -125,6 +125,13 @@ class Distributor {
         await runStage(`Collect details of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
           const offset = limit * currentBatch;
 
+          // The nested subquery construction in both queries below
+          // are the best way to get all resources in a paginated way in Virtuoso.
+          // If ORDER BY and LIMIT/OFFSET are combined in only 1 subquery
+          // chances are high you will hit the MaxSortedTopRows limit of Virtuoso.
+          // By nesting ORDER BY in the LIMIT/OFFSET query we work around this limit
+          // while still getting all the resources in a paginated way.
+
           // Outgoing triples
           await updateTriplestore(`
             INSERT {
