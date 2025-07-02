@@ -71,7 +71,7 @@ export default class ModelCache {
     }
   }
 
-  getSparqlPrefixes() {
+  get sparqlPrefixes() {
     return Object.keys(prefixes).map((prefix) => {
       return `PREFIX ${prefix}: <${prefixes[prefix]}>`;
     }).join('\n');

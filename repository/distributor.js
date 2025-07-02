@@ -6,10 +6,11 @@ import { countResources, deleteResource } from './query-helpers';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
-  constructor({ sourceGraph, targetGraph }) {
+  constructor({ sourceGraph, targetGraph, model }) {
     this.sourceGraph = sourceGraph;
     this.targetGraph = targetGraph;
     this.tempGraph = `http://mu.semte.ch/graphs/temp/${uuid()}`;
+    this.model = model;
 
     this.releaseOptions = {
       validateDecisionsRelease: false,

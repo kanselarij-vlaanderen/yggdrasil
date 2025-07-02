@@ -34,10 +34,11 @@ import {
  * Distributor for minister profile
  */
 export default class MinisterDistributor extends Distributor {
-  constructor() {
+  constructor(model) {
     super({
       sourceGraph: ADMIN_GRAPH,
-      targetGraph: MINISTER_GRAPH
+      targetGraph: MINISTER_GRAPH,
+      model,
     });
 
     this.releaseOptions = {
