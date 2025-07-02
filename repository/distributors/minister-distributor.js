@@ -97,12 +97,12 @@ export default class MinisterDistributor extends Distributor {
         await this.collectVisibleFiles();
       }, this.constructor.name);
 
-      await runStage('Collect physical files', async () => {
-        await collectPhysicalFiles(this);
-      }, this.constructor.name);
-
       await runStage('Collect derived files', async() => {
         await collectDerivedFiles(this);
+      }, this.constructor.name);
+
+      await runStage('Collect physical files', async () => {
+        await collectPhysicalFiles(this);
       }, this.constructor.name);
 
       await runStage('Collect publication-flows', async() => {
