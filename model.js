@@ -48,6 +48,11 @@ const typeUris = [
   { key: 'file', uri: 'nfo:FileDataObject' }
 ];
 
+const typesToIgnore = [
+  'ext:TempGraph', // Internal Yggdrasil type
+  'prov:Activity', // Subclasses are configured for distribution
+];
+
 // TODO refactor collectors to make use of this model configuration to construct query paths
 const pathsFromAgenda = {
   meeting: [
@@ -155,5 +160,6 @@ const pathsFromAgenda = {
 export {
   prefixes,
   typeUris,
+  typesToIgnore,
   pathsFromAgenda
 }
