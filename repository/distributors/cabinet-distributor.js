@@ -41,10 +41,11 @@ import {
  * Distributor for cabinet (intern-regering) profile
  */
 export default class CabinetDistributor extends Distributor {
-  constructor() {
+  constructor(model) {
     super({
       sourceGraph: ADMIN_GRAPH,
-      targetGraph: CABINET_GRAPH
+      targetGraph: CABINET_GRAPH,
+      model,
     });
 
     this.releaseOptions = {

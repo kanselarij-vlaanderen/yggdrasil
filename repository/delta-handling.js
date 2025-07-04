@@ -1,10 +1,7 @@
 import { ADMIN_GRAPH } from '../constants';
 import { LOG_DELTA_PROCESSING, VALUES_BLOCK_SIZE } from '../config';
 import { querySudo } from './auth-sudo';
-import ModelCache from './model-cache';
 import chunk from 'lodash.chunk';
-
-const modelCache = new ModelCache();
 
 /**
  * Returns a unique list of resource URIs that are a subject/object
@@ -32,14 +29,14 @@ function reduceChangesets(delta) {
  * Fetches the related agendas for a given list of subjects URIs from a triplestore.
  * The related agenda(s) are fetched based on the subject's type and the configured model.
 */
-async function fetchRelatedAgendas(subjects) {
+async function fetchRelatedAgendas(subjects, model) {
   let agendas = new Set();
 
   if (subjects && subjects.length) {
     const typeMap = await constructSubjectsTypeMap(subjects);
     for (let typeUri in typeMap) {
       const subjectsForType = typeMap[typeUri];
-      const agendasForType = await fetchRelatedAgendasForType(subjectsForType, typeUri);
+      const agendasForType = await fetchRelatedAgendasForType(subjectsForType, typeUri, model);
       if (LOG_DELTA_PROCESSING)
         console.log(`Reduced ${subjectsForType.length} subjects of type <${typeUri}> to ${agendasForType.size} agendas `);
       agendas = new Set([...agendasForType, ...agendas]);
@@ -106,10 +103,10 @@ async function constructSubjectsTypeMap(subjects) {
  *
  * @private
 */
-async function fetchRelatedAgendasForType(subjects, typeUri) {
+async function fetchRelatedAgendasForType(subjects, typeUri, model) {
   const agendas = new Set();
 
-  const paths = modelCache.getPathsFromAgenda(typeUri);
+  const paths = model.getPathsFromAgenda(typeUri);
 
   if (paths != null) {
     let pathToAgendaStatement = '';
@@ -130,7 +127,7 @@ async function fetchRelatedAgendasForType(subjects, typeUri) {
       }
 
       return `
-        ${modelCache.getSparqlPrefixes()}
+        ${model.sparqlPrefixes}
         SELECT DISTINCT ?agenda WHERE {
           GRAPH <${ADMIN_GRAPH}> {
             ${typeValues}
