@@ -1,11 +1,13 @@
 import httpContext from 'express-http-context';
-import { SparqlClient } from 'sparql-client-2';
+import SC2 from 'sparql-client-2';
 import {
   DIRECT_SPARQL_ENDPOINT,
   LOG_DIRECT_QUERIES,
   NB_OF_QUERY_RETRIES,
   RETRY_TIMEOUT_MS
 } from '../config';
+
+const { SparqlClient } = SC2;
 
 function triplestoreSparqlClient() {
   let options = {
