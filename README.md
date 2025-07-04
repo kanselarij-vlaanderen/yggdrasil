@@ -42,9 +42,8 @@ export default [
 By default, Yggdrasil assumes the initial load has been done. The initial load has to be enabled specifically, and disabled afterwards. During initial load, deltas will not be handled, but queued for future processing.
 
 Before starting the initial load, the target graphs need to be cleaned manually.
-For each user group, execute
 ```sparql
-DROP SILENT GRAPH <user group graph>
+mu script yggdrasil reset
 ```
 
 When the the `RELOAD_ON_INIT` flag is enabled on start-up of Yggdrasil, the initial load will be triggered.
