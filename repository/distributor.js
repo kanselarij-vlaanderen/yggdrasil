@@ -3,6 +3,8 @@ import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
 import { countResources, deleteResource } from './query-helpers';
+import { cleanupPublicationFlowDetails } from './collectors/publication-collection';
+import { cleanupEmptyAgendaitemTreatments } from './collectors/decision-collection';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
@@ -34,12 +36,11 @@ class Distributor {
           await this.collectResourceDetails();
         }, this.constructor.name);
 
-        await runStage('Filter out unwanted publication-flow triples', async () => {
-          await this.filterPublicationFlows();
-        }, this.constructor.name);
-
-        await runStage('Workaround for cache issue', async () => {
-          await this.filterEmptyTreatments();
+        await runStage('Cleanup resource details', async () => {
+          // Cleanup of the collected resource details of the previous step.
+          // Doing cleanup as a post-processing step will be cheaper than making
+          // the collectResourceDetails queries more complex with FILTER statements
+          await this.cleanupResourceDetails();
         }, this.constructor.name);
 
         if (!options.isInitialDistribution) {
@@ -53,7 +54,7 @@ class Distributor {
         });
       } else {
         console.log('No resources collected in temp graph');
-      }
+     }
 
       if (KEEP_TEMP_GRAPH) {
         console.log(`Service configured not to cleanup temp graph. Graph <${this.tempGraph}> will remain in triplestore.`);
@@ -181,172 +182,14 @@ class Distributor {
     }
   }
 
-  /**
-   * Filter out unwanted triples related to publication-flows from the temp graph.
-   * We only want to propagate a subset of data about publcation-flows to other
-   * graphs, this function is used to remove the unwanted triples without
-   * impacting the performance of the query in collectResourceDetails by adding
-   * FILTER statements.
-   */
-  async filterPublicationFlows() {
-    let offset = 0;
-    const summary = await queryTriplestore(`
-    PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX fabio: <http://purl.org/spar/fabio/>
-    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
+  async cleanupResourceDetails() {
+    await runStage('Cleanup publication flow details that must not be published' , async () => {
+      await cleanupPublicationFlowDetails(this);
+    });
 
-    SELECT (COUNT(?o) AS ?count) WHERE {
-      GRAPH <${this.tempGraph}> {
-        ?s a ?type .
-        VALUES ?type {
-          pub:Publicatieaangelegenheid
-          pub:VertalingProcedurestap
-          pub:PublicatieProcedurestap
-          pub:VertaalActiviteit
-          pub:DrukproefActiviteit
-          pub:PublicatieActiviteit
-        }
-        { ?s rdfs:comment ?o }
-        UNION { ?s dossier:openingsdatum ?o }
-        UNION { ?s dossier:sluitingsdatum ?o }
-        UNION { ?s fabio:hasPageCount ?o }
-        UNION { ?s pub:aantalUittreksels ?o }
-        UNION { ?s pub:publicatieWijze ?o }
-        UNION { ?s pub:urgentieniveau ?o }
-        UNION { ?s prov:hadActivity ?o }
-        UNION { ?s pub:threadId ?o }
-        UNION { ?s pub:doorlooptVertaling ?o }
-        UNION { ?s pub:doorlooptPublicatie ?o }
-        UNION { ?s dct:created ?o }
-        UNION { ?s dossier:Procedurestap.startdatum ?o }
-        UNION { ?s dossier:Procedurestap.einddatum ?o }
-        UNION { ?s tmo:targetEndTime ?o }
-        UNION { ?s tmo:dueDate ?o }
-        UNION { ?s pub:drukproefVerbeteraar ?o }
-        UNION { ?s pub:vertalingsactiviteitVanAanvraag ?o }
-        UNION { ?s pub:doelTaal ?o }
-        UNION { ?s pub:vertalingGebruikt ?o }
-        UNION { ?s pub:vertalingGenereert ?o }
-        UNION { ?s pub:drukproefGebruikt ?o }
-        UNION { ?s pub:drukproefGenereert ?o }
-        UNION { ?s pub:drukproefactiviteitVanAanvraag ?o }
-        UNION { ?s pub:publicatieGebruikt ?o }
-        UNION { ?s prov:generated ?o }
-        UNION { ?s pub:publicatieactiviteitVanAanvraag ?o }
-      }
-    }`);
-    const count = summary.results.bindings.map(b => b['count'].value);
-
-    const deleteStatement =`
-    PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX fabio: <http://purl.org/spar/fabio/>
-    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
-    DELETE {
-      GRAPH <${this.tempGraph}> {
-        ?s ?p ?o .
-      }
-    }
-    WHERE {
-      GRAPH <${this.tempGraph}> {
-        SELECT ?s ?p ?o {
-          VALUES ?p {
-            rdfs:comment
-            dossier:openingsdatum
-            dossier:sluitingsdatum
-            fabio:hasPageCount
-            pub:aantalUittreksels
-            pub:publicatieWijze
-            pub:urgentieniveau
-            prov:hadActivity
-            pub:threadId
-            dct:created
-            dossier:Procedurestap.startdatum
-            dossier:Procedurestap.einddatum
-            tmo:targetEndTime
-            tmo:dueDate
-            pub:drukproefVerbeteraar
-            pub:vertalingsactiviteitVanAanvraag
-            pub:doelTaal
-            pub:vertalingGebruikt
-            pub:vertalingGenereert
-            pub:drukproefGebruikt
-            pub:drukproefGenereert
-            pub:drukproefactiviteitVanAanvraag
-            pub:publicatieGebruikt
-            prov:generated
-            pub:publicatieactiviteitVanAanvraag
-          }
-          VALUES ?type {
-            pub:Publicatieaangelegenheid
-            pub:VertalingProcedurestap
-            pub:PublicatieProcedurestap
-            pub:VertaalActiviteit
-            pub:DrukproefActiviteit
-            pub:PublicatieActiviteit
-          }
-          ?s a ?type .
-          OPTIONAL { ?s ?p ?o }
-        }
-        LIMIT ${MU_AUTH_PAGE_SIZE}
-      }
-    }`;
-
-    while (offset < count) {
-      await updateTriplestore(deleteStatement);
-      offset = offset + MU_AUTH_PAGE_SIZE;
-    }
-  }
-
-  /**
-   * Filter out a triple pointing to an empty treatment from the temp graph.
-   * This is used to counter the cache issue when adding treatments to a graph on a later run than the agendaitems,
-   * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
-   */
-    async filterEmptyTreatments() {
-    let offset = 0;
-    const summary = await queryTriplestore(`
-    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    SELECT (COUNT(?s) AS ?count) WHERE {
-      GRAPH <${this.tempGraph}> {
-        ?s a besluit:Agendapunt .
-        ?o dct:subject ?s .
-        FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
-      }
-    }`);
-    const count = summary.results.bindings.map(b => b['count'].value);
-
-    const deleteStatement =`
-    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    DELETE {
-      GRAPH <${this.tempGraph}> {
-        ?o dct:subject ?s .
-      }
-    }
-    WHERE {
-      GRAPH <${this.tempGraph}> {
-        SELECT ?s ?o {
-          ?s a besluit:Agendapunt .
-          ?o dct:subject ?s .
-          FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
-        }
-        LIMIT ${MU_AUTH_PAGE_SIZE}
-      }
-    }`;
-
-    while (offset < count) {
-      await updateTriplestore(deleteStatement);
-      offset = offset + MU_AUTH_PAGE_SIZE;
-    }
+    await runStage('Filter empty agendaitem treatments to work around cache issue', async () => {
+      await cleanupEmptyAgendaitemTreatments(this);
+    });
   }
 
   /*

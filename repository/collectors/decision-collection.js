@@ -1,5 +1,6 @@
-import { updateTriplestore } from '../triplestore';
+import { queryTriplestore, updateTriplestore } from '../triplestore';
 import { decisionsReleaseFilter } from './release-validations';
+import { VIRTUOSO_RESOURCE_PAGE_SIZE } from '../../config';
 
 /**
  * Helpers to collect data about:
@@ -88,7 +89,51 @@ async function collectAgendaitemDecisionActivitiesAndNewsitems(distributor) {
   await updateTriplestore(relatedQuery);
 }
 
+/**
+ * Filter out a triple pointing to an empty treatment from the temp graph.
+ * This is used to counter the cache issue when adding treatments to a graph
+ * on a later (delta) run than the agendaitems.
+ */
+async function cleanupEmptyAgendaitemTreatments(distributor) {
+  let offset = 0;
+
+  const summary = await queryTriplestore(`
+    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    SELECT (COUNT(?s) AS ?count) WHERE {
+      GRAPH <${distributor.tempGraph}> {
+        ?s a besluit:Agendapunt .
+        ?o dct:subject ?s .
+        FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt . }
+      }
+    }`);
+  const count = summary.results.bindings.map(b => b['count'].value);
+
+  while (offset < count) {
+    await updateTriplestore(`
+    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    DELETE {
+      GRAPH <${distributor.tempGraph}> {
+        ?o dct:subject ?s .
+      }
+    }
+    WHERE {
+      GRAPH <${distributor.tempGraph}> {
+        SELECT ?s ?o {
+          ?s a besluit:Agendapunt .
+          ?o dct:subject ?s .
+          FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
+        }
+        LIMIT ${VIRTUOSO_RESOURCE_PAGE_SIZE}
+      }
+        }`);
+    offset = offset + VIRTUOSO_RESOURCE_PAGE_SIZE;
+  }
+}
+
 export {
   collectReleasedAgendaitemTreatments,
-  collectAgendaitemDecisionActivitiesAndNewsitems
+  collectAgendaitemDecisionActivitiesAndNewsitems,
+  cleanupEmptyAgendaitemTreatments,
 }
