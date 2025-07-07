@@ -2,7 +2,7 @@ import { uuid } from 'mu';
 import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
-import { countResources, deleteResource } from './query-helpers';
+import { countTriples, deleteResource } from './query-helpers';
 import { cleanupPublicationFlowDetails } from './collectors/publication-collection';
 import { cleanupEmptyAgendaitemTreatments } from './collectors/decision-collection';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
@@ -12,6 +12,8 @@ class Distributor {
     this.sourceGraph = sourceGraph;
     this.targetGraph = targetGraph;
     this.tempGraph = `http://mu.semte.ch/graphs/temp/${uuid()}`;
+    this.tempGraphSubjectsIn = `${this.tempGraph}/subjects-in`;
+    this.tempGraphSubjectsOut = `${this.tempGraph}/subjects-out`;
     this.model = model;
 
     this.releaseOptions = {
@@ -49,6 +51,8 @@ class Distributor {
           }, this.constructor.name);
         }
 
+        const count = await countTriples({ graph: this.tempGraph });
+        console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
         await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
           await this.copyTempGraph();
         });
@@ -61,6 +65,8 @@ class Distributor {
       } else {
         await runStage(`Delete temp graph <${this.tempGraph}>`, async () => {
           await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraph}>`);
+          await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraphSubjectsIn}>`);
+          await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraphSubjectsOut}>`);
         });
       }
 
@@ -76,6 +82,8 @@ class Distributor {
       INSERT DATA {
         GRAPH <${this.tempGraph}> {
           <${this.tempGraph}> a ext:TempGraph .
+          <${this.tempGraphSubjectsIn}> a ext:TempGraph .
+          <${this.tempGraphSubjectsOut}> a ext:TempGraph .
         }
       }`);
   }
@@ -87,8 +95,9 @@ class Distributor {
    * should not exceed the maximum number of triples returned by the database
    * (ie. ResultSetMaxRows in Virtuoso).
    *
-   * Using subquery to select all distinct subjects.
-   * More info: http://vos.openlinksw.com/owiki/wiki/VOS/VirtTipsAndTricksHowToHandleBandwidthLimitExceed
+   * We use additional temporary graphs to keep track of the subjects that have already been copied.
+   * This way we avoid to paginate (combining ORDER BY with LIMIT/OFFSET) over all subjects in the temp graph,
+   * which is a costly operation in Virtuoso for large datasets.
   */
   async collectResourceDetails() {
     const summary = await queryTriplestore(`
@@ -99,11 +108,19 @@ class Distributor {
       } GROUP BY ?type ORDER BY ?type`);
 
     console.log(`Temp graph <${this.tempGraph}> summary`);
+    const typesWithCount = {};
     summary.results.bindings.forEach(binding => {
-      console.log(`\t[${binding['count'].value}] ${binding['type'].value}`);
+      const type = binding['type'].value;
+      const count = parseInt(binding['count'].value);
+      console.log(`\t[${count}] ${type}`);
+      typesWithCount[type] = count;
     });
 
-    const types = summary.results.bindings.map(b => b['type'].value);
+    console.log(`Copying temp graph to keep track of handled resources during details collection`);
+    await updateTriplestore(`COPY SILENT GRAPH <${this.tempGraph}> TO <${this.tempGraphSubjectsIn}>`);
+    await updateTriplestore(`COPY SILENT GRAPH <${this.tempGraph}> TO <${this.tempGraphSubjectsOut}>`);
+
+    const types = Object.keys(typesWithCount);
     const relevantTypes = types.filter((type) => this.model.isRelevantType(type));
     const missingTypes = types.filter((type) => !this.model.isConfiguredType(type));
     if (missingTypes.length) {
@@ -112,39 +129,30 @@ class Distributor {
     }
 
     for (let type of relevantTypes) {
-      const count = await countResources({ graph: this.tempGraph, type: type });
-
+      const count = typesWithCount[type];
       const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
       const totalBatches = Math.ceil(count / limit);
       let currentBatch = 0;
       while (currentBatch < totalBatches) {
         await runStage(`Collect details of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
-          const offset = limit * currentBatch;
-
-          // The nested subquery construction in both queries below
-          // are the best way to get all resources in a paginated way in Virtuoso.
-          // If ORDER BY and LIMIT/OFFSET are combined in only 1 subquery
-          // chances are high you will hit the MaxSortedTopRows limit of Virtuoso.
-          // By nesting ORDER BY in the LIMIT/OFFSET query we work around this limit
-          // while still getting all the resources in a paginated way.
-
           // Outgoing triples
           await updateTriplestore(`
-            INSERT {
+            DELETE {
+              GRAPH <${this.tempGraphSubjectsIn}> {
+                ?resource a <${type}> .
+              }
+            } INSERT {
               GRAPH <${this.tempGraph}> {
+                ?resource a <${type}> .
                 ?resource ?p ?o .
               }
             } WHERE {
               {
-                SELECT ?resource {
-                  {
-                    SELECT DISTINCT ?resource {
-                      GRAPH <${this.tempGraph}> {
-                        ?resource a <${type}> .
-                      }
-                    } ORDER BY ?resource
+                SELECT ?resource WHERE {
+                  GRAPH <${this.tempGraphSubjectsIn}> {
+                    ?resource a <${type}> .
                   }
-                } LIMIT ${limit} OFFSET ${offset}
+                } ORDER BY ?resource LIMIT ${VIRTUOSO_RESOURCE_PAGE_SIZE}
               }
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
@@ -154,27 +162,28 @@ class Distributor {
 
           // Incoming triples
           await updateTriplestore(`
-            INSERT {
+            DELETE {
+              GRAPH <${this.tempGraphSubjectsOut}> {
+                ?resource a <${type}> .
+              }
+            } INSERT {
               GRAPH <${this.tempGraph}> {
+                ?resource a <${type}> .
                 ?s ?p ?resource .
               }
             } WHERE {
               {
-                SELECT ?resource {
-                  {
-                    SELECT DISTINCT ?resource {
-                      GRAPH <${this.tempGraph}> {
-                        ?resource a <${type}> .
-                      }
-                    } ORDER BY ?resource
+                SELECT ?resource WHERE {
+                  GRAPH <${this.tempGraphSubjectsOut}> {
+                    ?resource a <${type}> .
                   }
-                } LIMIT ${limit} OFFSET ${offset}
+                } ORDER BY ?resource LIMIT ${VIRTUOSO_RESOURCE_PAGE_SIZE}
               }
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
                 ?s ?p ?resource .
               }
-            }`)
+            }`);
         });
 
         currentBatch++;
