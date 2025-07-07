@@ -151,6 +151,7 @@ export default class GovernmentDistributor extends Distributor {
         }
         GRAPH <${this.sourceGraph}> {
           ?piece a dossier:Stuk .
+          ?file a nfo:FileDataObject .
           ?piece prov:value ?file ;
                  besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER( ?accessLevel IN (<${ACCESS_LEVEL_GOVERNMENT}>, <${ACCESS_LEVEL_PUBLIC}>) )

@@ -95,18 +95,18 @@ async function collectReleasedDocuments(distributor) {
  */
 async function collectDocumentContainers(distributor) {
   const properties = [
-    [ '^dossier:Collectie.bestaatUit' ], // document-container
+    { type: 'dossier:Serie', predicate: '^dossier:Collectie.bestaatUit' },
   ];
-  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
-  const relatedQuery = `
+  for (let path of properties) {
+    const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       INSERT {
         GRAPH <${distributor.tempGraph}> {
-          ?s a ?type ;
+          ?s a ${path.type} ;
              ext:tracesLineageTo ?agenda .
         }
       } WHERE {
@@ -116,11 +116,12 @@ async function collectDocumentContainers(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ?piece a dossier:Stuk .
-          ?piece ${path} ?s .
-          ?s a ?type .
+          ?piece ${path.predicate} ?s .
+          ?s a ${path.type} .
         }
       }`;
-  await updateTriplestore(relatedQuery);
+    await updateTriplestore(relatedQuery);
+  }
 }
 
 /*
@@ -132,11 +133,11 @@ async function collectDocumentContainers(distributor) {
  */
 async function collectDerivedFiles(distributor) {
   const properties = [
-    [ '^prov:hadPrimarySource' ], // derived-file (e.g. PDF file generated from a Word file)
+    { type: 'nfo:FileDataObject', predicate: '^prov:hadPrimarySource' }, // derived-file (e.g. PDF file generated from a Word file)
   ];
-  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
-  const relatedQuery = `
+  for (let path of properties) {
+    const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -144,7 +145,7 @@ async function collectDerivedFiles(distributor) {
       PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
       INSERT {
         GRAPH <${distributor.tempGraph}> {
-          ?s a ?type ;
+          ?s a ${path.type} ;
              ext:tracesLineageTo ?agenda .
         }
       } WHERE {
@@ -154,11 +155,12 @@ async function collectDerivedFiles(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ?virtualFile a nfo:FileDataObject .
-          ?virtualFile ${path} ?s .
-          ?s a ?type .
+          ?virtualFile ${path.predicate} ?s .
+          ?s a ${path.type} .
         }
       }`;
-  await updateTriplestore(relatedQuery);
+    await updateTriplestore(relatedQuery);
+  }
 }
 
 /*
@@ -170,11 +172,11 @@ async function collectDerivedFiles(distributor) {
  */
 async function collectPhysicalFiles(distributor) {
   const properties = [
-    [ '^nie:dataSource' ], // physical-file
+    { type: 'nfo:FileDataObject', predicate: '^prov:hadPrimarySource' },
   ];
-  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
 
-  const relatedQuery = `
+  for (let path of properties) {
+    const relatedQuery = `
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
       PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -182,7 +184,7 @@ async function collectPhysicalFiles(distributor) {
       PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
       INSERT {
         GRAPH <${distributor.tempGraph}> {
-          ?s a ?type ;
+          ?s a ${path.type} ;
              ext:tracesLineageTo ?agenda .
         }
       } WHERE {
@@ -192,11 +194,12 @@ async function collectPhysicalFiles(distributor) {
         }
         GRAPH <${distributor.sourceGraph}> {
           ?virtualFile a nfo:FileDataObject .
-          ?virtualFile ${path} ?s .
-          ?s a ?type .
+          ?virtualFile ${path.predicate} ?s .
+          ?s a ${path.type} .
         }
       }`;
-  await updateTriplestore(relatedQuery);
+    await updateTriplestore(relatedQuery);
+  }
 }
 
 export {

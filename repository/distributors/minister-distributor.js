@@ -141,6 +141,7 @@ export default class MinisterDistributor extends Distributor {
         }
         GRAPH <${this.sourceGraph}> {
           ?piece a dossier:Stuk .
+          ?file a nfo:FileDataObject .
           ?piece prov:value ?file ;
                  besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
           FILTER ( ?accessLevel != <${ACCESS_LEVEL_SECRETARY}> )
