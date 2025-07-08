@@ -26,8 +26,7 @@ import {
 } from '../collectors/document-collection';
 import {
   collectPublicationFlows,
-  collectTranslationSubcasesAndActivities,
-  collectPublicationSubcasesAndActivities
+  collectPublicationFlowSubcasesAndActivities,
 } from '../collectors/publication-collection';
 
 /**
@@ -110,12 +109,8 @@ export default class MinisterDistributor extends Distributor {
         await collectPublicationFlows(this);
       }, this.constructor.name);
 
-      await runStage('Collect translation-subcases', async() => {
-        await collectTranslationSubcasesAndActivities(this);
-      }, this.constructor.name);
-
-      await runStage('Collect publication-subcases', async() => {
-        await collectPublicationSubcasesAndActivities(this);
+      await runStage('Collect publication-flow subcases and activities', async() => {
+        await collectPublicationFlowSubcasesAndActivities(this);
       }, this.constructor.name);
     }
 
