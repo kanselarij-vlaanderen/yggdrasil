@@ -6,10 +6,11 @@ import { countResources, deleteResource } from './query-helpers';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
-  constructor({ sourceGraph, targetGraph }) {
+  constructor({ sourceGraph, targetGraph, model }) {
     this.sourceGraph = sourceGraph;
     this.targetGraph = targetGraph;
     this.tempGraph = `http://mu.semte.ch/graphs/temp/${uuid()}`;
+    this.model = model;
 
     this.releaseOptions = {
       validateDecisionsRelease: false,
@@ -102,20 +103,14 @@ class Distributor {
     });
 
     const types = summary.results.bindings.map(b => b['type'].value);
+    const relevantTypes = types.filter((type) => this.model.isRelevantType(type));
+    const missingTypes = types.filter((type) => !this.model.isConfiguredType(type));
+    if (missingTypes.length) {
+      console.log(`The following types are found in the temp graph but not configured in the Yggdrasil model to be distributed or ignored. You may want to add these to the config.`);
+      missingTypes.forEach((type) => console.log(`\t - ${type}`));
+    }
 
-    // We are not interested in redistributing certain types because
-    // they hold the same resource triples attached to another type.
-    // E.g. the triples of a resource gathered from prov:Activity or from
-    // besluitvorming:Agendering are identical. Distributing both is a
-    // waste of work for Yggdrasil.
-    const skippedTypes = ['http://www.w3.org/ns/prov#Activity'];
-
-    for (let type of types) {
-      if (skippedTypes.includes(type)) {
-        console.log(`Skipping detail collection of type <${type}>`);
-        continue;
-      }
-
+    for (let type of relevantTypes) {
       const count = await countResources({ graph: this.tempGraph, type: type });
 
       const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;

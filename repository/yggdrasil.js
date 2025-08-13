@@ -1,6 +1,7 @@
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { RELOAD_ON_INIT, KEEP_TEMP_GRAPH } from '../config';
 import { reduceChangesets, fetchRelatedAgendas } from './delta-handling';
+import ModelCache from './model-cache';
 import  {
   MinisterDistributor,
   CabinetDistributor,
@@ -11,10 +12,11 @@ export default class Yggdrasil {
 
   constructor() {
     this.isProcessing = false;
+    this.model = new ModelCache();
     this.distributors = {
-      'minister': new MinisterDistributor(),
-      'intern-regering': new CabinetDistributor(),
-      'intern-overheid': new GovernmentDistributor(),
+      'minister': new MinisterDistributor(this.model),
+      'intern-regering': new CabinetDistributor(this.model),
+      'intern-overheid': new GovernmentDistributor(this.model),
     };
   }
 
@@ -48,7 +50,7 @@ export default class Yggdrasil {
     if (RELOAD_ON_INIT.length) {
       try {
         this.isProcessing = true;
-        console.log(`Distributors ${RELOAD_ON_INIT.join(',')} are configured to propagate data on initialization. Make sure the target graphs are cleared manually.`);
+        console.log(`Distributors ${RELOAD_ON_INIT.join(', ')} are configured to propagate data on initialization. Make sure the target graphs are cleared manually.`);
         for (let key of RELOAD_ON_INIT) {
           const distributor = this.distributors[key];
           if (distributor) {
@@ -77,7 +79,7 @@ export default class Yggdrasil {
           this.isProcessing = true;
           const delta = cache.clear();
           const subjects = reduceChangesets(delta);
-          const agendas = await fetchRelatedAgendas(subjects);
+          const agendas = await fetchRelatedAgendas(subjects, this.model);
           if (agendas.length) {
             for (let distributor of this.deltaDistributors) {
               await distributor.perform({ agendaUris: agendas });

@@ -40,10 +40,11 @@ import {
  * Distributor for government (intern-overheid) profile
  */
 export default class GovernmentDistributor extends Distributor {
-  constructor() {
+  constructor(model) {
     super({
       sourceGraph: ADMIN_GRAPH,
-      targetGraph: GOVERNMENT_GRAPH
+      targetGraph: GOVERNMENT_GRAPH,
+      model
     });
 
     this.releaseOptions = {
