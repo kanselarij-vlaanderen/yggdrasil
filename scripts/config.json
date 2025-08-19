@@ -1,0 +1,18 @@
+{
+  "version": "0.1",
+  "scripts": [
+    {
+      "documentation": {
+        "command": "reset",
+        "description": "Reset graphs to which data is distributed",
+        "arguments": []
+      },
+      "environment": {
+        "image": "alpine/curl",
+        "interactive": false,
+        "script": "reset/run.sh",
+        "join_networks": true
+      }
+    }
+  ]
+}
