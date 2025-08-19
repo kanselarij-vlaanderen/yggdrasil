@@ -14,6 +14,7 @@ const prefixes = {
   'nfo': 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#',
 };
 
+// Make sure at least 1 path exists in pathsFromAgenda for each key here
 const typeUris = [
   { key: 'agenda', uri: 'besluitvorming:Agenda' },
   { key: 'meeting', uri: 'besluit:Vergaderactiviteit' },
@@ -154,6 +155,9 @@ const pathsFromAgenda = {
   ],
   publicationActivity: [
     { source: 'publicationSubcase', predicate: '^pub:publicatieVindtPlaatsTijdens' }
+  ],
+  file: [
+    { source: 'piece', predicate: 'prov:value' }
   ],
 };
 
