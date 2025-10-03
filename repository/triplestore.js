@@ -43,6 +43,8 @@ async function executeQuery(client, queryString, options = { }) {
       try {
         return JSON.parse(body);
       } catch (ex) { // Catch invalid JSON
+        console.log('Triplestore returned invalid JSON with the following error:');
+        console.log(ex);
         return null;
       }
     }
