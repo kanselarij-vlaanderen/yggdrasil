@@ -2,14 +2,19 @@ import { uuid } from 'mu';
 import { querySudo, updateSudo } from './auth-sudo';
 import { queryTriplestore, updateTriplestore } from './triplestore';
 import { runStage, forLoopProgressBar } from './timing';
-import { countResources, deleteResource } from './query-helpers';
+import { countTriples, deleteResource } from './query-helpers';
+import { cleanupPublicationFlowDetails } from './collectors/publication-collection';
+import { cleanupEmptyAgendaitemTreatments } from './collectors/decision-collection';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
 
 class Distributor {
-  constructor({ sourceGraph, targetGraph }) {
+  constructor({ sourceGraph, targetGraph, model }) {
     this.sourceGraph = sourceGraph;
     this.targetGraph = targetGraph;
     this.tempGraph = `http://mu.semte.ch/graphs/temp/${uuid()}`;
+    this.tempGraphSubjectsIn = `${this.tempGraph}/subjects-in`;
+    this.tempGraphSubjectsOut = `${this.tempGraph}/subjects-out`;
+    this.model = model;
 
     this.releaseOptions = {
       validateDecisionsRelease: false,
@@ -33,12 +38,11 @@ class Distributor {
           await this.collectResourceDetails();
         }, this.constructor.name);
 
-        await runStage('Filter out unwanted publication-flow triples', async () => {
-          await this.filterPublicationFlows();
-        }, this.constructor.name);
-
-        await runStage('Workaround for cache issue', async () => {
-          await this.filterEmptyTreatments();
+        await runStage('Cleanup resource details', async () => {
+          // Cleanup of the collected resource details of the previous step.
+          // Doing cleanup as a post-processing step will be cheaper than making
+          // the collectResourceDetails queries more complex with FILTER statements
+          await this.cleanupResourceDetails();
         }, this.constructor.name);
 
         if (!options.isInitialDistribution) {
@@ -47,18 +51,22 @@ class Distributor {
           }, this.constructor.name);
         }
 
+        const count = await countTriples({ graph: this.tempGraph });
+        console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
         await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
           await this.copyTempGraph();
         });
       } else {
         console.log('No resources collected in temp graph');
-      }
+     }
 
       if (KEEP_TEMP_GRAPH) {
         console.log(`Service configured not to cleanup temp graph. Graph <${this.tempGraph}> will remain in triplestore.`);
       } else {
         await runStage(`Delete temp graph <${this.tempGraph}>`, async () => {
           await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraph}>`);
+          await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraphSubjectsIn}>`);
+          await updateTriplestore(`DROP SILENT GRAPH <${this.tempGraphSubjectsOut}>`);
         });
       }
 
@@ -74,6 +82,8 @@ class Distributor {
       INSERT DATA {
         GRAPH <${this.tempGraph}> {
           <${this.tempGraph}> a ext:TempGraph .
+          <${this.tempGraphSubjectsIn}> a ext:TempGraph .
+          <${this.tempGraphSubjectsOut}> a ext:TempGraph .
         }
       }`);
   }
@@ -85,8 +95,9 @@ class Distributor {
    * should not exceed the maximum number of triples returned by the database
    * (ie. ResultSetMaxRows in Virtuoso).
    *
-   * Using subquery to select all distinct subjects.
-   * More info: http://vos.openlinksw.com/owiki/wiki/VOS/VirtTipsAndTricksHowToHandleBandwidthLimitExceed
+   * We use additional temporary graphs to keep track of the subjects that have already been copied.
+   * This way we avoid to paginate (combining ORDER BY with LIMIT/OFFSET) over all subjects in the temp graph,
+   * which is a costly operation in Virtuoso for large datasets.
   */
   async collectResourceDetails() {
     const summary = await queryTriplestore(`
@@ -97,58 +108,51 @@ class Distributor {
       } GROUP BY ?type ORDER BY ?type`);
 
     console.log(`Temp graph <${this.tempGraph}> summary`);
+    const typesWithCount = {};
     summary.results.bindings.forEach(binding => {
-      console.log(`\t[${binding['count'].value}] ${binding['type'].value}`);
+      const type = binding['type'].value;
+      const count = parseInt(binding['count'].value);
+      console.log(`\t[${count}] ${type}`);
+      typesWithCount[type] = count;
     });
 
-    const types = summary.results.bindings.map(b => b['type'].value);
+    console.log(`Copying temp graph to keep track of handled resources during details collection`);
+    await updateTriplestore(`COPY SILENT GRAPH <${this.tempGraph}> TO <${this.tempGraphSubjectsIn}>`);
+    await updateTriplestore(`COPY SILENT GRAPH <${this.tempGraph}> TO <${this.tempGraphSubjectsOut}>`);
 
-    // We are not interested in redistributing certain types because
-    // they hold the same resource triples attached to another type.
-    // E.g. the triples of a resource gathered from prov:Activity or from
-    // besluitvorming:Agendering are identical. Distributing both is a
-    // waste of work for Yggdrasil.
-    const skippedTypes = ['http://www.w3.org/ns/prov#Activity'];
+    const types = Object.keys(typesWithCount);
+    const relevantTypes = types.filter((type) => this.model.isRelevantType(type));
+    const missingTypes = types.filter((type) => !this.model.isConfiguredType(type));
+    if (missingTypes.length) {
+      console.log(`The following types are found in the temp graph but not configured in the Yggdrasil model to be distributed or ignored. You may want to add these to the config.`);
+      missingTypes.forEach((type) => console.log(`\t - ${type}`));
+    }
 
-    for (let type of types) {
-      if (skippedTypes.includes(type)) {
-        console.log(`Skipping detail collection of type <${type}>`);
-        continue;
-      }
-
-      const count = await countResources({ graph: this.tempGraph, type: type });
-
+    for (let type of relevantTypes) {
+      const count = typesWithCount[type];
       const limit = VIRTUOSO_RESOURCE_PAGE_SIZE;
       const totalBatches = Math.ceil(count / limit);
       let currentBatch = 0;
       while (currentBatch < totalBatches) {
         await runStage(`Collect details of <${type}> (batch ${currentBatch + 1}/${totalBatches})`, async () => {
-          const offset = limit * currentBatch;
-
-          // The nested subquery construction in both queries below
-          // are the best way to get all resources in a paginated way in Virtuoso.
-          // If ORDER BY and LIMIT/OFFSET are combined in only 1 subquery
-          // chances are high you will hit the MaxSortedTopRows limit of Virtuoso.
-          // By nesting ORDER BY in the LIMIT/OFFSET query we work around this limit
-          // while still getting all the resources in a paginated way.
-
           // Outgoing triples
           await updateTriplestore(`
-            INSERT {
+            DELETE {
+              GRAPH <${this.tempGraphSubjectsIn}> {
+                ?resource a <${type}> .
+              }
+            } INSERT {
               GRAPH <${this.tempGraph}> {
+                ?resource a <${type}> .
                 ?resource ?p ?o .
               }
             } WHERE {
               {
-                SELECT ?resource {
-                  {
-                    SELECT DISTINCT ?resource {
-                      GRAPH <${this.tempGraph}> {
-                        ?resource a <${type}> .
-                      }
-                    } ORDER BY ?resource
+                SELECT ?resource WHERE {
+                  GRAPH <${this.tempGraphSubjectsIn}> {
+                    ?resource a <${type}> .
                   }
-                } LIMIT ${limit} OFFSET ${offset}
+                } ORDER BY ?resource LIMIT ${VIRTUOSO_RESOURCE_PAGE_SIZE}
               }
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
@@ -158,27 +162,28 @@ class Distributor {
 
           // Incoming triples
           await updateTriplestore(`
-            INSERT {
+            DELETE {
+              GRAPH <${this.tempGraphSubjectsOut}> {
+                ?resource a <${type}> .
+              }
+            } INSERT {
               GRAPH <${this.tempGraph}> {
+                ?resource a <${type}> .
                 ?s ?p ?resource .
               }
             } WHERE {
               {
-                SELECT ?resource {
-                  {
-                    SELECT DISTINCT ?resource {
-                      GRAPH <${this.tempGraph}> {
-                        ?resource a <${type}> .
-                      }
-                    } ORDER BY ?resource
+                SELECT ?resource WHERE {
+                  GRAPH <${this.tempGraphSubjectsOut}> {
+                    ?resource a <${type}> .
                   }
-                } LIMIT ${limit} OFFSET ${offset}
+                } ORDER BY ?resource LIMIT ${VIRTUOSO_RESOURCE_PAGE_SIZE}
               }
               GRAPH <${this.sourceGraph}> {
                 ?resource a <${type}> . # for Virtuoso performance
                 ?s ?p ?resource .
               }
-            }`)
+            }`);
         });
 
         currentBatch++;
@@ -186,172 +191,14 @@ class Distributor {
     }
   }
 
-  /**
-   * Filter out unwanted triples related to publication-flows from the temp graph.
-   * We only want to propagate a subset of data about publcation-flows to other
-   * graphs, this function is used to remove the unwanted triples without
-   * impacting the performance of the query in collectResourceDetails by adding
-   * FILTER statements.
-   */
-  async filterPublicationFlows() {
-    let offset = 0;
-    const summary = await queryTriplestore(`
-    PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX fabio: <http://purl.org/spar/fabio/>
-    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
+  async cleanupResourceDetails() {
+    await runStage('Cleanup publication flow details that must not be published' , async () => {
+      await cleanupPublicationFlowDetails(this);
+    });
 
-    SELECT (COUNT(?o) AS ?count) WHERE {
-      GRAPH <${this.tempGraph}> {
-        ?s a ?type .
-        VALUES ?type {
-          pub:Publicatieaangelegenheid
-          pub:VertalingProcedurestap
-          pub:PublicatieProcedurestap
-          pub:VertaalActiviteit
-          pub:DrukproefActiviteit
-          pub:PublicatieActiviteit
-        }
-        { ?s rdfs:comment ?o }
-        UNION { ?s dossier:openingsdatum ?o }
-        UNION { ?s dossier:sluitingsdatum ?o }
-        UNION { ?s fabio:hasPageCount ?o }
-        UNION { ?s pub:aantalUittreksels ?o }
-        UNION { ?s pub:publicatieWijze ?o }
-        UNION { ?s pub:urgentieniveau ?o }
-        UNION { ?s prov:hadActivity ?o }
-        UNION { ?s pub:threadId ?o }
-        UNION { ?s pub:doorlooptVertaling ?o }
-        UNION { ?s pub:doorlooptPublicatie ?o }
-        UNION { ?s dct:created ?o }
-        UNION { ?s dossier:Procedurestap.startdatum ?o }
-        UNION { ?s dossier:Procedurestap.einddatum ?o }
-        UNION { ?s tmo:targetEndTime ?o }
-        UNION { ?s tmo:dueDate ?o }
-        UNION { ?s pub:drukproefVerbeteraar ?o }
-        UNION { ?s pub:vertalingsactiviteitVanAanvraag ?o }
-        UNION { ?s pub:doelTaal ?o }
-        UNION { ?s pub:vertalingGebruikt ?o }
-        UNION { ?s pub:vertalingGenereert ?o }
-        UNION { ?s pub:drukproefGebruikt ?o }
-        UNION { ?s pub:drukproefGenereert ?o }
-        UNION { ?s pub:drukproefactiviteitVanAanvraag ?o }
-        UNION { ?s pub:publicatieGebruikt ?o }
-        UNION { ?s prov:generated ?o }
-        UNION { ?s pub:publicatieactiviteitVanAanvraag ?o }
-      }
-    }`);
-    const count = summary.results.bindings.map(b => b['count'].value);
-
-    const deleteStatement =`
-    PREFIX pub: <http://mu.semte.ch/vocabularies/ext/publicatie/>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX fabio: <http://purl.org/spar/fabio/>
-    PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX tmo: <http://www.semanticdesktop.org/ontologies/2008/05/20/tmo#>
-    DELETE {
-      GRAPH <${this.tempGraph}> {
-        ?s ?p ?o .
-      }
-    }
-    WHERE {
-      GRAPH <${this.tempGraph}> {
-        SELECT ?s ?p ?o {
-          VALUES ?p {
-            rdfs:comment
-            dossier:openingsdatum
-            dossier:sluitingsdatum
-            fabio:hasPageCount
-            pub:aantalUittreksels
-            pub:publicatieWijze
-            pub:urgentieniveau
-            prov:hadActivity
-            pub:threadId
-            dct:created
-            dossier:Procedurestap.startdatum
-            dossier:Procedurestap.einddatum
-            tmo:targetEndTime
-            tmo:dueDate
-            pub:drukproefVerbeteraar
-            pub:vertalingsactiviteitVanAanvraag
-            pub:doelTaal
-            pub:vertalingGebruikt
-            pub:vertalingGenereert
-            pub:drukproefGebruikt
-            pub:drukproefGenereert
-            pub:drukproefactiviteitVanAanvraag
-            pub:publicatieGebruikt
-            prov:generated
-            pub:publicatieactiviteitVanAanvraag
-          }
-          VALUES ?type {
-            pub:Publicatieaangelegenheid
-            pub:VertalingProcedurestap
-            pub:PublicatieProcedurestap
-            pub:VertaalActiviteit
-            pub:DrukproefActiviteit
-            pub:PublicatieActiviteit
-          }
-          ?s a ?type .
-          OPTIONAL { ?s ?p ?o }
-        }
-        LIMIT ${MU_AUTH_PAGE_SIZE}
-      }
-    }`;
-
-    while (offset < count) {
-      await updateTriplestore(deleteStatement);
-      offset = offset + MU_AUTH_PAGE_SIZE;
-    }
-  }
-
-  /**
-   * Filter out a triple pointing to an empty treatment from the temp graph.
-   * This is used to counter the cache issue when adding treatments to a graph on a later run than the agendaitems,
-   * without impacting the performance of the query in collectResourceDetails by adding FILTER statements.
-   */
-    async filterEmptyTreatments() {
-    let offset = 0;
-    const summary = await queryTriplestore(`
-    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    SELECT (COUNT(?s) AS ?count) WHERE {
-      GRAPH <${this.tempGraph}> {
-        ?s a besluit:Agendapunt .
-        ?o dct:subject ?s .
-        FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
-      }
-    }`);
-    const count = summary.results.bindings.map(b => b['count'].value);
-
-    const deleteStatement =`
-    PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    DELETE {
-      GRAPH <${this.tempGraph}> {
-        ?o dct:subject ?s .
-      }
-    }
-    WHERE {
-      GRAPH <${this.tempGraph}> {
-        SELECT ?s ?o {
-          ?s a besluit:Agendapunt .
-          ?o dct:subject ?s .
-          FILTER NOT EXISTS { ?o a besluit:BehandelingVanAgendapunt .}
-        }
-        LIMIT ${MU_AUTH_PAGE_SIZE}
-      }
-    }`;
-
-    while (offset < count) {
-      await updateTriplestore(deleteStatement);
-      offset = offset + MU_AUTH_PAGE_SIZE;
-    }
+    await runStage('Filter empty agendaitem treatments to work around cache issue', async () => {
+      await cleanupEmptyAgendaitemTreatments(this);
+    });
   }
 
   /*

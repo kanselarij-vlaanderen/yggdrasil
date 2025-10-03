@@ -8,13 +8,19 @@ const prefixes = {
   'sign': 'http://mu.semte.ch/vocabularies/ext/handtekenen/',
   'pub': 'http://mu.semte.ch/vocabularies/ext/publicatie/',
   'adms': 'http://www.w3.org/ns/adms#',
+  'generiek': 'https://data.vlaanderen.be/ns/generiek#',
+  'person': 'http://www.w3.org/ns/person#',
+  'schema': 'http://schema.org/',
+  'nfo': 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#',
 };
 
+// Make sure at least 1 path exists in pathsFromAgenda for each key here
 const typeUris = [
   { key: 'agenda', uri: 'besluitvorming:Agenda' },
   { key: 'meeting', uri: 'besluit:Vergaderactiviteit' },
   { key: 'internalDecisionPublicationActivity', uri: 'ext:InternalDecisionPublicationActivity' },
   { key: 'internalDocumentPublicationActivity', uri: 'ext:InternalDocumentPublicationActivity' },
+  { key: 'themisPublicationActivity', uri: 'ext:ThemisPublicationActivity' },
   { key: 'agendaitem', uri: 'besluit:Agendapunt' },
   { key: 'agendaActivity', uri: 'besluitvorming:Agendering' },
   { key: 'agendaStatusActivity', uri: 'ext:AgendaStatusActivity' },
@@ -24,6 +30,9 @@ const typeUris = [
   { key: 'decisionmakingFlow', uri: 'besluitvorming:Besluitvormingsaangelegenheid' },
   { key: 'publicationFlow', uri: 'pub:Publicatieaangelegenheid' },
   { key: 'identification', uri: 'adms:Identifier' },
+  { key: 'structuredIdentifier', uri: 'generiek:GestructureerdeIdentificator' },
+  { key: 'contactPerson', uri: 'schema:ContactPoint' },
+  { key: 'person', uri: 'person:Person' },
   { key: 'translationSubcase', uri: 'pub:VertalingProcedurestap' },
   { key: 'publicationSubcase', uri: 'pub:PublicatieProcedurestap' },
   { key: 'requestActivity', uri: 'pub:AanvraagActiviteit' },
@@ -36,7 +45,13 @@ const typeUris = [
   { key: 'piece', uri: 'dossier:Stuk' },
   { key: 'signedPiece', uri: 'dossier:Stuk' },
   { key: 'signedPieceCopy', uri: 'dossier:Stuk' },
-  { key: 'documentContainer', uri: 'dossier:Serie' }
+  { key: 'documentContainer', uri: 'dossier:Serie' },
+  { key: 'file', uri: 'nfo:FileDataObject' }
+];
+
+const typesToIgnore = [
+  'ext:TempGraph', // Internal Yggdrasil type
+  'prov:Activity', // Subclasses are configured for distribution
 ];
 
 // TODO refactor collectors to make use of this model configuration to construct query paths
@@ -50,6 +65,9 @@ const pathsFromAgenda = {
   ],
   internalDocumentPublicationActivity: [
     { source: 'meeting', predicate: '^ext:internalDocumentPublicationActivityUsed' }
+  ],
+  themisPublicationActivity: [
+    { source: 'meeting', predicate: '^prov:used' }
   ],
   agendaitem: [
     { predicate: 'dct:hasPart' }
@@ -110,6 +128,15 @@ const pathsFromAgenda = {
   identification: [
     { source: 'publicationFlow', predicate: 'adms:identifier' }
   ],
+  structuredIdentifier: [
+    { source: 'identification', predicate: 'generiek:gestructureerdeIdentificator' }
+  ],
+  contactPerson: [
+    { source: 'publicationFlow', predicate: 'prov:qualifiedDelegation' }
+  ],
+  person: [
+    { source: 'contactPerson', predicate: '^schema:contactPoint' }
+  ],
   translationSubcase: [
     { source: 'publicationFlow', predicate: 'pub:doorlooptVertaling' }
   ],
@@ -129,10 +156,14 @@ const pathsFromAgenda = {
   publicationActivity: [
     { source: 'publicationSubcase', predicate: '^pub:publicatieVindtPlaatsTijdens' }
   ],
+  file: [
+    { source: 'piece', predicate: 'prov:value' }
+  ],
 };
 
 export {
   prefixes,
   typeUris,
+  typesToIgnore,
   pathsFromAgenda
 }

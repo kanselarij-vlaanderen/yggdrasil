@@ -124,6 +124,44 @@ async function collectDocumentContainers(distributor) {
 }
 
 /*
+ * Collect all derived files related to the 'virtual' files
+ * from the distributor's source graph in the temp graph.
+ *
+ * Note, file visibility (access level) is checked
+ * at the level of the 'virtual' file.
+ */
+async function collectDerivedFiles(distributor) {
+  const properties = [
+    [ '^prov:hadPrimarySource' ], // derived-file (e.g. PDF file generated from a Word file)
+  ];
+  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
+
+  const relatedQuery = `
+      PREFIX prov: <http://www.w3.org/ns/prov#>
+      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
+      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+      PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+      INSERT {
+        GRAPH <${distributor.tempGraph}> {
+          ?s a ?type ;
+             ext:tracesLineageTo ?agenda .
+        }
+      } WHERE {
+        GRAPH <${distributor.tempGraph}> {
+          ?virtualFile a nfo:FileDataObject ;
+              ext:tracesLineageTo ?agenda .
+        }
+        GRAPH <${distributor.sourceGraph}> {
+          ?virtualFile a nfo:FileDataObject .
+          ?virtualFile ${path} ?s .
+          ?s a ?type .
+        }
+      }`;
+  await updateTriplestore(relatedQuery);
+}
+
+/*
  * Collect all physical files related to the 'virtual' files
  * from the distributor's source graph in the temp graph.
  *
@@ -161,48 +199,9 @@ async function collectPhysicalFiles(distributor) {
   await updateTriplestore(relatedQuery);
 }
 
-/*
- * Collect all derived files related to the 'virtual' files
- * from the distributor's source graph in the temp graph.
- *
- * Note, file visibility (access level) is checked
- * at the level of the 'virtual' file.
- */
-async function collectDerivedFiles(distributor) {
-  const properties = [
-    [ '^prov:hadPrimarySource' ], // derived-file (e.g. PDF file generated from a Word file)
-    [ '^prov:hadPrimarySource', '^nie:dataSource' ], // physical-file of derived-file
-  ];
-  const path = properties.map(prop => prop.join(' / ')).map(path => `( ${path} )`).join(' | ');
-
-  const relatedQuery = `
-      PREFIX prov: <http://www.w3.org/ns/prov#>
-      PREFIX dossier: <https://data.vlaanderen.be/ns/dossier#>
-      PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-      PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-      PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-      INSERT {
-        GRAPH <${distributor.tempGraph}> {
-          ?s a ?type ;
-             ext:tracesLineageTo ?agenda .
-        }
-      } WHERE {
-        GRAPH <${distributor.tempGraph}> {
-          ?virtualFile a nfo:FileDataObject ;
-              ext:tracesLineageTo ?agenda .
-        }
-        GRAPH <${distributor.sourceGraph}> {
-          ?virtualFile a nfo:FileDataObject .
-          ?virtualFile ${path} ?s .
-          ?s a ?type .
-        }
-      }`;
-  await updateTriplestore(relatedQuery);
-}
-
 export {
   collectReleasedDocuments,
   collectDocumentContainers,
-  collectPhysicalFiles,
   collectDerivedFiles,
+  collectPhysicalFiles,
 }

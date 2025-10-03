@@ -1,32 +1,22 @@
-import { prefixes, typeUris, pathsFromAgenda } from '../model';
+import { prefixes, typeUris, typesToIgnore, pathsFromAgenda } from '../model';
 import { LOG_INITIALIZATION } from '../config';
 
 export default class ModelCache {
   constructor() {
     this.pathCache = {};
     this.typeCache = [];
+    this.typesToIgnore = [];
     this.build();
   }
 
   build() {
+    this.typesToIgnore = typesToIgnore.map((uri) => this.resolvePrefix(uri));
+
     // Building a type cache containing non-prefixed entries
     // like { key: 'agenda', uri: 'https://data.vlaanderen.be/ns/besluitvorming#Agenda' }
-    this.typeCache = typeUris.map(entry => {
-      const prefixedType = entry.uri;
-      const parts = prefixedType.split(':');
-      if (parts.length > 1) {
-        const prefix = parts[0];
-        const prefixUri = prefixes[prefix];
-
-        if (prefix) {
-          const resolvedType = prefixedType.replace(`${prefix}:`, prefixUri);
-          return { key: entry.key, uri: resolvedType };
-        } else {
-          throw new Error(`No prefix definition found for '${prefix}'. Please fix the model configuration.`);
-        }
-      } else {
-        return entry;
-      }
+    this.typeCache = typeUris.map(({ key, uri }) => {
+      const resolvedUri = this.resolvePrefix(uri);
+      return { key, uri: resolvedUri };
     });
     if (LOG_INITIALIZATION)
       console.log(`Type cache: ${JSON.stringify(this.typeCache)}`);
@@ -38,6 +28,33 @@ export default class ModelCache {
         const propertyPathsForKey = this.pathCache[key].map(path => path.join(' / '));
         console.log(`Constructed paths from '${key}' to 'agenda': ${JSON.stringify(propertyPathsForKey, null, 4)}`);
       }
+    }
+  }
+
+  isRelevantType(type) {
+    return !this.typesToIgnore.includes(type)
+      && this.typeCache.some(({ uri }) => type == uri);
+  }
+
+  isConfiguredType(type) {
+    return this.typesToIgnore.includes(type)
+      || this.typeCache.some(({ uri }) => type == uri);
+  }
+
+  resolvePrefix(prefixedUri) {
+    const parts = prefixedUri.split(':');
+    if (parts.length > 1) {
+      const prefix = parts[0];
+      const prefixUri = prefixes[prefix];
+
+      if (prefix) {
+        const resolvedUri = prefixedUri.replace(`${prefix}:`, prefixUri);
+        return resolvedUri;
+      } else {
+        throw new Error(`No prefix definition found for '${prefix}'. Please fix the model configuration.`);
+      }
+    } else {
+      return prefixedUri; // URI doesn't contain a prefix
     }
   }
 
@@ -71,7 +88,7 @@ export default class ModelCache {
     }
   }
 
-  getSparqlPrefixes() {
+  get sparqlPrefixes() {
     return Object.keys(prefixes).map((prefix) => {
       return `PREFIX ${prefix}: <${prefixes[prefix]}>`;
     }).join('\n');

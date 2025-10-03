@@ -33,18 +33,18 @@ import {
 } from '../collectors/document-collection';
 import {
   collectPublicationFlows,
-  collectTranslationSubcasesAndActivities,
-  collectPublicationSubcasesAndActivities
+  collectPublicationFlowSubcasesAndActivities,
 } from '../collectors/publication-collection';
 
 /**
  * Distributor for cabinet (intern-regering) profile
  */
 export default class CabinetDistributor extends Distributor {
-  constructor() {
+  constructor(model) {
     super({
       sourceGraph: ADMIN_GRAPH,
-      targetGraph: CABINET_GRAPH
+      targetGraph: CABINET_GRAPH,
+      model,
     });
 
     this.releaseOptions = {
@@ -103,24 +103,20 @@ export default class CabinetDistributor extends Distributor {
         await this.collectVisibleFiles();
       }, this.constructor.name);
 
-      await runStage('Collect physical files', async () => {
-        await collectPhysicalFiles(this);
-      }, this.constructor.name);
-
       await runStage('Collect derived files', async() => {
         await collectDerivedFiles(this);
+      }, this.constructor.name);
+
+      await runStage('Collect physical files', async () => {
+        await collectPhysicalFiles(this);
       }, this.constructor.name);
 
       await runStage('Collect publication-flows', async() => {
         await collectPublicationFlows(this);
       }, this.constructor.name);
 
-      await runStage('Collect translation-subcases', async() => {
-        await collectTranslationSubcasesAndActivities(this);
-      }, this.constructor.name);
-
-      await runStage('Collect publication-subcases', async() => {
-        await collectPublicationSubcasesAndActivities(this);
+      await runStage('Collect publication-flow subcases and activities', async() => {
+        await collectPublicationFlowSubcasesAndActivities(this);
       }, this.constructor.name);
     }
 
