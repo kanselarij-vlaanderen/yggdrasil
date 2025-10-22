@@ -148,7 +148,7 @@ class Distributor {
               }
             } WHERE {
               {
-                SELECT ?resource WHERE {
+                SELECT DISTINCT(?resource) WHERE {
                   GRAPH <${this.tempGraphSubjectsIn}> {
                     ?resource a <${type}> .
                   }
@@ -173,7 +173,7 @@ class Distributor {
               }
             } WHERE {
               {
-                SELECT ?resource WHERE {
+                SELECT DISTINCT(?resource) WHERE {
                   GRAPH <${this.tempGraphSubjectsOut}> {
                     ?resource a <${type}> .
                   }
