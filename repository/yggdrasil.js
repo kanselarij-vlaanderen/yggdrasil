@@ -85,7 +85,7 @@ export default class Yggdrasil {
           const subjects = reduceChangesets(delta);
           const agendas = await fetchRelatedAgendas(subjects, this.model);
           if (agendas.length) {
-            await createDistributorJobs(this.deltaDistributors, { agendaUris: agendas });
+            await createDistributorJobs(this.deltaDistributors, agendas);
             for (let distributor of this.deltaDistributors) {
               await distributor.perform({ agendaUris: agendas });
             }
