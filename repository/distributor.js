@@ -6,6 +6,8 @@ import { countTriples, deleteResource } from './query-helpers';
 import { cleanupPublicationFlowDetails } from './collectors/publication-collection';
 import { cleanupEmptyAgendaitemTreatments } from './collectors/decision-collection';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
+import { JOB } from '../constants';
+import { updateJobStatus } from './distributor-job';
 
 class Distributor {
   constructor({ sourceGraph, targetGraph, model }) {
@@ -15,6 +17,7 @@ class Distributor {
     this.tempGraphSubjectsIn = `${this.tempGraph}/subjects-in`;
     this.tempGraphSubjectsOut = `${this.tempGraph}/subjects-out`;
     this.model = model;
+    this.jobUri = '';
 
     this.releaseOptions = {
       validateDecisionsRelease: false,
@@ -25,6 +28,7 @@ class Distributor {
   async perform(options = { agendaUris: [], isInitialDistribution: false }) {
     if (this.collect) {
       console.log(`${this.constructor.name} started at ${new Date().toISOString()}`);
+      await updateJobStatus(this.jobUri, JOB.STATUSES.BUSY);
 
       await runStage(`Register temp graph <${this.tempGraph}>`, async () => {
         await this.registerTempGraph();
@@ -70,6 +74,7 @@ class Distributor {
         });
       }
 
+      await updateJobStatus(this.jobUri, JOB.STATUSES.SUCCESS);
       console.log(`${this.constructor.name} ended at ${new Date().toISOString()}`);
     } else {
       console.warn(`Distributor ${this.constructor.name} doesn't contain a function this.collect(). Nothing to perform.`);

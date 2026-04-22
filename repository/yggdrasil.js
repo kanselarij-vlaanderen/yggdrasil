@@ -7,6 +7,10 @@ import  {
   CabinetDistributor,
   GovernmentDistributor,
 } from './distributors';
+import {
+  createDistributorJobs,
+  failUnfinishedDistributorJobs,
+} from './distributor-job';
 
 export default class Yggdrasil {
 
@@ -81,6 +85,7 @@ export default class Yggdrasil {
           const subjects = reduceChangesets(delta);
           const agendas = await fetchRelatedAgendas(subjects, this.model);
           if (agendas.length) {
+            await createDistributorJobs(this.deltaDistributors, agendas);
             for (let distributor of this.deltaDistributors) {
               await distributor.perform({ agendaUris: agendas });
             }
@@ -88,14 +93,17 @@ export default class Yggdrasil {
             console.log('Deltas not related to any agenda. Nothing to distribute.');
           }
         } catch(e) {
+          await failUnfinishedDistributorJobs(`Someting went wrong while processing delta's: ${e.message}`);
           console.log("Someting went wrong while processing delta's");
-          console.log(e);
+          console.trace(e);
         } finally {
           this.isProcessing = false;
         }
       }
     }
   }
+
+  // TODO cleanup all jobs on rebuild? they mean nothing after a rebuild
 
   async cleanupTempGraphs() {
     const result = await queryTriplestore(`

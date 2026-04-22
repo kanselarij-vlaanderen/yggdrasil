@@ -14,6 +14,18 @@ const ACCESS_LEVEL_PUBLIC = 'http://themis.vlaanderen.be/id/concept/toegangsnive
 const DECISION_STATUS_APPROVED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd';
 const DECISION_STATUS_ACKNOWLEDGED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/9f342a88-9485-4a83-87d9-245ed4b504bf';
 
+const JOB = {
+  JSONAPI_JOB_TYPE: "distributor-jobs",
+  RDF_TYPE: "http://mu.semte.ch/vocabularies/ext/DistributorJob",
+  RESOURCE_BASE: "http://mu.semte.ch/services/yggdrasil",
+  STATUSES: {
+    SCHEDULED: "http://redpencil.data.gift/id/concept/JobStatus/scheduled",
+    BUSY: "http://redpencil.data.gift/id/concept/JobStatus/busy",
+    SUCCESS: "http://redpencil.data.gift/id/concept/JobStatus/success",
+    FAILED: "http://redpencil.data.gift/id/concept/JobStatus/failed",
+  },
+};
+
 export {
   ADMIN_GRAPH,
   MINISTER_GRAPH,
@@ -27,4 +39,5 @@ export {
   ACCESS_LEVEL_PUBLIC,
   DECISION_STATUS_APPROVED,
   DECISION_STATUS_ACKNOWLEDGED,
+  JOB
 }
