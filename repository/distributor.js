@@ -6,7 +6,7 @@ import { countTriples, deleteResource } from './query-helpers';
 import { cleanupPublicationFlowDetails } from './collectors/publication-collection';
 import { cleanupEmptyAgendaitemTreatments } from './collectors/decision-collection';
 import { USE_DIRECT_QUERIES, MU_AUTH_PAGE_SIZE, VIRTUOSO_RESOURCE_PAGE_SIZE, KEEP_TEMP_GRAPH } from '../config';
-import { JOB } from '../constants';
+import { JOB, DESIGN_AGENDA_STATUS } from '../constants';
 import { updateJobStatus } from './distributor-job';
 
 class Distributor {
@@ -37,6 +37,7 @@ class Distributor {
       // resource collection logic implemented by subclass
       const hasCollectedResources = await this.collect(options);
 
+      let copyCancelled = false;
       if (hasCollectedResources) {
         await runStage('Collect resource details', async () => {
           await this.collectResourceDetails();
@@ -55,11 +56,21 @@ class Distributor {
           }, this.constructor.name);
         }
 
-        const count = await countTriples({ graph: this.tempGraph });
-        console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
-        await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
-          await this.copyTempGraph();
-        });
+        // Right before the copy: cancel if any agenda in the temp graph has
+        // been reverted to DESIGN status in the source graph. A future delta
+        // will retrigger the whole flow with the current state.
+        const designAgendas = await this.findDesignAgendasInTempGraph();
+        if (designAgendas.length) {
+          console.log(`Cancelling copy to <${this.targetGraph}>: ${designAgendas.length} agenda(s) in the temp graph are currently in DESIGN status in <${this.sourceGraph}>:`);
+          designAgendas.forEach(uri => console.log(`\t- <${uri}>`));
+          copyCancelled = true;
+        } else {
+          const count = await countTriples({ graph: this.tempGraph });
+          console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
+          await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
+            await this.copyTempGraph();
+          });
+        }
       } else {
         console.log('No resources collected in temp graph');
      }
@@ -74,7 +85,7 @@ class Distributor {
         });
       }
 
-      await updateJobStatus(this.jobUri, JOB.STATUSES.SUCCESS);
+      await updateJobStatus(this.jobUri, copyCancelled ? JOB.STATUSES.FAILED : JOB.STATUSES.SUCCESS);
       console.log(`${this.constructor.name} ended at ${new Date().toISOString()}`);
     } else {
       console.warn(`Distributor ${this.constructor.name} doesn't contain a function this.collect(). Nothing to perform.`);
@@ -334,6 +345,28 @@ class Distributor {
         }
       `);
     });
+  }
+
+  /*
+   * Find agendas that are present in the temp graph but currently have
+   * DESIGN status in the source graph. Used to detect when an agenda
+   * has been reverted from APPROVED back to DESIGN between the collection
+   * phase and the copy phase of this distribution run, in which case the
+   * caller restarts the distributor — on retry the collector's DESIGN
+   * filter excludes the agenda naturally.
+  */
+  async findDesignAgendasInTempGraph() {
+    const result = await queryTriplestore(`
+      PREFIX besluitvorming: <https://data.vlaanderen.be/ns/besluitvorming#>
+      SELECT DISTINCT ?agenda WHERE {
+        GRAPH <${this.tempGraph}> {
+          ?agenda a besluitvorming:Agenda .
+        }
+        GRAPH <${this.sourceGraph}> {
+          ?agenda besluitvorming:agendaStatus <${DESIGN_AGENDA_STATUS}> .
+        }
+      }`);
+    return result.results.bindings.map(b => b['agenda'].value);
   }
 
   /*
