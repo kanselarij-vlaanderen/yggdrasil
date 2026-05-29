@@ -54,22 +54,22 @@ class Distributor {
           await runStage('Cleanup previously published data', async () => {
             await this.cleanupPreviouslyPublishedData();
           }, this.constructor.name);
-        }
 
-        // Right before the copy: cancel if any agenda in the temp graph has
-        // been reverted to DESIGN status in the source graph. A future delta
-        // will retrigger the whole flow with the current state.
-        const designAgendas = await this.findDesignAgendasInTempGraph();
-        if (designAgendas.length) {
-          console.log(`Cancelling copy to <${this.targetGraph}>: ${designAgendas.length} agenda(s) in the temp graph are currently in DESIGN status in <${this.sourceGraph}>:`);
-          designAgendas.forEach(uri => console.log(`\t- <${uri}>`));
-          copyCancelled = true;
-        } else {
-          const count = await countTriples({ graph: this.tempGraph });
-          console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
-          await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
-            await this.copyTempGraph();
-          });
+          // Right before the copy: cancel if any agenda in the temp graph has
+          // been reverted to DESIGN status in the source graph. A future delta
+          // will retrigger the whole flow with the current state.
+          const designAgendas = await this.findDesignAgendasInTempGraph();
+          if (designAgendas.length) {
+            console.log(`Cancelling copy to <${this.targetGraph}>: ${designAgendas.length} agenda(s) in the temp graph are currently in DESIGN status in <${this.sourceGraph}>:`);
+            designAgendas.forEach(uri => console.log(`\t- <${uri}>`));
+            copyCancelled = true;
+          } else {
+            const count = await countTriples({ graph: this.tempGraph });
+            console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
+            await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
+              await this.copyTempGraph();
+            });
+          }
         }
       } else {
         console.log('No resources collected in temp graph');
