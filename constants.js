@@ -10,6 +10,7 @@ const ACCESS_LEVEL_SECRETARY = 'http://themis.vlaanderen.be/id/concept/toegangsn
 const ACCESS_LEVEL_CABINET = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/13ae94b0-6188-49df-8ecd-4c4a17511d6d'; // intern regering
 const ACCESS_LEVEL_GOVERNMENT = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/634f438e-0d62-4ae4-923a-b63460f6bc46'; // intern overheid
 const ACCESS_LEVEL_PUBLIC = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/c3de9c70-391e-4031-a85e-4b03433d6266';
+const ACCESS_LEVEL_RETRACTED = 'http://themis.vlaanderen.be/id/concept/toegangsniveau/969a712a-b3d3-406f-ab08-5f665427185a'; // ingetrokken
 
 const DECISION_STATUS_APPROVED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/56312c4b-9d2a-4735-b0b1-2ff14bb524fd';
 const DECISION_STATUS_ACKNOWLEDGED = 'http://themis.vlaanderen.be/id/concept/beslissing-resultaatcodes/9f342a88-9485-4a83-87d9-245ed4b504bf';
@@ -37,6 +38,7 @@ export {
   ACCESS_LEVEL_CABINET,
   ACCESS_LEVEL_GOVERNMENT,
   ACCESS_LEVEL_PUBLIC,
+  ACCESS_LEVEL_RETRACTED,
   DECISION_STATUS_APPROVED,
   DECISION_STATUS_ACKNOWLEDGED,
   JOB

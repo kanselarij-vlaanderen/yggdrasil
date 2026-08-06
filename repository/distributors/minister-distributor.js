@@ -1,7 +1,7 @@
 import Distributor from '../distributor';
 import { runStage } from '../timing';
 import { updateTriplestore } from '../triplestore';
-import { ADMIN_GRAPH, MINISTER_GRAPH, AGENDA_TYPE, ACCESS_LEVEL_SECRETARY } from '../../constants';
+import { ADMIN_GRAPH, MINISTER_GRAPH, AGENDA_TYPE, ACCESS_LEVEL_SECRETARY, ACCESS_LEVEL_RETRACTED } from '../../constants';
 import { countResources } from '../query-helpers';
 import {
   collectReleasedAgendas,
@@ -120,7 +120,7 @@ export default class MinisterDistributor extends Distributor {
   /*
    * Collect all files related to any of the previously copied released documents
    * that are accessible for the minister-profile
-   * I.e. the document does not have an access level 'Intern secretarie'.
+   * I.e. the document does not have an access level 'Intern secretarie' or 'Ingetrokken'.
   */
   async collectVisibleFiles() {
     const visibleFileQuery = `
@@ -143,7 +143,7 @@ export default class MinisterDistributor extends Distributor {
           ?piece a dossier:Stuk .
           ?piece prov:value ?file ;
                  besluitvorming:vertrouwelijkheidsniveau ?accessLevel .
-          FILTER ( ?accessLevel != <${ACCESS_LEVEL_SECRETARY}> )
+          FILTER ( ?accessLevel NOT IN (<${ACCESS_LEVEL_SECRETARY}>, <${ACCESS_LEVEL_RETRACTED}>) )
         }
       }`;
     await updateTriplestore(visibleFileQuery);
