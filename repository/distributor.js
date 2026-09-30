@@ -54,18 +54,18 @@ class Distributor {
           await runStage('Cleanup previously published data', async () => {
             await this.cleanupPreviouslyPublishedData();
           }, this.constructor.name);
+        }
 
-          const isValid = await this.validateAgendaStatuses();
-          if (isValid) {
-            const count = await countTriples({ graph: this.tempGraph });
-            console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
-            await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
-              await this.copyTempGraph();
-            });
-          } else {
-            console.log(`Cancel propagation to graph <${this.targetGraph}>`);
-            isCancelled = true;
-          }
+        const isValid = await this.validateAgendaStatuses();
+        if (isValid) {
+          const count = await countTriples({ graph: this.tempGraph });
+          console.log(`Temp graph <${this.tempGraph}> now contains ${count} triples.`);
+          await runStage(`Copy temp graph to <${this.targetGraph}>`, async () => {
+            await this.copyTempGraph();
+          });
+        } else {
+          console.log(`Cancel propagation to graph <${this.targetGraph}>`);
+          isCancelled = true;
         }
       } else {
         console.log('No resources collected in temp graph');
