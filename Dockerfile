@@ -1,4 +1,4 @@
-FROM semtech/mu-javascript-template:1.9.1
+FROM semtech/mu-javascript-template:feature-draft-1.10.0-clean-slim
 LABEL maintainer=info@redpencil.io
 
  # overwrite default of mu-javascript-template
